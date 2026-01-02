@@ -15,25 +15,17 @@ echo "[1/5] Pulling latest code..."
 git pull origin main
 
 echo ""
-echo "[2/5] Installing backend dependencies..."
-cd backend
-source venv/bin/activate
-pip install -r requirements.txt --quiet
-deactivate
-
-echo ""
-echo "[3/5] Restarting backend..."
-cd ..
+echo "[2/5] Restarting backend..."
 docker compose restart backend
 
 echo ""
-echo "[4/5] Building frontend..."
+echo "[3/5] Building frontend..."
 cd frontend
 npm install --silent
 npm run build
 
 echo ""
-echo "[5/5] Restarting frontend..."
+echo "[4/5] Restarting frontend..."
 pm2 restart frontend 2>/dev/null || pm2 start "npm run start" --name frontend
 
 echo ""
