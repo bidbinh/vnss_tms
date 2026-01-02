@@ -1,0 +1,511 @@
+from datetime import datetime
+from fastapi import APIRouter, Depends, HTTPException
+from sqlmodel import Session, select
+
+from app.db.session import get_session
+from app.models import Order, Customer, User, Location
+from app.models.order import OrderStatus
+from app.schemas.order import OrderCreate, OrderRead, OrderAccept, OrderReject, OrderUpdate
+from app.core.security import get_current_user, get_current_user_optional
+from app.services.order_code import next_order_code
+from app.services.order_parser import parse_order_text
+from app.services.distance_calculator import get_distance_from_rates
+from app.services.freight_calculator import get_freight_from_rates
+from app.services.order_status_logger import log_status_change
+from typing import Optional, List
+
+router = APIRouter(prefix="/orders", tags=["orders"])
+
+
+@router.get("/preview-code/{customer_id}")
+def preview_order_code(
+    customer_id: str,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Preview next order code for a customer"""
+    tenant_id = str(current_user.tenant_id)
+
+    customer = session.get(Customer, customer_id)
+    if not customer or str(customer.tenant_id) != tenant_id:
+        raise HTTPException(404, "Customer not found")
+
+    # Don't actually increment, just peek at what it would be
+    from sqlmodel import select
+    from app.models.order_sequence import OrderSequence
+
+    seq = session.exec(
+        select(OrderSequence)
+        .where(
+            OrderSequence.tenant_id == tenant_id,
+            OrderSequence.customer_code == customer.code,
+            OrderSequence.yymm == "ALL",
+        )
+    ).first()
+
+    next_seq = (seq.last_seq + 1) if seq else 1
+    preview_code = f"{customer.code}-{next_seq}"
+
+    return {"order_code": preview_code}
+
+
+@router.post("/batch", response_model=List[OrderRead])
+def create_orders_batch(
+    text: str,
+    customer_id: str,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Create multiple orders from pasted text (CUSTOMER role).
+
+    Text format:
+    "02x20 CARGO_NOTE; PICKUP - DELIVERY"
+    """
+    tenant_id = str(current_user.tenant_id)
+
+    # Verify customer access
+    customer = session.get(Customer, customer_id)
+    if not customer or str(customer.tenant_id) != tenant_id:
+        raise HTTPException(404, "Customer not found")
+
+    # Parse text into order data
+    order_data_list = parse_order_text(text)
+
+    if not order_data_list:
+        raise HTTPException(400, "No valid orders found in text")
+
+    # Create orders
+    created_orders = []
+    for order_data in order_data_list:
+        # Generate order code
+        order_code = next_order_code(
+            session, tenant_id, customer.code, datetime.utcnow()
+        )
+
+        order = Order(
+            tenant_id=tenant_id,
+            customer_id=customer_id,
+            created_by_user_id=str(current_user.id),
+            order_code=order_code,
+            status=OrderStatus.NEW,
+            pickup_text=order_data.get("pickup_text"),
+            delivery_text=order_data.get("delivery_text"),
+            equipment=order_data.get("equipment"),
+            qty=order_data.get("qty", 1),
+            cargo_note=order_data.get("cargo_note"),
+            empty_return_note=order_data.get("empty_return_note"),
+        )
+
+        session.add(order)
+        created_orders.append(order)
+
+    session.commit()
+
+    # Refresh all
+    for order in created_orders:
+        session.refresh(order)
+
+    return created_orders
+
+
+@router.post("", response_model=OrderRead)
+def create_order(
+    payload: OrderCreate,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Create single order (CUSTOMER/ADMIN role)"""
+    tenant_id = str(current_user.tenant_id)
+
+    customer = session.get(Customer, payload.customer_id)
+    if not customer or str(customer.tenant_id) != tenant_id:
+        raise HTTPException(404, "Customer not found")
+
+    # Populate location text from IDs if provided
+    pickup_text = payload.pickup_text
+    delivery_text = payload.delivery_text
+
+    if payload.pickup_location_id:
+        pickup_loc = session.get(Location, payload.pickup_location_id)
+        if pickup_loc:
+            pickup_text = f"{pickup_loc.code} - {pickup_loc.name}"
+
+    if payload.delivery_location_id:
+        delivery_loc = session.get(Location, payload.delivery_location_id)
+        if delivery_loc:
+            delivery_text = f"{delivery_loc.code} - {delivery_loc.name}"
+
+    # Generate order code
+    order_code = payload.order_code or next_order_code(
+        session, tenant_id, customer.code, datetime.utcnow()
+    )
+
+    # Auto-calculate distance_km from Rates table
+    distance_km = payload.distance_km  # Use provided value if exists
+    order_date_for_rate = (payload.customer_requested_date or datetime.utcnow()).date() if payload.customer_requested_date else None
+    if not distance_km:
+        # Auto-calculate from Rates
+        distance_km = get_distance_from_rates(
+            session=session,
+            pickup_location_id=payload.pickup_location_id,
+            delivery_location_id=payload.delivery_location_id,
+            pickup_site_id=payload.pickup_site_id,
+            delivery_site_id=payload.delivery_site_id,
+            tenant_id=tenant_id,
+            order_date=order_date_for_rate
+        )
+
+    # Auto-calculate freight_charge from Rates table
+    freight_charge, _ = get_freight_from_rates(
+        session=session,
+        pickup_location_id=payload.pickup_location_id,
+        delivery_location_id=payload.delivery_location_id,
+        pickup_site_id=payload.pickup_site_id,
+        delivery_site_id=payload.delivery_site_id,
+        tenant_id=tenant_id,
+        customer_id=payload.customer_id,
+        equipment=payload.equipment,
+        order_date=order_date_for_rate
+    )
+
+    order = Order(
+        tenant_id=tenant_id,
+        customer_id=payload.customer_id,
+        created_by_user_id=str(current_user.id),
+        order_code=order_code,
+        status=OrderStatus.NEW,
+        pickup_text=pickup_text,
+        delivery_text=delivery_text,
+        pickup_location_id=payload.pickup_location_id,
+        delivery_location_id=payload.delivery_location_id,
+        pickup_site_id=payload.pickup_site_id,
+        delivery_site_id=payload.delivery_site_id,
+        port_site_id=payload.port_site_id,
+        equipment=payload.equipment,
+        qty=payload.qty,
+        container_code=payload.container_code,
+        cargo_note=payload.cargo_note,
+        empty_return_note=payload.empty_return_note,
+        customer_requested_date=payload.customer_requested_date,
+        distance_km=distance_km,
+        freight_charge=freight_charge,
+    )
+
+    session.add(order)
+
+    # Log initial status
+    log_status_change(
+        session=session,
+        tenant_id=tenant_id,
+        order_id=order.id,
+        from_status=None,
+        to_status=OrderStatus.NEW,
+        changed_by_user_id=str(current_user.id)
+    )
+
+    session.commit()
+    session.refresh(order)
+    return order
+
+
+@router.get("", response_model=List[OrderRead])
+def list_orders(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    List orders based on user role:
+    - CUSTOMER: only their orders
+    - DRIVER: only assigned to them
+    - DISPATCHER/ADMIN: all orders in tenant
+    """
+    tenant_id = str(current_user.tenant_id)
+
+    query = select(Order).where(Order.tenant_id == tenant_id)
+
+    if current_user.role == "CUSTOMER":
+        # CUSTOMER: only orders they created or for their customer account
+        query = query.where(
+            (Order.created_by_user_id == str(current_user.id)) |
+            (Order.customer_id == str(current_user.id))
+        )
+    elif current_user.role == "DRIVER":
+        # DRIVER: only orders assigned to them
+        query = query.where(Order.driver_id == str(current_user.driver_id))
+
+    # DISPATCHER/ADMIN: see all orders (no additional filter)
+
+    query = query.order_by(Order.created_at.desc())
+    result = session.exec(query).all()
+    return result
+
+
+@router.post("/{order_id}/accept", response_model=OrderRead)
+def accept_order(
+    order_id: str,
+    payload: OrderAccept,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Accept order and assign driver + ETAs (DISPATCHER/ADMIN only).
+
+    Workflow: NEW -> ACCEPTED -> ASSIGNED (once driver + ETAs set)
+    """
+    if current_user.role not in ("DISPATCHER", "ADMIN"):
+        raise HTTPException(403, "Only DISPATCHER or ADMIN can accept orders")
+
+    tenant_id = str(current_user.tenant_id)
+
+    order = session.get(Order, order_id)
+    if not order:
+        raise HTTPException(404, f"Order {order_id} not found")
+    if str(order.tenant_id) != tenant_id:
+        raise HTTPException(403, "Access denied")
+
+    if order.status != OrderStatus.NEW:
+        raise HTTPException(400, f"Cannot accept order in status {order.status}")
+
+    # Update order
+    old_status = order.status
+    order.status = OrderStatus.ASSIGNED  # Direct to ASSIGNED once driver set
+    order.dispatcher_id = str(current_user.id)
+    order.driver_id = payload.driver_id
+    order.eta_pickup_at = payload.eta_pickup_at
+    order.eta_delivery_at = payload.eta_delivery_at
+
+    session.add(order)
+
+    # Log status change
+    log_status_change(
+        session=session,
+        tenant_id=tenant_id,
+        order_id=order.id,
+        from_status=old_status,
+        to_status=OrderStatus.ASSIGNED,
+        changed_by_user_id=str(current_user.id)
+    )
+
+    session.commit()
+    session.refresh(order)
+    return order
+
+
+@router.post("/{order_id}/reject", response_model=OrderRead)
+def reject_order(
+    order_id: str,
+    payload: OrderReject,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Reject order with reason (DISPATCHER/ADMIN only)"""
+    if current_user.role not in ("DISPATCHER", "ADMIN"):
+        raise HTTPException(403, "Only DISPATCHER or ADMIN can reject orders")
+
+    tenant_id = str(current_user.tenant_id)
+
+    order = session.get(Order, order_id)
+    if not order:
+        raise HTTPException(404, f"Order {order_id} not found")
+    if str(order.tenant_id) != tenant_id:
+        raise HTTPException(403, "Access denied")
+
+    # Allow cancel/reject for orders that are not yet delivered
+    non_cancellable_statuses = [
+        OrderStatus.DELIVERED,
+        OrderStatus.EMPTY_RETURN,
+        OrderStatus.COMPLETED,
+        OrderStatus.REJECTED,
+        OrderStatus.CANCELLED,
+    ]
+    if order.status in non_cancellable_statuses:
+        raise HTTPException(400, f"Cannot cancel order in status {order.status}")
+
+    old_status = order.status
+    # Use REJECTED for NEW orders, CANCELLED for others (ASSIGNED, IN_TRANSIT)
+    new_status = OrderStatus.REJECTED if old_status == OrderStatus.NEW else OrderStatus.CANCELLED
+    order.status = new_status
+    order.reject_reason = payload.reason
+    order.dispatcher_id = str(current_user.id)
+
+    session.add(order)
+
+    # Log status change
+    log_status_change(
+        session=session,
+        tenant_id=tenant_id,
+        order_id=order.id,
+        from_status=old_status,
+        to_status=new_status,
+        changed_by_user_id=str(current_user.id),
+        note=payload.reason
+    )
+
+    session.commit()
+    session.refresh(order)
+    return order
+
+
+@router.post("/{order_id}/pickup", response_model=OrderRead)
+def start_pickup(
+    order_id: str,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Start pickup (change status to IN_TRANSIT - picking up)"""
+    tenant_id = str(current_user.tenant_id)
+
+    order = session.get(Order, order_id)
+    if not order:
+        raise HTTPException(404, f"Order {order_id} not found")
+    if str(order.tenant_id) != tenant_id:
+        raise HTTPException(403, "Access denied")
+
+    if order.status != OrderStatus.ASSIGNED:
+        raise HTTPException(400, f"Cannot start pickup from status {order.status}")
+
+    old_status = order.status
+    order.status = OrderStatus.IN_TRANSIT
+    session.add(order)
+
+    # Log status change
+    log_status_change(
+        session=session,
+        tenant_id=tenant_id,
+        order_id=order.id,
+        from_status=old_status,
+        to_status=OrderStatus.IN_TRANSIT,
+        changed_by_user_id=str(current_user.id)
+    )
+
+    session.commit()
+    session.refresh(order)
+    return order
+
+
+@router.post("/{order_id}/delivering", response_model=OrderRead)
+def start_delivery(
+    order_id: str,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Start delivery (status remains IN_TRANSIT but indicates delivering phase)"""
+    tenant_id = str(current_user.tenant_id)
+
+    order = session.get(Order, order_id)
+    if not order:
+        raise HTTPException(404, f"Order {order_id} not found")
+    if str(order.tenant_id) != tenant_id:
+        raise HTTPException(403, "Access denied")
+
+    if order.status != OrderStatus.IN_TRANSIT:
+        raise HTTPException(400, f"Cannot start delivery from status {order.status}")
+
+    # Keep status as IN_TRANSIT, just acknowledge transition
+    session.add(order)
+    session.commit()
+    session.refresh(order)
+    return order
+
+
+@router.post("/{order_id}/delivered", response_model=OrderRead)
+def mark_delivered(
+    order_id: str,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Mark as delivered (waiting for empty return)"""
+    tenant_id = str(current_user.tenant_id)
+
+    order = session.get(Order, order_id)
+    if not order:
+        raise HTTPException(404, f"Order {order_id} not found")
+    if str(order.tenant_id) != tenant_id:
+        raise HTTPException(403, "Access denied")
+
+    if order.status != OrderStatus.IN_TRANSIT:
+        raise HTTPException(400, f"Cannot mark delivered from status {order.status}")
+
+    old_status = order.status
+    order.status = OrderStatus.DELIVERED
+    session.add(order)
+
+    # Log status change - CRITICAL for salary calculation (delivered_date)
+    log_status_change(
+        session=session,
+        tenant_id=tenant_id,
+        order_id=order.id,
+        from_status=old_status,
+        to_status=OrderStatus.DELIVERED,
+        changed_by_user_id=str(current_user.id)
+    )
+
+    session.commit()
+    session.refresh(order)
+    return order
+
+
+@router.post("/{order_id}/complete", response_model=OrderRead)
+def mark_completed(
+    order_id: str,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Mark as completed (all done including empty return)"""
+    tenant_id = str(current_user.tenant_id)
+
+    order = session.get(Order, order_id)
+    if not order:
+        raise HTTPException(404, f"Order {order_id} not found")
+    if str(order.tenant_id) != tenant_id:
+        raise HTTPException(403, "Access denied")
+
+    if order.status != OrderStatus.DELIVERED:
+        raise HTTPException(400, f"Cannot complete from status {order.status}")
+
+    old_status = order.status
+    order.status = OrderStatus.COMPLETED
+    session.add(order)
+
+    # Log status change
+    log_status_change(
+        session=session,
+        tenant_id=tenant_id,
+        order_id=order.id,
+        from_status=old_status,
+        to_status=OrderStatus.COMPLETED,
+        changed_by_user_id=str(current_user.id)
+    )
+
+    session.commit()
+    session.refresh(order)
+    return order
+
+
+@router.patch("/{order_id}", response_model=OrderRead)
+def update_order(
+    order_id: str,
+    payload: OrderUpdate,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Update order fields (DISPATCHER/ADMIN)"""
+    if current_user.role not in ("DISPATCHER", "ADMIN"):
+        raise HTTPException(403, "Only DISPATCHER or ADMIN can update orders")
+
+    tenant_id = str(current_user.tenant_id)
+
+    order = session.get(Order, order_id)
+    if not order or str(order.tenant_id) != tenant_id:
+        raise HTTPException(404, "Order not found")
+
+    # Update allowed fields
+    update_data = payload.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(order, field, value)
+
+    session.add(order)
+    session.commit()
+    session.refresh(order)
+    return order

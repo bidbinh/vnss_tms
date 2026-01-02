@@ -1,0 +1,65 @@
+# Dependencies
+node_modules/
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Environment
+.env
+.env.local
+backend/.env
+
+# Build
+.next/
+frontend/.next/
+frontend/out/
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+server.log
+
+# Archives
+*.rar
+*.zip
+
+# Database dumps
+*.sql
+backup.sql
+
+# Temp files
+nul
+*.tmp
+
+# Test files
+test_*.py
+kill_backend.py
+
+# Local scripts
+start_backend.bat
+restart_backend.bat
+force_restart_backend.bat
+export_db.bat
+test_db.ps1
+
+# Mobile (separate repo)
+mobile/
+mobile_flutter_backup/
+
+# Misc
+openapi_output.txt
+crm_sync_check.py
+web/
+docs/
+ops/
+tools/
