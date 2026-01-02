@@ -16,7 +16,7 @@ git pull origin main
 
 echo ""
 echo "[2/5] Restarting backend..."
-docker compose restart backend
+docker compose -f ops/docker-compose.prod.yml restart backend
 
 echo ""
 echo "[3/5] Building frontend..."
