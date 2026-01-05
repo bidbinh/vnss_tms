@@ -16,6 +16,7 @@ import {
   ArrowRight,
   RefreshCw,
   ChevronRight,
+  Activity,
 } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 
@@ -63,10 +64,37 @@ interface BillingPlan {
   is_active: boolean;
 }
 
+interface ActivityBilling {
+  orders?: {
+    total_completed: number;
+    free_quota: number;
+    billable: number;
+    price_per_order_vnd: number;
+    cost_vnd: number;
+  };
+  storage?: {
+    used_gb: number;
+    used_mb: number;
+    free_quota_gb: number;
+    billable_gb: number;
+    price_per_gb_vnd: number;
+    cost_vnd: number;
+  };
+  summary: {
+    total_users: number;
+    total_actions?: number;
+    total_tokens: number;
+    order_cost_vnd?: number;
+    storage_cost_vnd?: number;
+    total_cost_vnd: number;
+  };
+}
+
 export default function BillingDashboardPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [dashboard, setDashboard] = useState<BillingDashboard | null>(null);
+  const [activityBilling, setActivityBilling] = useState<ActivityBilling | null>(null);
   const [transactionTypes, setTransactionTypes] = useState<TransactionType[]>([]);
   const [plans, setPlans] = useState<BillingPlan[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -80,15 +108,17 @@ export default function BillingDashboardPage() {
     setLoading(true);
     setError(null);
     try {
-      const [dashboardData, typesData, plansData] = await Promise.all([
+      const [dashboardData, typesData, plansData, activityData] = await Promise.all([
         apiFetch<BillingDashboard>("/admin/billing/dashboard").catch(() => null),
         apiFetch<TransactionType[]>("/admin/billing/transaction-types").catch(() => []),
         apiFetch<BillingPlan[]>("/admin/billing/plans").catch(() => []),
+        apiFetch<ActivityBilling>("/activity-logs/billing").catch(() => null),
       ]);
 
       setDashboard(dashboardData);
       setTransactionTypes(typesData || []);
       setPlans(plansData || []);
+      setActivityBilling(activityData);
     } catch (err) {
       console.error("Failed to fetch billing data:", err);
       setError("Không thể tải dữ liệu billing. Vui lòng thử lại.");
@@ -211,25 +241,18 @@ export default function BillingDashboardPage() {
         <div className="bg-white p-4 rounded-xl shadow border border-gray-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500">Doanh thu tháng này</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {formatCurrency(dashboard?.total_this_month || 0)}
+              <p className="text-sm text-gray-500">Chi phí tháng này</p>
+              <p className="text-2xl font-bold text-blue-600">
+                {formatCurrency(activityBilling?.summary?.total_cost_vnd || 0)}
               </p>
             </div>
             <div className="p-3 bg-blue-100 rounded-full">
               <TrendingUp className="w-6 h-6 text-blue-600" />
             </div>
           </div>
-          {dashboard && Number(dashboard.growth_percent) !== 0 && (
-            <p
-              className={`text-xs mt-2 ${
-                Number(dashboard.growth_percent) > 0 ? "text-green-600" : "text-red-600"
-              }`}
-            >
-              {Number(dashboard.growth_percent) > 0 ? "+" : ""}
-              {Number(dashboard.growth_percent).toFixed(1)}% so với tháng trước
-            </p>
-          )}
+          <p className="text-xs mt-2 text-gray-500">
+            Từ {formatNumber(activityBilling?.summary?.total_tokens || 0)} tokens
+          </p>
         </div>
 
         <div className="bg-white p-4 rounded-xl shadow border border-gray-200">
@@ -320,20 +343,47 @@ export default function BillingDashboardPage() {
 
       {/* Usage & Quick Links */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Usage Stats */}
+        {/* NEW: Order-based Usage Stats */}
         <div className="bg-white rounded-xl shadow border border-gray-200 p-4">
-          <h3 className="font-semibold text-gray-900 mb-4">Sử dụng tháng này</h3>
-          <div className="space-y-4">
+          <h3 className="font-semibold text-gray-900 mb-4">Chi phí tháng này</h3>
+          <div className="space-y-3">
+            {/* Orders */}
             <div className="flex justify-between items-center">
-              <span className="text-gray-600">Tổng credits sử dụng</span>
-              <span className="font-bold text-lg">
-                {formatNumber(dashboard?.total_credits_this_month || 0)}
+              <span className="text-gray-600">📦 Đơn hoàn thành</span>
+              <span className="font-bold">
+                {formatNumber(activityBilling?.orders?.total_completed || 0)}
+              </span>
+            </div>
+            <div className="flex justify-between items-center text-sm text-gray-500">
+              <span className="pl-6">Miễn phí: {activityBilling?.orders?.free_quota || 50}</span>
+              <span>Tính phí: {activityBilling?.orders?.billable || 0}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-gray-600">→ Phí đơn hàng</span>
+              <span className="font-medium text-blue-600">
+                {formatCurrency(activityBilling?.orders?.cost_vnd || 0)}
+              </span>
+            </div>
+
+            {/* Storage */}
+            <div className="flex justify-between items-center pt-2 border-t">
+              <span className="text-gray-600">💾 Lưu trữ</span>
+              <span className="font-bold">
+                {(activityBilling?.storage?.used_mb || 0).toFixed(1)} MB
               </span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-gray-600">Tổng giao dịch</span>
-              <span className="font-bold text-lg">
-                {formatNumber(dashboard?.total_transactions_this_month || 0)}
+              <span className="text-gray-600">→ Phí lưu trữ</span>
+              <span className="font-medium text-purple-600">
+                {formatCurrency(activityBilling?.storage?.cost_vnd || 0)}
+              </span>
+            </div>
+
+            {/* Total */}
+            <div className="flex justify-between items-center pt-2 border-t font-bold">
+              <span>Tổng chi phí</span>
+              <span className="text-lg text-green-600">
+                {formatCurrency(activityBilling?.summary?.total_cost_vnd || 0)}
               </span>
             </div>
           </div>
@@ -370,6 +420,26 @@ export default function BillingDashboardPage() {
               <div className="flex items-center gap-3">
                 <CreditCard className="w-5 h-5 text-gray-500" />
                 <span>Gói cước</span>
+              </div>
+              <ChevronRight className="w-4 h-4 text-gray-400" />
+            </Link>
+            <Link
+              href="/admin/billing/usage"
+              className="flex items-center justify-between p-3 rounded-lg hover:bg-blue-50 border border-blue-200"
+            >
+              <div className="flex items-center gap-3">
+                <Activity className="w-5 h-5 text-blue-600" />
+                <span className="text-blue-700 font-medium">Báo cáo sử dụng</span>
+              </div>
+              <ChevronRight className="w-4 h-4 text-blue-400" />
+            </Link>
+            <Link
+              href="/admin/activity-logs"
+              className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 border border-gray-100"
+            >
+              <div className="flex items-center gap-3">
+                <Activity className="w-5 h-5 text-gray-500" />
+                <span>Activity Logs</span>
               </div>
               <ChevronRight className="w-4 h-4 text-gray-400" />
             </Link>

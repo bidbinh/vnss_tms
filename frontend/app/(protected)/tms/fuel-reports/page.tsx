@@ -1,6 +1,22 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import {
+  Fuel,
+  Truck,
+  Route,
+  Calculator,
+  RefreshCw,
+  Download,
+  Gauge,
+  DollarSign,
+  AlertCircle,
+} from "lucide-react";
+import { apiFetch } from "@/lib/api";
+
+// ============================================================================
+// TYPES
+// ============================================================================
 
 interface Vehicle {
   id: string;
@@ -38,82 +54,99 @@ interface ConsumptionReport {
   };
 }
 
+// ============================================================================
+// COMPONENT
+// ============================================================================
+
 export default function FuelReportsPage() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [report, setReport] = useState<ConsumptionReport | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Filters
   const [selectedVehicle, setSelectedVehicle] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
-  useEffect(() => {
-    fetchVehicles();
+  // Fetch vehicles
+  const fetchVehicles = useCallback(async () => {
+    try {
+      const data = await apiFetch<Vehicle[]>("/vehicles");
+      setVehicles(data);
+    } catch (err) {
+      console.error("Failed to fetch vehicles:", err);
+    }
   }, []);
 
-  useEffect(() => {
-    fetchReport();
-  }, [selectedVehicle, startDate, endDate]);
-
-  async function fetchVehicles() {
-    try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/vehicles`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("access_token")}` },
-      });
-      if (!res.ok) throw new Error("Failed to fetch vehicles");
-      const data = await res.json();
-      setVehicles(data);
-    } catch (err: any) {
-      console.error("Error fetching vehicles:", err);
-    }
-  }
-
-  async function fetchReport() {
-    setLoading(true);
+  // Fetch report
+  const fetchReport = useCallback(async () => {
+    setIsLoading(true);
     try {
       const params = new URLSearchParams();
       if (selectedVehicle) params.append("vehicle_id", selectedVehicle);
       if (startDate) params.append("start_date", startDate);
       if (endDate) params.append("end_date", endDate);
 
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/fuel-reports/consumption?${params}`,
-        {
-          headers: { Authorization: `Bearer ${localStorage.getItem("access_token")}` },
-        }
-      );
-      if (!res.ok) throw new Error("Failed to fetch report");
-      const data = await res.json();
+      const url = `/fuel-reports/consumption${params.toString() ? `?${params}` : ""}`;
+      const data = await apiFetch<ConsumptionReport>(url);
       setReport(data);
-    } catch (err: any) {
-      alert("Error: " + err.message);
+    } catch (err) {
+      console.error("Failed to fetch fuel report:", err);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
-  }
+  }, [selectedVehicle, startDate, endDate]);
 
-  function formatNumber(num: number): string {
-    return num.toLocaleString("vi-VN");
-  }
+  useEffect(() => {
+    fetchVehicles();
+  }, [fetchVehicles]);
 
-  if (loading && !report) {
-    return <div className="p-6">Đang tải...</div>;
-  }
+  useEffect(() => {
+    fetchReport();
+  }, [fetchReport]);
+
+  const formatNumber = (n: number) => Math.round(n).toLocaleString("vi-VN");
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Báo cáo tiêu hao xăng dầu</h1>
+    <div className="p-6 space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+            <Fuel className="w-7 h-7 text-yellow-600" />
+            Báo cáo tiêu hao nhiên liệu
+          </h1>
+          <p className="text-gray-600 mt-1">
+            Thống kê mức tiêu thụ xăng dầu theo từng xe
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => fetchReport()}
+            className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+            title="Làm mới"
+          >
+            <RefreshCw className="w-5 h-5" />
+          </button>
+          <button
+            className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2"
+          >
+            <Download className="w-4 h-4" />
+            Xuất Excel
+          </button>
+        </div>
+      </div>
 
       {/* Filters */}
-      <div className="mb-6 p-4 border rounded bg-gray-50">
-        <div className="grid grid-cols-3 gap-4">
+      <div className="bg-white rounded-xl border p-4">
+        <div className="flex flex-wrap items-end gap-4">
+          {/* Vehicle */}
           <div>
-            <label className="block text-sm font-medium mb-1">Xe</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Xe</label>
             <select
               value={selectedVehicle}
               onChange={(e) => setSelectedVehicle(e.target.value)}
-              className="w-full text-sm border rounded px-3 py-2"
+              className="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-yellow-500 min-w-[150px]"
             >
               <option value="">Tất cả xe</option>
               {vehicles.map((v) => (
@@ -124,161 +157,240 @@ export default function FuelReportsPage() {
             </select>
           </div>
 
+          <div className="h-6 border-l border-gray-300" />
+
+          {/* Start Date */}
           <div>
-            <label className="block text-sm font-medium mb-1">Từ ngày</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Từ ngày</label>
             <input
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="w-full text-sm border rounded px-3 py-2"
+              className="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-yellow-500"
             />
           </div>
 
+          {/* End Date */}
           <div>
-            <label className="block text-sm font-medium mb-1">Đến ngày</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Đến ngày</label>
             <input
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="w-full text-sm border rounded px-3 py-2"
+              className="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-yellow-500"
             />
           </div>
         </div>
       </div>
 
+      {/* Summary Cards */}
       {report && (
-        <>
-          {/* Fleet Summary */}
-          <div className="mb-6">
-            <h2 className="text-lg font-bold mb-3">Tổng quan toàn bộ xe</h2>
-            <div className="grid grid-cols-3 gap-4">
-              <div className="p-4 border rounded bg-blue-50">
-                <div className="text-sm text-gray-600">Tổng số xe</div>
-                <div className="text-2xl font-bold">{report.fleet_summary.total_vehicles}</div>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div className="bg-white rounded-xl border p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <Truck className="w-5 h-5 text-blue-600" />
               </div>
-
-              <div className="p-4 border rounded bg-green-50">
-                <div className="text-sm text-gray-600">Tổng quãng đường (km)</div>
-                <div className="text-2xl font-bold">
-                  {formatNumber(report.fleet_summary.total_distance_km)}
-                </div>
-              </div>
-
-              <div className="p-4 border rounded bg-yellow-50">
-                <div className="text-sm text-gray-600">Tổng xăng dầu (lít)</div>
-                <div className="text-2xl font-bold">
-                  {formatNumber(report.fleet_summary.total_fuel_liters)}
-                </div>
-              </div>
-
-              <div className="p-4 border rounded bg-purple-50">
-                <div className="text-sm text-gray-600">Tổng chi phí (VND)</div>
-                <div className="text-2xl font-bold">
-                  {formatNumber(report.fleet_summary.total_cost)}
-                </div>
-              </div>
-
-              <div className="p-4 border rounded bg-orange-50">
-                <div className="text-sm text-gray-600">TB tiêu hao (lít/100km)</div>
-                <div className="text-2xl font-bold">
-                  {report.fleet_summary.avg_consumption_per_100km.toFixed(2)}
-                </div>
-              </div>
-
-              <div className="p-4 border rounded bg-red-50">
-                <div className="text-sm text-gray-600">TB chi phí (VND/km)</div>
-                <div className="text-2xl font-bold">
-                  {formatNumber(Math.round(report.fleet_summary.avg_cost_per_km))}
-                </div>
+              <div>
+                <p className="text-sm text-gray-500">Số xe</p>
+                <p className="text-xl font-bold text-gray-900">
+                  {report.fleet_summary.total_vehicles}
+                </p>
               </div>
             </div>
           </div>
 
-          {/* Vehicle Details */}
-          {report.vehicles.length > 0 && (
-            <div>
-              <h2 className="text-lg font-bold mb-3">Chi tiết từng xe</h2>
-              <div className="border rounded overflow-hidden">
-                <table className="w-full text-sm">
-                  <thead className="bg-gray-100">
-                    <tr>
-                      <th className="px-4 py-2 text-left">Biển số</th>
-                      <th className="px-4 py-2 text-right">Quãng đường (km)</th>
-                      <th className="px-4 py-2 text-right">Xăng dầu (lít)</th>
-                      <th className="px-4 py-2 text-right">Chi phí (VND)</th>
-                      <th className="px-4 py-2 text-right">Tiêu hao (lít/100km)</th>
-                      <th className="px-4 py-2 text-right">Chi phí (VND/km)</th>
-                      <th className="px-4 py-2 text-center">Số lần đổ</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {report.vehicles.map((vehicle) => (
-                      <tr key={vehicle.vehicle_id} className="border-t hover:bg-gray-50">
-                        <td className="px-4 py-2 font-medium">{vehicle.vehicle_plate}</td>
-                        <td className="px-4 py-2 text-right">
-                          {formatNumber(vehicle.total_distance_km)}
-                        </td>
-                        <td className="px-4 py-2 text-right">
-                          {vehicle.total_fuel_liters.toFixed(2)}
-                        </td>
-                        <td className="px-4 py-2 text-right">
-                          {formatNumber(vehicle.total_cost)}
-                        </td>
-                        <td className="px-4 py-2 text-right">
-                          <span
-                            className={`px-2 py-1 rounded ${
-                              vehicle.consumption_per_100km > 41
-                                ? "bg-red-100 text-red-800"
-                                : vehicle.consumption_per_100km > 35
-                                ? "bg-yellow-100 text-yellow-800"
-                                : "bg-green-100 text-green-800"
-                            }`}
-                          >
-                            {vehicle.consumption_per_100km.toFixed(2)}
-                          </span>
-                        </td>
-                        <td className="px-4 py-2 text-right">
-                          {formatNumber(Math.round(vehicle.cost_per_km))}
-                        </td>
-                        <td className="px-4 py-2 text-center">{vehicle.fuel_log_count}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+          <div className="bg-white rounded-xl border p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-green-100 rounded-lg">
+                <Route className="w-5 h-5 text-green-600" />
               </div>
-
-              {/* Legend */}
-              <div className="mt-4 text-xs text-gray-600">
-                <div className="flex gap-4">
-                  <div className="flex items-center gap-2">
-                    <span className="px-2 py-1 rounded bg-green-100 text-green-800">
-                      ≤ 35 lít/100km
-                    </span>
-                    <span>Tốt</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="px-2 py-1 rounded bg-yellow-100 text-yellow-800">
-                      35-41 lít/100km
-                    </span>
-                    <span>Trung bình</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="px-2 py-1 rounded bg-red-100 text-red-800">
-                      &gt; 41 lít/100km
-                    </span>
-                    <span>Cần kiểm tra</span>
-                  </div>
-                </div>
+              <div>
+                <p className="text-sm text-gray-500">Quãng đường</p>
+                <p className="text-xl font-bold text-gray-900">
+                  {formatNumber(report.fleet_summary.total_distance_km)}{" "}
+                  <span className="text-sm font-normal text-gray-500">km</span>
+                </p>
               </div>
             </div>
-          )}
+          </div>
 
-          {report.vehicles.length === 0 && (
-            <div className="text-center py-8 text-gray-500">
-              Không có dữ liệu trong khoảng thời gian này
+          <div className="bg-white rounded-xl border p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-yellow-100 rounded-lg">
+                <Fuel className="w-5 h-5 text-yellow-600" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Nhiên liệu</p>
+                <p className="text-xl font-bold text-gray-900">
+                  {formatNumber(report.fleet_summary.total_fuel_liters)}{" "}
+                  <span className="text-sm font-normal text-gray-500">lít</span>
+                </p>
+              </div>
             </div>
-          )}
-        </>
+          </div>
+
+          <div className="bg-white rounded-xl border p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-red-100 rounded-lg">
+                <DollarSign className="w-5 h-5 text-red-600" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Chi phí</p>
+                <p className="text-xl font-bold text-gray-900">
+                  {formatNumber(report.fleet_summary.total_cost)}{" "}
+                  <span className="text-sm font-normal text-gray-500">đ</span>
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl border p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-orange-100 rounded-lg">
+                <Gauge className="w-5 h-5 text-orange-600" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">TB tiêu hao</p>
+                <p className="text-xl font-bold text-gray-900">
+                  {report.fleet_summary.avg_consumption_per_100km.toFixed(1)}{" "}
+                  <span className="text-sm font-normal text-gray-500">L/100km</span>
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl border p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-purple-100 rounded-lg">
+                <Calculator className="w-5 h-5 text-purple-600" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Chi phí/km</p>
+                <p className="text-xl font-bold text-gray-900">
+                  {formatNumber(Math.round(report.fleet_summary.avg_cost_per_km))}{" "}
+                  <span className="text-sm font-normal text-gray-500">đ</span>
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Report Table */}
+      <div className="bg-white rounded-xl border overflow-hidden">
+        {isLoading ? (
+          <div className="p-8 text-center text-gray-500">
+            <RefreshCw className="w-8 h-8 mx-auto mb-2 animate-spin text-gray-400" />
+            Đang tải dữ liệu...
+          </div>
+        ) : !report || report.vehicles.length === 0 ? (
+          <div className="p-8 text-center text-gray-500">
+            <Fuel className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+            <p>Không có dữ liệu trong khoảng thời gian này</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Biển số
+                  </th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                    Quãng đường
+                  </th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                    Nhiên liệu
+                  </th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                    Chi phí
+                  </th>
+                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">
+                    Tiêu hao
+                  </th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                    Chi phí/km
+                  </th>
+                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">
+                    Số lần đổ
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {report.vehicles.map((vehicle) => (
+                  <tr key={vehicle.vehicle_id} className="hover:bg-gray-50">
+                    <td className="px-4 py-3">
+                      <span className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-sm font-medium">
+                        {vehicle.vehicle_plate}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-right text-sm">
+                      {formatNumber(vehicle.total_distance_km)} km
+                    </td>
+                    <td className="px-4 py-3 text-right text-sm">
+                      {vehicle.total_fuel_liters.toFixed(1)} lít
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <span className="font-semibold text-red-600">
+                        {formatNumber(vehicle.total_cost)}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <span
+                        className={`px-2 py-1 rounded text-sm font-medium ${
+                          vehicle.consumption_per_100km > 41
+                            ? "bg-red-100 text-red-700"
+                            : vehicle.consumption_per_100km > 35
+                            ? "bg-yellow-100 text-yellow-700"
+                            : "bg-green-100 text-green-700"
+                        }`}
+                      >
+                        {vehicle.consumption_per_100km.toFixed(1)} L/100km
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-right text-sm text-gray-600">
+                      {formatNumber(Math.round(vehicle.cost_per_km))} đ
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <span className="font-medium">{vehicle.fuel_log_count}</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Legend */}
+      {report && report.vehicles.length > 0 && (
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+          <div className="text-sm text-blue-800">
+            <p className="font-medium mb-2">Chú giải mức tiêu hao nhiên liệu</p>
+            <div className="flex flex-wrap gap-4">
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-1 rounded bg-green-100 text-green-700 text-xs font-medium">
+                  &le; 35 L/100km
+                </span>
+                <span>Tốt</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-1 rounded bg-yellow-100 text-yellow-700 text-xs font-medium">
+                  35-41 L/100km
+                </span>
+                <span>Trung bình</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-1 rounded bg-red-100 text-red-700 text-xs font-medium">
+                  &gt; 41 L/100km
+                </span>
+                <span>Cần kiểm tra</span>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

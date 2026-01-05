@@ -1,17 +1,16 @@
-export const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "";
-console.log("API_BASE =", API_BASE);
-
-export function getToken() {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem("access_token");
-}
+// Use empty string to leverage Next.js rewrites for same-origin API calls
+// This solves cross-origin cookie issues in development
+// In production, rewrites also work - the backend URL is configured in next.config.ts
+export const API_BASE = "";
+console.log("API_BASE = (using Next.js rewrites)");
 
 export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const token = getToken();
-
   const headers = new Headers(init.headers || {});
-  headers.set("Content-Type", "application/json");
-  if (token) headers.set("Authorization", `Bearer ${token}`);
+  // Only set Content-Type for requests with body (POST, PUT, PATCH with body)
+  if (init.body) {
+    headers.set("Content-Type", "application/json");
+  }
+  // Token is now sent via cookie automatically with credentials: 'include'
 
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
   // If caller already passed an /api/v1 path, keep it; otherwise prefix once.
@@ -21,13 +20,11 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
   const url = joinUrl(API_BASE, versionedPath);
   console.log("API CALL:", url);
 
-  const res = await fetch(url, { ...init, headers });
+  const res = await fetch(url, { ...init, headers, credentials: "include" });
 
   if (res.status === 401 && typeof window !== "undefined") {
-    localStorage.removeItem("access_token");
     localStorage.removeItem("user");
     window.location.href = "/login";
-    // để TS hiểu hàm dừng ở đây
     throw new Error("Unauthorized");
   }
 
@@ -53,10 +50,7 @@ function joinUrl(base: string, path: string) {
 
 // Upload file với FormData (không set Content-Type, để browser tự set với boundary)
 export async function apiUpload<T>(path: string, formData: FormData): Promise<T> {
-  const token = getToken();
-
-  const headers = new Headers();
-  if (token) headers.set("Authorization", `Bearer ${token}`);
+  // Token is now sent via cookie automatically with credentials: 'include'
   // KHÔNG set Content-Type - browser sẽ tự set với boundary cho multipart/form-data
 
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
@@ -68,12 +62,11 @@ export async function apiUpload<T>(path: string, formData: FormData): Promise<T>
 
   const res = await fetch(url, {
     method: "POST",
-    headers,
     body: formData,
+    credentials: "include",
   });
 
   if (res.status === 401 && typeof window !== "undefined") {
-    localStorage.removeItem("access_token");
     localStorage.removeItem("user");
     window.location.href = "/login";
     throw new Error("Unauthorized");

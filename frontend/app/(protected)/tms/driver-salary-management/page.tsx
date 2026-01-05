@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { getDriverColor } from "@/lib/utils";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api/v1";
 
@@ -257,15 +258,6 @@ export default function DriverSalaryManagementPage() {
     return words.map(w => w.charAt(0).toUpperCase()).join("");
   }
 
-  function getDriverColor(driverId: string | null): string {
-    if (!driverId) return "bg-gray-100";
-    const colors = [
-      "bg-blue-100", "bg-green-100", "bg-yellow-100", "bg-purple-100", "bg-pink-100",
-      "bg-indigo-100", "bg-red-100", "bg-orange-100", "bg-teal-100", "bg-cyan-100",
-    ];
-    const index = drivers.findIndex(d => d.id === driverId);
-    return colors[index % colors.length];
-  }
 
   function renderCheckbox(trip: DriverSalaryTrip, field: 'is_flatbed' | 'is_internal_cargo' | 'is_holiday') {
     const value = trip[field];
@@ -531,7 +523,7 @@ export default function DriverSalaryManagementPage() {
                   <tr key={trip.id} className="hover:bg-gray-50">
                     <td className="px-2 py-2 border border-gray-300 overflow-hidden whitespace-nowrap text-ellipsis" style={{ width: columnWidths.order_code, maxWidth: columnWidths.order_code }}>{trip.order_code}</td>
                     <td className="px-2 py-2 text-center border border-gray-300 overflow-hidden whitespace-nowrap" style={{ width: columnWidths.driver_id, maxWidth: columnWidths.driver_id }}>
-                      <span className={`font-semibold ${getDriverColor(trip.driver_id)} px-2 py-1 rounded`}>
+                      <span className={`font-semibold ${getDriverColor(trip.driver_id).bg} ${getDriverColor(trip.driver_id).text} px-2 py-1 rounded`}>
                         {getDriverInitials(trip.driver_id)}
                       </span>
                     </td>

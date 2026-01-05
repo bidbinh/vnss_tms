@@ -2,18 +2,22 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 
 from app.db.session import get_session
-from app.models import CostNorm
+from app.models import CostNorm, User
 from app.schemas.cost_norms import CostNormCreate, CostNormRead
+from app.core.security import get_current_user
 
 router = APIRouter(prefix="/cost-norms", tags=["cost_norms"])
 
-def tenant() -> str:
-    return "TENANT_DEMO"
 
 @router.post("", response_model=CostNormRead)
-def create_cost_norm(payload: CostNormCreate, session: Session = Depends(get_session)):
+def create_cost_norm(
+    payload: CostNormCreate,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    tenant_id = str(current_user.tenant_id)
     item = CostNorm(
-        tenant_id=tenant(),
+        tenant_id=tenant_id,
         type=payload.type.upper(),
         apply_level=payload.apply_level.upper(),
         vehicle_id=payload.vehicle_id,
@@ -34,8 +38,10 @@ def list_cost_norms(
     vehicle_id: str | None = None,
     route_code: str | None = None,
     session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
 ):
-    q = select(CostNorm).where(CostNorm.tenant_id == tenant())
+    tenant_id = str(current_user.tenant_id)
+    q = select(CostNorm).where(CostNorm.tenant_id == tenant_id)
 
     if type:
         q = q.where(CostNorm.type == type.upper())
@@ -49,16 +55,27 @@ def list_cost_norms(
     return session.exec(q.order_by(CostNorm.created_at.desc())).all()
 
 @router.get("/{norm_id}", response_model=CostNormRead)
-def get_cost_norm(norm_id: str, session: Session = Depends(get_session)):
+def get_cost_norm(
+    norm_id: str,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    tenant_id = str(current_user.tenant_id)
     item = session.get(CostNorm, norm_id)
-    if not item or item.tenant_id != tenant():
+    if not item or item.tenant_id != tenant_id:
         raise HTTPException(404, "Not found")
     return item
 
+
 @router.delete("/{norm_id}")
-def delete_cost_norm(norm_id: str, session: Session = Depends(get_session)):
+def delete_cost_norm(
+    norm_id: str,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    tenant_id = str(current_user.tenant_id)
     item = session.get(CostNorm, norm_id)
-    if not item or item.tenant_id != tenant():
+    if not item or item.tenant_id != tenant_id:
         raise HTTPException(404, "Not found")
     session.delete(item)
     session.commit()

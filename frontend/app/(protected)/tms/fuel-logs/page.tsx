@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import Pagination, { PageSizeSelector } from "@/components/Pagination";
 import { Camera, Upload, X } from "lucide-react";
+import { getDriverColor } from "@/lib/utils";
 
 // Helper functions for number formatting
 function formatNumber(value: string | number): string {
@@ -26,24 +27,6 @@ function getDriverDisplayName(driver: { name: string; short_name?: string } | nu
   return parts[parts.length - 1];
 }
 
-// Color palette for drivers - distinct background colors
-const DRIVER_COLORS = [
-  { bg: "bg-blue-100", text: "text-blue-800" },
-  { bg: "bg-green-100", text: "text-green-800" },
-  { bg: "bg-yellow-100", text: "text-yellow-800" },
-  { bg: "bg-purple-100", text: "text-purple-800" },
-  { bg: "bg-pink-100", text: "text-pink-800" },
-  { bg: "bg-indigo-100", text: "text-indigo-800" },
-  { bg: "bg-red-100", text: "text-red-800" },
-  { bg: "bg-orange-100", text: "text-orange-800" },
-  { bg: "bg-teal-100", text: "text-teal-800" },
-  { bg: "bg-cyan-100", text: "text-cyan-800" },
-];
-
-// Get consistent color for a driver based on their index
-function getDriverColor(index: number) {
-  return DRIVER_COLORS[index % DRIVER_COLORS.length];
-}
 
 interface FuelLog {
   id: string;
@@ -125,14 +108,6 @@ export default function FuelLogsPage() {
   const [sortField, setSortField] = useState<keyof FuelLog>("date");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
-  // Create a map of driver_id to color index for consistent coloring
-  const driverColorMap = useMemo(() => {
-    const map = new Map<string, number>();
-    drivers.forEach((driver, index) => {
-      map.set(driver.id, index);
-    });
-    return map;
-  }, [drivers]);
 
   // Create a map of driver_id to driver object for quick lookup
   const driverMap = useMemo(() => {
@@ -744,14 +719,14 @@ export default function FuelLogsPage() {
                 }
                 className={`w-full text-xs border rounded px-2 py-1 ${
                   formData.driver_id
-                    ? `${getDriverColor(driverColorMap.get(formData.driver_id) ?? 0).bg} ${getDriverColor(driverColorMap.get(formData.driver_id) ?? 0).text} font-medium`
+                    ? `${getDriverColor(formData.driver_id).bg} ${getDriverColor(formData.driver_id).text} font-medium`
                     : ""
                 }`}
                 required
               >
                 <option value="">-- Chọn tài xế --</option>
-                {drivers.map((d, idx) => (
-                  <option key={d.id} value={d.id} className={`${getDriverColor(idx).bg} ${getDriverColor(idx).text}`}>
+                {drivers.map((d) => (
+                  <option key={d.id} value={d.id} className={`${getDriverColor(d.id).bg} ${getDriverColor(d.id).text}`}>
                     {getDriverDisplayName(d)}
                   </option>
                 ))}
@@ -952,13 +927,13 @@ export default function FuelLogsPage() {
               onChange={(e) => setFilterDriver(e.target.value)}
               className={`w-full text-xs border rounded px-2 py-1 ${
                 filterDriver
-                  ? `${getDriverColor(driverColorMap.get(filterDriver) ?? 0).bg} ${getDriverColor(driverColorMap.get(filterDriver) ?? 0).text} font-medium`
+                  ? `${getDriverColor(filterDriver).bg} ${getDriverColor(filterDriver).text} font-medium`
                   : ""
               }`}
             >
               <option value="">Tất cả</option>
-              {drivers.map((d, idx) => (
-                <option key={d.id} value={d.id} className={`${getDriverColor(idx).bg} ${getDriverColor(idx).text}`}>
+              {drivers.map((d) => (
+                <option key={d.id} value={d.id} className={`${getDriverColor(d.id).bg} ${getDriverColor(d.id).text}`}>
                   {getDriverDisplayName(d)}
                 </option>
               ))}
@@ -1054,7 +1029,7 @@ export default function FuelLogsPage() {
                   <span
                     className={`px-1.5 sm:px-2 py-0.5 rounded text-xs font-medium whitespace-nowrap ${
                       log.driver_id
-                        ? `${getDriverColor(driverColorMap.get(log.driver_id) ?? 0).bg} ${getDriverColor(driverColorMap.get(log.driver_id) ?? 0).text}`
+                        ? `${getDriverColor(log.driver_id).bg} ${getDriverColor(log.driver_id).text}`
                         : ""
                     }`}
                   >
@@ -1269,14 +1244,14 @@ export default function FuelLogsPage() {
                     onChange={(e) => setImageFormData({ ...imageFormData, driver_id: e.target.value })}
                     className={`w-full border rounded px-3 py-2 ${
                       imageFormData.driver_id
-                        ? `${getDriverColor(driverColorMap.get(imageFormData.driver_id) ?? 0).bg} ${getDriverColor(driverColorMap.get(imageFormData.driver_id) ?? 0).text} font-medium`
+                        ? `${getDriverColor(imageFormData.driver_id).bg} ${getDriverColor(imageFormData.driver_id).text} font-medium`
                         : ""
                     }`}
                     required
                   >
                     <option value="">-- Chọn tài xế --</option>
-                    {drivers.map((d, idx) => (
-                      <option key={d.id} value={d.id} className={`${getDriverColor(idx).bg} ${getDriverColor(idx).text}`}>
+                    {drivers.map((d) => (
+                      <option key={d.id} value={d.id} className={`${getDriverColor(d.id).bg} ${getDriverColor(d.id).text}`}>
                         {getDriverDisplayName(d)}
                       </option>
                     ))}

@@ -74,3 +74,44 @@ export function formatDateTime(dateStr: string | null | undefined): string {
     return "-";
   }
 }
+
+/**
+ * Bảng màu cố định cho tài xế - 10 màu khác nhau
+ * Mỗi tài xế sẽ có 1 màu cố định dựa trên ID
+ */
+export const DRIVER_COLORS = [
+  { bg: "bg-blue-100", text: "text-blue-800", bgHex: "#dbeafe" },
+  { bg: "bg-green-100", text: "text-green-800", bgHex: "#dcfce7" },
+  { bg: "bg-yellow-100", text: "text-yellow-800", bgHex: "#fef9c3" },
+  { bg: "bg-purple-100", text: "text-purple-800", bgHex: "#f3e8ff" },
+  { bg: "bg-pink-100", text: "text-pink-800", bgHex: "#fce7f3" },
+  { bg: "bg-indigo-100", text: "text-indigo-800", bgHex: "#e0e7ff" },
+  { bg: "bg-red-100", text: "text-red-800", bgHex: "#fee2e2" },
+  { bg: "bg-orange-100", text: "text-orange-800", bgHex: "#ffedd5" },
+  { bg: "bg-teal-100", text: "text-teal-800", bgHex: "#ccfbf1" },
+  { bg: "bg-cyan-100", text: "text-cyan-800", bgHex: "#cffafe" },
+];
+
+/**
+ * Lấy màu cố định cho tài xế dựa trên ID
+ * Cùng 1 driver ID sẽ luôn trả về cùng 1 màu
+ * @param driverId - ID của tài xế (number hoặc string)
+ * @returns Object chứa bg class, text class và bgHex
+ */
+export function getDriverColor(driverId: number | string | null | undefined): typeof DRIVER_COLORS[0] {
+  if (!driverId) return DRIVER_COLORS[0];
+
+  // Convert to string for hashing
+  const idStr = String(driverId);
+
+  // Simple hash function - consistent for same ID
+  let hash = 0;
+  for (let i = 0; i < idStr.length; i++) {
+    const char = idStr.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+
+  const index = Math.abs(hash) % DRIVER_COLORS.length;
+  return DRIVER_COLORS[index];
+}

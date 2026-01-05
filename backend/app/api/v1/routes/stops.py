@@ -1,18 +1,20 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 from app.db.session import get_session
-from app.models import Shipment, Stop
+from app.models import Shipment, Stop, User
 from app.schemas.stop import StopCreate, StopRead
-
+from app.core.security import get_current_user
 
 router = APIRouter(prefix="/stops", tags=["stops"])
 
-def get_tenant_id_stub() -> str:
-    return "TENANT_DEMO"
 
 @router.post("", response_model=StopRead)
-def create_stop(payload: StopCreate, session: Session = Depends(get_session)):
-    tenant_id = get_tenant_id_stub()
+def create_stop(
+    payload: StopCreate,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    tenant_id = str(current_user.tenant_id)
 
     shp = session.exec(
         select(Shipment).where(Shipment.tenant_id == tenant_id, Shipment.id == payload.shipment_id)

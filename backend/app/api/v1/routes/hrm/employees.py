@@ -5,14 +5,17 @@ CRUD operations for employees
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlmodel import Session, select, func, or_
 from typing import Optional, List
-from pydantic import BaseModel
+from pydantic import BaseModel, Field as PydanticField
 from datetime import datetime
 
 from app.db.session import get_session
-from app.models import User
+from app.models import User, Role
+from app.models.role import UserRole
 from app.models.hrm.employee import Employee, EmployeeStatus, EmployeeType, EmployeeDependent, EmployeeDocument
 from app.models.hrm.department import Branch, Department, Team, Position
-from app.core.security import get_current_user
+from app.models.hrm.namecard import EmployeeNameCard
+from app.models.user import UserStatus
+from app.core.security import get_current_user, hash_password
 from app.services.driver_hrm_sync import sync_employee_to_driver
 
 router = APIRouter(prefix="/employees", tags=["HRM - Employees"])
@@ -20,8 +23,16 @@ router = APIRouter(prefix="/employees", tags=["HRM - Employees"])
 
 # === Pydantic Schemas ===
 
+class UserAccountCreate(BaseModel):
+    """Options for creating user account along with employee"""
+    create_account: bool = False
+    username: Optional[str] = None  # Auto-generated from phone/email if not provided
+    password: Optional[str] = None  # Auto-generated if not provided
+    role_ids: List[str] = []  # Role IDs to assign
+
+
 class EmployeeCreate(BaseModel):
-    employee_code: str
+    employee_code: Optional[str] = PydanticField(default=None, description="Auto-generated if not provided")
     full_name: str
     date_of_birth: Optional[str] = None
     gender: Optional[str] = None
@@ -54,6 +65,8 @@ class EmployeeCreate(BaseModel):
     license_expiry: Optional[str] = None
     salary_type: Optional[str] = "FIXED"
     notes: Optional[str] = None
+    # User account creation options
+    user_account: Optional[UserAccountCreate] = None
 
 
 class EmployeeUpdate(BaseModel):
@@ -277,6 +290,36 @@ def get_employee_stats(
     }
 
 
+def generate_next_employee_code(session: Session, tenant_id: str) -> str:
+    """Generate next employee code as incrementing number (1, 2, 3...)"""
+    # Find the highest numeric employee_code for this tenant
+    employees = session.exec(
+        select(Employee.employee_code).where(
+            Employee.tenant_id == tenant_id
+        )
+    ).all()
+
+    max_num = 0
+    for code in employees:
+        if code and code.isdigit():
+            num = int(code)
+            if num > max_num:
+                max_num = num
+
+    return str(max_num + 1)
+
+
+@router.get("/next-code")
+def get_next_employee_code(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Preview next auto-generated employee code"""
+    tenant_id = str(current_user.tenant_id)
+    next_code = generate_next_employee_code(session, tenant_id)
+    return {"next_code": next_code}
+
+
 @router.get("/{employee_id}")
 def get_employee(
     employee_id: str,
@@ -336,7 +379,120 @@ def get_employee(
     ).all()
     emp_dict["documents"] = [d.model_dump() for d in documents]
 
+    # Get Name Card
+    namecard = session.exec(
+        select(EmployeeNameCard).where(
+            EmployeeNameCard.employee_id == employee_id
+        )
+    ).first()
+    if namecard:
+        emp_dict["namecard"] = {
+            "id": namecard.id,
+            "token": namecard.token,
+            "public_url": f"/namecard/{namecard.token}",
+            "is_active": namecard.is_active,
+            "view_count": namecard.view_count,
+            "last_viewed_at": namecard.last_viewed_at,
+        }
+    else:
+        emp_dict["namecard"] = None
+
     return emp_dict
+
+
+def generate_default_password() -> str:
+    """Generate a simple default password"""
+    import secrets
+    return secrets.token_urlsafe(8)
+
+
+def create_user_for_employee(
+    session: Session,
+    employee: Employee,
+    tenant_id: str,
+    username: Optional[str],
+    password: Optional[str],
+    role_ids: List[str],
+    created_by_id: str,
+) -> User:
+    """Create a User account linked to an Employee"""
+    # Determine username
+    if not username:
+        if employee.phone:
+            username = employee.phone
+        elif employee.email:
+            username = employee.email.split("@")[0]
+        else:
+            username = f"emp_{employee.employee_code}"
+
+    # Check if username exists
+    existing_user = session.exec(
+        select(User).where(User.username == username)
+    ).first()
+    if existing_user:
+        raise HTTPException(400, f"Username '{username}' already exists")
+
+    # Generate password if not provided
+    if not password:
+        password = generate_default_password()
+
+    # Create user
+    user = User(
+        tenant_id=tenant_id,
+        username=username,
+        password_hash=hash_password(password),
+        full_name=employee.full_name,
+        email=employee.email,
+        phone=employee.phone,
+        status=UserStatus.ACTIVE.value,
+        employee_id=str(employee.id),
+        role="DRIVER" if employee.employee_type == EmployeeType.DRIVER.value else "USER",
+    )
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+
+    # Assign roles
+    now = datetime.utcnow().isoformat()
+    for role_id in role_ids:
+        role = session.exec(
+            select(Role).where(
+                Role.id == role_id,
+                Role.tenant_id == tenant_id,
+                Role.is_active == True
+            )
+        ).first()
+        if role:
+            user_role = UserRole(
+                user_id=str(user.id),
+                role_id=role_id,
+                assigned_at=now,
+                assigned_by=created_by_id,
+            )
+            session.add(user_role)
+
+    # If no roles specified, assign default role based on employee type
+    if not role_ids:
+        default_role_code = "DRIVER" if employee.employee_type == EmployeeType.DRIVER.value else "VIEWER"
+        default_role = session.exec(
+            select(Role).where(
+                Role.tenant_id == tenant_id,
+                Role.code == default_role_code,
+                Role.is_active == True
+            )
+        ).first()
+        if default_role:
+            user_role = UserRole(
+                user_id=str(user.id),
+                role_id=str(default_role.id),
+                assigned_at=now,
+                assigned_by=created_by_id,
+            )
+            session.add(user_role)
+
+    session.commit()
+
+    return user, password  # Return password for display to admin
 
 
 @router.post("")
@@ -345,25 +501,34 @@ def create_employee(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
-    """Create new employee"""
+    """Create new employee with optional user account"""
     if current_user.role not in ("ADMIN", "HR_MANAGER", "HR"):
         raise HTTPException(403, "Only ADMIN or HR can create employees")
 
     tenant_id = str(current_user.tenant_id)
 
+    # Auto-generate employee_code if not provided
+    employee_code = payload.employee_code
+    if not employee_code:
+        employee_code = generate_next_employee_code(session, tenant_id)
+
     # Check if employee_code already exists
     existing = session.exec(
         select(Employee).where(
             Employee.tenant_id == tenant_id,
-            Employee.employee_code == payload.employee_code
+            Employee.employee_code == employee_code
         )
     ).first()
     if existing:
-        raise HTTPException(400, f"Employee code {payload.employee_code} already exists")
+        raise HTTPException(400, f"Employee code {employee_code} already exists")
+
+    # Prepare data (exclude user_account from employee data)
+    emp_data = payload.model_dump(exclude={"user_account"})
+    emp_data["employee_code"] = employee_code
 
     employee = Employee(
         tenant_id=tenant_id,
-        **payload.model_dump()
+        **emp_data
     )
 
     session.add(employee)
@@ -376,7 +541,45 @@ def create_employee(
         if driver:
             session.refresh(employee)  # Refresh to get updated driver_id
 
-    return employee
+    # Auto-create Name Card for new employee
+    namecard = EmployeeNameCard(
+        tenant_id=tenant_id,
+        employee_id=str(employee.id),
+        is_active=True,
+    )
+    session.add(namecard)
+    session.commit()
+
+    # Create User account if requested
+    user_info = None
+    if payload.user_account and payload.user_account.create_account:
+        user, generated_password = create_user_for_employee(
+            session=session,
+            employee=employee,
+            tenant_id=tenant_id,
+            username=payload.user_account.username,
+            password=payload.user_account.password,
+            role_ids=payload.user_account.role_ids,
+            created_by_id=str(current_user.id),
+        )
+
+        # Link user to employee
+        employee.user_id = str(user.id)
+        session.add(employee)
+        session.commit()
+        session.refresh(employee)
+
+        user_info = {
+            "user_id": str(user.id),
+            "username": user.username,
+            "generated_password": generated_password if not payload.user_account.password else None,
+        }
+
+    result = employee.model_dump()
+    if user_info:
+        result["user_account"] = user_info
+
+    return result
 
 
 @router.patch("/{employee_id}")
@@ -400,6 +603,7 @@ def update_employee(
 
     # Update only provided fields
     update_data = payload.model_dump(exclude_unset=True)
+
     for key, value in update_data.items():
         setattr(employee, key, value)
 
@@ -412,6 +616,18 @@ def update_employee(
         driver = sync_employee_to_driver(session, employee, create_if_not_exists=True)
         if driver:
             session.refresh(employee)
+
+    # Deactivate Name Card if employee resigned/terminated
+    if employee.status in (EmployeeStatus.RESIGNED.value, EmployeeStatus.TERMINATED.value):
+        namecard = session.exec(
+            select(EmployeeNameCard).where(
+                EmployeeNameCard.employee_id == employee_id
+            )
+        ).first()
+        if namecard and namecard.is_active:
+            namecard.is_active = False
+            session.add(namecard)
+            session.commit()
 
     return employee
 
@@ -441,7 +657,147 @@ def delete_employee(
     session.add(employee)
     session.commit()
 
+    # Deactivate Name Card
+    namecard = session.exec(
+        select(EmployeeNameCard).where(
+            EmployeeNameCard.employee_id == employee_id
+        )
+    ).first()
+    if namecard and namecard.is_active:
+        namecard.is_active = False
+        session.add(namecard)
+        session.commit()
+
     return {"message": "Employee deleted successfully"}
+
+
+# === User Account Management ===
+
+class CreateUserAccountRequest(BaseModel):
+    username: Optional[str] = None
+    password: Optional[str] = None
+    role_ids: List[str] = []
+
+
+@router.post("/{employee_id}/user-account")
+def create_user_account_for_employee(
+    employee_id: str,
+    payload: CreateUserAccountRequest,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Create user account for existing employee"""
+    if current_user.role not in ("ADMIN", "HR_MANAGER", "HR"):
+        raise HTTPException(403, "Only ADMIN or HR can create user accounts")
+
+    tenant_id = str(current_user.tenant_id)
+
+    employee = session.get(Employee, employee_id)
+    if not employee or str(employee.tenant_id) != tenant_id:
+        raise HTTPException(404, "Employee not found")
+
+    # Check if employee already has user account
+    if employee.user_id:
+        raise HTTPException(400, "Employee already has a user account")
+
+    # Create user account
+    user, generated_password = create_user_for_employee(
+        session=session,
+        employee=employee,
+        tenant_id=tenant_id,
+        username=payload.username,
+        password=payload.password,
+        role_ids=payload.role_ids,
+        created_by_id=str(current_user.id),
+    )
+
+    # Link user to employee
+    employee.user_id = str(user.id)
+    session.add(employee)
+    session.commit()
+
+    return {
+        "message": "User account created successfully",
+        "user_id": str(user.id),
+        "username": user.username,
+        "generated_password": generated_password if not payload.password else None,
+    }
+
+
+@router.delete("/{employee_id}/user-account")
+def disable_user_account(
+    employee_id: str,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Disable user account for employee (does not delete)"""
+    if current_user.role not in ("ADMIN",):
+        raise HTTPException(403, "Only ADMIN can disable user accounts")
+
+    tenant_id = str(current_user.tenant_id)
+
+    employee = session.get(Employee, employee_id)
+    if not employee or str(employee.tenant_id) != tenant_id:
+        raise HTTPException(404, "Employee not found")
+
+    if not employee.user_id:
+        raise HTTPException(400, "Employee does not have a user account")
+
+    user = session.get(User, employee.user_id)
+    if user:
+        user.status = UserStatus.INACTIVE.value
+        session.add(user)
+        session.commit()
+
+    return {"message": "User account disabled"}
+
+
+@router.get("/{employee_id}/user-account")
+def get_employee_user_account(
+    employee_id: str,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Get user account info for employee"""
+    tenant_id = str(current_user.tenant_id)
+
+    employee = session.get(Employee, employee_id)
+    if not employee or str(employee.tenant_id) != tenant_id:
+        raise HTTPException(404, "Employee not found")
+
+    if not employee.user_id:
+        return {"has_account": False, "user": None, "roles": []}
+
+    user = session.get(User, employee.user_id)
+    if not user:
+        return {"has_account": False, "user": None, "roles": []}
+
+    # Get assigned roles
+    user_roles = session.exec(
+        select(UserRole).where(UserRole.user_id == employee.user_id)
+    ).all()
+
+    roles = []
+    for ur in user_roles:
+        role = session.get(Role, ur.role_id)
+        if role:
+            roles.append({
+                "id": role.id,
+                "name": role.name,
+                "code": role.code,
+            })
+
+    return {
+        "has_account": True,
+        "user": {
+            "id": user.id,
+            "username": user.username,
+            "status": user.status,
+            "last_login_at": user.last_login_at,
+            "created_at": user.created_at.isoformat() if user.created_at else None,
+        },
+        "roles": roles,
+    }
 
 
 # === Dependents ===

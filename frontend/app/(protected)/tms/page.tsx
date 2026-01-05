@@ -344,8 +344,8 @@ export default function TMSDashboardPage() {
                       <th className="text-left py-2 font-medium">#</th>
                       <th className="text-left py-2 font-medium whitespace-nowrap">Biển số</th>
                       <th className="text-right py-2 font-medium whitespace-nowrap">30 ngày (lít)</th>
-                      <th className="text-right py-2 font-medium whitespace-nowrap">L/100km</th>
-                      <th className="text-right py-2 font-medium whitespace-nowrap">7 lần (L/100km)</th>
+                      <th className="text-right py-2 font-medium whitespace-nowrap">30 ngày</th>
+                      <th className="text-right py-2 font-medium whitespace-nowrap">7 lần</th>
                     </tr>
                   </thead>
                   <tbody>

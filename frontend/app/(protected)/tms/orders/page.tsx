@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
-import { apiFetch, apiUpload, getToken } from "@/lib/api";
+import { apiFetch, apiUpload, API_BASE } from "@/lib/api";
+import { getDriverColor } from "@/lib/utils";
 
 // Default column widths
 const DEFAULT_COLUMN_WIDTHS = {
@@ -22,6 +23,8 @@ interface Customer {
   id: string;
   code: string;
   name: string;
+  source?: "TMS" | "CRM";  // Source of customer data
+  crm_account_id?: string;
 }
 
 interface Driver {
@@ -30,6 +33,8 @@ interface Driver {
   phone?: string;
   vehicle_id?: string;
   short_name?: string;
+  source?: string; // INTERNAL or EXTERNAL
+  external_worker_id?: string;
 }
 
 interface Location {
@@ -101,7 +106,6 @@ type SortField = "order_code" | "driver_id" | "eta_pickup_at" | "eta_delivery_at
 type SortOrder = "asc" | "desc";
 
 export default function OrdersPage() {
-  const [token, setToken] = useState<string | null>(null);
   const [role, setRole] = useState<string | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -135,9 +139,7 @@ export default function OrdersPage() {
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   useEffect(() => {
-    const t = getToken();
     const user = localStorage.getItem("user");
-    setToken(t);
     if (user) {
       const userData = JSON.parse(user);
       setRole(userData.role);
@@ -407,6 +409,8 @@ export default function OrdersPage() {
     order_code: "",
     pickup_site_id: "",
     delivery_site_id: "",
+    pickup_text: "",  // Allow manual input
+    delivery_text: "",  // Allow manual input
     port_site_id: "",
     equipment: "20",
     qty: 1,
@@ -460,14 +464,18 @@ export default function OrdersPage() {
   }, [handleMouseMove]);
 
   useEffect(() => {
-    if (token) {
-      fetchOrders();
-      fetchCustomers();
-      fetchDrivers();
-      fetchLocations();
-      fetchSites();
+    // Auth is now cookie-based, fetch data on mount
+    const user = localStorage.getItem("user");
+    if (user) {
+      const userData = JSON.parse(user);
+      setRole(userData.role);
     }
-  }, [token]);
+    fetchOrders();
+    fetchCustomers();
+    fetchDrivers();
+    fetchLocations();
+    fetchSites();
+  }, []);
 
   const fetchOrders = async () => {
     try {
@@ -483,10 +491,22 @@ export default function OrdersPage() {
 
   const fetchCustomers = async () => {
     try {
-      const data = await apiFetch<Customer[]>("/customers");
+      // Use unified endpoint that includes both TMS customers and CRM accounts
+      console.log("[Customers] Fetching unified customers...");
+      const data = await apiFetch<Customer[]>("/customers/unified");
+      console.log("[Customers] Loaded", data.length, "customers");
       setCustomers(data);
-    } catch (err) {
-      console.error("Failed to fetch customers:", err);
+    } catch (err: any) {
+      console.error("[Customers] Failed to fetch unified:", err?.message || err);
+      // Fallback to regular customers endpoint
+      try {
+        console.log("[Customers] Trying fallback /customers...");
+        const fallback = await apiFetch<Customer[]>("/customers");
+        console.log("[Customers] Fallback loaded", fallback.length, "customers");
+        setCustomers(fallback);
+      } catch (fallbackErr: any) {
+        console.error("[Customers] Fallback also failed:", fallbackErr?.message || fallbackErr);
+      }
     }
   };
 
@@ -557,12 +577,11 @@ export default function OrdersPage() {
   };
 
   const handleDownloadDocument = (docId: string, fileName: string) => {
-    const token = getToken();
-    const url = `/api/v1/orders/documents/${docId}/download`;
+    const url = `${API_BASE}/orders/documents/${docId}/download`;
 
-    // Create a temporary link to download with auth
+    // Create a temporary link to download with auth (cookie-based)
     fetch(url, {
-      headers: { Authorization: `Bearer ${token}` },
+      credentials: "include",
     })
       .then((res) => res.blob())
       .then((blob) => {
@@ -582,6 +601,43 @@ export default function OrdersPage() {
   };
 
   const handleCustomerChange = async (customerId: string) => {
+    const selectedCustomer = customers.find(c => c.id === customerId);
+
+    // If selected from CRM (not yet in TMS), sync first
+    if (selectedCustomer?.source === "CRM") {
+      try {
+        // Sync CRM account to TMS customer
+        console.log("[CRM Sync] Syncing CRM account:", customerId);
+        const syncResult = await apiFetch<{ id: string; code: string; name: string }>(
+          `/customers/by-crm/${customerId}`
+        );
+        console.log("[CRM Sync] Result:", syncResult);
+
+        // Use the newly created/linked TMS customer ID
+        const tmsCustomerId = syncResult.id;
+        setFormData({ ...formData, customer_id: tmsCustomerId, order_code: "" });
+
+        // Preview order code with TMS customer ID
+        try {
+          const result = await apiFetch<{ order_code: string }>(
+            `/orders/preview-code/${tmsCustomerId}`
+          );
+          setFormData((prev) => ({ ...prev, order_code: result.order_code }));
+        } catch (err) {
+          console.error("Failed to preview order code:", err);
+        }
+
+        // Refresh customer list to show updated data
+        fetchCustomers();
+        return;
+      } catch (err: any) {
+        console.error("Failed to sync CRM account:", err);
+        alert("Không thể đồng bộ khách hàng từ CRM: " + (err.message || "Unknown error"));
+        return;
+      }
+    }
+
+    // Regular TMS customer
     setFormData({ ...formData, customer_id: customerId, order_code: "" });
 
     if (customerId) {
@@ -605,6 +661,8 @@ export default function OrdersPage() {
         order_code: formData.order_code,
         pickup_site_id: formData.pickup_site_id || null,
         delivery_site_id: formData.delivery_site_id || null,
+        pickup_text: formData.pickup_text || null,
+        delivery_text: formData.delivery_text || null,
         port_site_id: formData.port_site_id || null,
         equipment: formData.equipment,
         qty: formData.qty,
@@ -624,6 +682,8 @@ export default function OrdersPage() {
         order_code: "",
         pickup_site_id: "",
         delivery_site_id: "",
+        pickup_text: "",
+        delivery_text: "",
         port_site_id: "",
         equipment: "20",
         qty: 1,
@@ -661,11 +721,23 @@ export default function OrdersPage() {
 
   const openEditModal = (order: Order) => {
     setEditingOrder(order);
+    // Get site names for text display
+    const pickupSite = order.pickup_site_id ? sites.find(s => s.id === order.pickup_site_id) : null;
+    const deliverySite = order.delivery_site_id ? sites.find(s => s.id === order.delivery_site_id) : null;
+    const pickupLoc = pickupSite ? locations.find(l => l.id === pickupSite.location_id) : null;
+    const deliveryLoc = deliverySite ? locations.find(l => l.id === deliverySite.location_id) : null;
+
     setFormData({
       customer_id: order.customer_id,
       order_code: order.order_code,
       pickup_site_id: order.pickup_site_id || "",
       delivery_site_id: order.delivery_site_id || "",
+      pickup_text: pickupSite
+        ? `${pickupSite.company_name} (${pickupLoc?.code || ''})`
+        : (order.pickup_text || ""),
+      delivery_text: deliverySite
+        ? `${deliverySite.company_name} (${deliveryLoc?.code || ''})`
+        : (order.delivery_text || ""),
       port_site_id: order.port_site_id || "",
       equipment: order.equipment || "20",
       qty: order.qty,
@@ -727,6 +799,8 @@ export default function OrdersPage() {
         order_code: formData.order_code,
         pickup_site_id: formData.pickup_site_id || null,
         delivery_site_id: formData.delivery_site_id || null,
+        pickup_text: formData.pickup_text || null,
+        delivery_text: formData.delivery_text || null,
         port_site_id: formData.port_site_id || null,
         equipment: formData.equipment,
         qty: formData.qty,
@@ -756,6 +830,8 @@ export default function OrdersPage() {
         order_code: "",
         pickup_site_id: "",
         delivery_site_id: "",
+        pickup_text: "",
+        delivery_text: "",
         port_site_id: "",
         equipment: "20",
         qty: 1,
@@ -920,31 +996,6 @@ export default function OrdersPage() {
     return statusMap[status] || status;
   };
 
-  // Generate consistent color for driver
-  const getDriverColor = (driverId?: string) => {
-    if (!driverId) return "";
-
-    const colors = [
-      "bg-blue-50",
-      "bg-green-50",
-      "bg-yellow-50",
-      "bg-purple-50",
-      "bg-pink-50",
-      "bg-indigo-50",
-      "bg-orange-50",
-      "bg-teal-50",
-      "bg-cyan-50",
-      "bg-rose-50",
-    ];
-
-    // Hash driver ID to get consistent color
-    let hash = 0;
-    for (let i = 0; i < driverId.length; i++) {
-      hash = driverId.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    const index = Math.abs(hash) % colors.length;
-    return colors[index];
-  };
 
   // Filter by tab
   const filteredOrders = useMemo(() => {
@@ -1235,13 +1286,13 @@ export default function OrdersPage() {
                 </th>
                 <th className="resizable-th px-2 py-2 text-left font-bold text-gray-700 cursor-pointer" style={{width: columnWidths.etaPickup}} onClick={() => handleSort("eta_pickup_at")}>
                   <div className="flex items-center gap-1">
-                    ETA Pickup <SortIcon field="eta_pickup_at" />
+                    Giờ lấy <SortIcon field="eta_pickup_at" />
                   </div>
                   <div className="resize-handle" onMouseDown={(e) => { e.stopPropagation(); handleMouseDown(e, 'etaPickup'); }} />
                 </th>
                 <th className="resizable-th px-2 py-2 text-left font-bold text-gray-700 cursor-pointer" style={{width: columnWidths.etaDelivery}} onClick={() => handleSort("eta_delivery_at")}>
                   <div className="flex items-center gap-1">
-                    ETA Delivery <SortIcon field="eta_delivery_at" />
+                    Giờ giao <SortIcon field="eta_delivery_at" />
                   </div>
                   <div className="resize-handle" onMouseDown={(e) => { e.stopPropagation(); handleMouseDown(e, 'etaDelivery'); }} />
                 </th>
@@ -1296,7 +1347,7 @@ export default function OrdersPage() {
                       {/* Order Rows (hidden if collapsed) */}
                       {!isCollapsed &&
                         group.orders.map((order) => (
-                          <tr key={order.id} className={`${getDriverColor(order.driver_id)}`}>
+                          <tr key={order.id} className={`${getDriverColor(order.driver_id).bg}`}>
                             <td className="px-2 py-2 wrap-cell" style={{width: columnWidths.custDate}}>
                               {/* Empty - date shown in group header */}
                             </td>
@@ -1406,7 +1457,7 @@ export default function OrdersPage() {
               ) : (
                 /* Normal Table View (when sorting by other columns) */
                 paginatedOrders.map((order) => (
-                  <tr key={order.id} className={`${getDriverColor(order.driver_id)}`}>
+                  <tr key={order.id} className={`${getDriverColor(order.driver_id).bg}`}>
                     <td className="px-2 py-2 wrap-cell" style={{width: columnWidths.custDate}}>
                       {formatCustomerDate(order.customer_requested_date)}
                     </td>
@@ -1601,7 +1652,7 @@ export default function OrdersPage() {
               <form onSubmit={handleCreateOrder} className="space-y-3">
                 <div>
                   <label className="block text-xs font-medium mb-1">
-                    Customer *
+                    Customer * <span className="text-gray-400 font-normal">(TMS + CRM)</span>
                   </label>
                   <select
                     required
@@ -1612,7 +1663,7 @@ export default function OrdersPage() {
                     <option value="">Select customer...</option>
                     {customers.map((c) => (
                       <option key={c.id} value={c.id}>
-                        {c.code} - {c.name}
+                        {c.source === "CRM" ? "🔗 " : ""}{c.code} - {c.name}{c.source === "CRM" ? " (CRM)" : ""}
                       </option>
                     ))}
                   </select>
@@ -1639,61 +1690,62 @@ export default function OrdersPage() {
                     <label className="block text-xs font-medium mb-1">
                       Pickup Site *
                     </label>
-                    <select
+                    <input
+                      type="text"
                       required
-                      value={formData.pickup_site_id}
-                      onChange={(e) =>
-                        setFormData({ ...formData, pickup_site_id: e.target.value })
-                      }
-                      className="w-full text-sm border rounded px-2 py-1.5"
-                    >
-                      <option value="">Select site...</option>
-                      {locations.map((loc) => {
-                        const locSites = sites.filter(s => s.location_id === loc.id && s.status === 'ACTIVE');
-                        if (locSites.length === 0) return null;
-                        return (
-                          <optgroup key={loc.id} label={`${loc.code} - ${loc.name}`}>
-                            {locSites.map((site) => (
-                              <option key={site.id} value={site.id}>
-                                {site.company_name}
-                              </option>
-                            ))}
-                          </optgroup>
+                      placeholder="Type or select..."
+                      value={formData.pickup_text}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        const matchedSite = sites.find(s =>
+                          s.company_name === value ||
+                          `${s.company_name} (${locations.find(l => l.id === s.location_id)?.code || ''})` === value
                         );
-                      })}
-                    </select>
+                        setFormData({
+                          ...formData,
+                          pickup_text: value,
+                          pickup_site_id: matchedSite?.id || ""
+                        });
+                      }}
+                      list="pickup-sites-list"
+                      className="w-full text-sm border rounded px-2 py-1.5"
+                    />
+                    <datalist id="pickup-sites-list">
+                      {sites.filter(s => s.status === 'ACTIVE').map((site) => (
+                        <option key={site.id} value={`${site.company_name} (${locations.find(l => l.id === site.location_id)?.code || ''})`} />
+                      ))}
+                    </datalist>
                   </div>
 
                   <div>
                     <label className="block text-xs font-medium mb-1">
                       Delivery Site *
                     </label>
-                    <select
+                    <input
+                      type="text"
                       required
-                      value={formData.delivery_site_id}
-                      onChange={(e) =>
+                      placeholder="Type or select..."
+                      value={formData.delivery_text}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        const matchedSite = sites.find(s =>
+                          s.company_name === value ||
+                          `${s.company_name} (${locations.find(l => l.id === s.location_id)?.code || ''})` === value
+                        );
                         setFormData({
                           ...formData,
-                          delivery_site_id: e.target.value,
-                        })
-                      }
+                          delivery_text: value,
+                          delivery_site_id: matchedSite?.id || ""
+                        });
+                      }}
+                      list="delivery-sites-list"
                       className="w-full text-sm border rounded px-2 py-1.5"
-                    >
-                      <option value="">Select site...</option>
-                      {locations.map((loc) => {
-                        const locSites = sites.filter(s => s.location_id === loc.id && s.status === 'ACTIVE');
-                        if (locSites.length === 0) return null;
-                        return (
-                          <optgroup key={loc.id} label={`${loc.code} - ${loc.name}`}>
-                            {locSites.map((site) => (
-                              <option key={site.id} value={site.id}>
-                                {site.company_name}
-                              </option>
-                            ))}
-                          </optgroup>
-                        );
-                      })}
-                    </select>
+                    />
+                    <datalist id="delivery-sites-list">
+                      {sites.filter(s => s.status === 'ACTIVE').map((site) => (
+                        <option key={site.id} value={`${site.company_name} (${locations.find(l => l.id === site.location_id)?.code || ''})`} />
+                      ))}
+                    </datalist>
                   </div>
                 </div>
 
@@ -1881,7 +1933,7 @@ export default function OrdersPage() {
                     <option value="">Select driver...</option>
                     {drivers.map((d) => (
                       <option key={d.id} value={d.id}>
-                        {d.name} {d.phone ? `(${d.phone})` : ""}
+                        {d.name} {d.phone ? `(${d.phone})` : ""} {d.source === "EXTERNAL" ? "[Ngoài]" : ""}
                       </option>
                     ))}
                   </select>
@@ -1889,7 +1941,7 @@ export default function OrdersPage() {
 
                 <div>
                   <label className="block text-xs font-medium mb-1">
-                    ETA Pickup
+                    Giờ lấy hàng dự kiến
                   </label>
                   <div className="grid grid-cols-2 gap-2">
                     <input
@@ -1922,7 +1974,7 @@ export default function OrdersPage() {
 
                 <div>
                   <label className="block text-xs font-medium mb-1">
-                    ETA Delivery
+                    Giờ giao hàng dự kiến
                   </label>
                   <div className="grid grid-cols-2 gap-2">
                     <input
@@ -2009,61 +2061,62 @@ export default function OrdersPage() {
                     <label className="block text-xs font-medium mb-1">
                       Pickup Site *
                     </label>
-                    <select
+                    <input
+                      type="text"
                       required
-                      value={formData.pickup_site_id}
-                      onChange={(e) =>
-                        setFormData({ ...formData, pickup_site_id: e.target.value })
-                      }
-                      className="w-full text-sm border rounded px-2 py-1.5"
-                    >
-                      <option value="">Select site...</option>
-                      {locations.map((loc) => {
-                        const locSites = sites.filter(s => s.location_id === loc.id && s.status === 'ACTIVE');
-                        if (locSites.length === 0) return null;
-                        return (
-                          <optgroup key={loc.id} label={`${loc.code} - ${loc.name}`}>
-                            {locSites.map((site) => (
-                              <option key={site.id} value={site.id}>
-                                {site.company_name}
-                              </option>
-                            ))}
-                          </optgroup>
+                      placeholder="Type or select..."
+                      value={formData.pickup_text}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        const matchedSite = sites.find(s =>
+                          s.company_name === value ||
+                          `${s.company_name} (${locations.find(l => l.id === s.location_id)?.code || ''})` === value
                         );
-                      })}
-                    </select>
+                        setFormData({
+                          ...formData,
+                          pickup_text: value,
+                          pickup_site_id: matchedSite?.id || ""
+                        });
+                      }}
+                      list="pickup-sites-list-edit"
+                      className="w-full text-sm border rounded px-2 py-1.5"
+                    />
+                    <datalist id="pickup-sites-list-edit">
+                      {sites.filter(s => s.status === 'ACTIVE').map((site) => (
+                        <option key={site.id} value={`${site.company_name} (${locations.find(l => l.id === site.location_id)?.code || ''})`} />
+                      ))}
+                    </datalist>
                   </div>
 
                   <div>
                     <label className="block text-xs font-medium mb-1">
                       Delivery Site *
                     </label>
-                    <select
+                    <input
+                      type="text"
                       required
-                      value={formData.delivery_site_id}
-                      onChange={(e) =>
+                      placeholder="Type or select..."
+                      value={formData.delivery_text}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        const matchedSite = sites.find(s =>
+                          s.company_name === value ||
+                          `${s.company_name} (${locations.find(l => l.id === s.location_id)?.code || ''})` === value
+                        );
                         setFormData({
                           ...formData,
-                          delivery_site_id: e.target.value,
-                        })
-                      }
+                          delivery_text: value,
+                          delivery_site_id: matchedSite?.id || ""
+                        });
+                      }}
+                      list="delivery-sites-list-edit"
                       className="w-full text-sm border rounded px-2 py-1.5"
-                    >
-                      <option value="">Select site...</option>
-                      {locations.map((loc) => {
-                        const locSites = sites.filter(s => s.location_id === loc.id && s.status === 'ACTIVE');
-                        if (locSites.length === 0) return null;
-                        return (
-                          <optgroup key={loc.id} label={`${loc.code} - ${loc.name}`}>
-                            {locSites.map((site) => (
-                              <option key={site.id} value={site.id}>
-                                {site.company_name}
-                              </option>
-                            ))}
-                          </optgroup>
-                        );
-                      })}
-                    </select>
+                    />
+                    <datalist id="delivery-sites-list-edit">
+                      {sites.filter(s => s.status === 'ACTIVE').map((site) => (
+                        <option key={site.id} value={`${site.company_name} (${locations.find(l => l.id === site.location_id)?.code || ''})`} />
+                      ))}
+                    </datalist>
                   </div>
                 </div>
 
@@ -2276,12 +2329,12 @@ export default function OrdersPage() {
 
                 {/* Driver Assignment Section - Available for all orders */}
                 <div className="border-t pt-3 mt-3">
-                  <h3 className="text-sm font-semibold mb-3">Driver Assignment</h3>
+                  <h3 className="text-sm font-semibold mb-3">Phân công tài xế</h3>
                 </div>
 
                 <div>
                   <label className="block text-xs font-medium mb-1">
-                    Driver
+                    Tài xế
                   </label>
                   <select
                     value={assignData.driver_id}
@@ -2290,10 +2343,10 @@ export default function OrdersPage() {
                     }
                     className="w-full text-sm border rounded px-2 py-1.5"
                   >
-                    <option value="">Select driver...</option>
+                    <option value="">Chọn tài xế...</option>
                     {drivers.map((d) => (
                       <option key={d.id} value={d.id}>
-                        {d.name} {d.phone ? `(${d.phone})` : ""}
+                        {d.name} {d.phone ? `(${d.phone})` : ""} {d.source === "EXTERNAL" ? "[Ngoài]" : ""}
                       </option>
                     ))}
                   </select>
@@ -2301,7 +2354,7 @@ export default function OrdersPage() {
 
                 <div>
                   <label className="block text-xs font-medium mb-1">
-                    ETA Pickup
+                    Giờ lấy hàng dự kiến
                   </label>
                   <div className="grid grid-cols-2 gap-2">
                     <input
@@ -2334,7 +2387,7 @@ export default function OrdersPage() {
 
                 <div>
                   <label className="block text-xs font-medium mb-1">
-                    ETA Delivery
+                    Giờ giao hàng dự kiến
                   </label>
                   <div className="grid grid-cols-2 gap-2">
                     <input
@@ -2371,13 +2424,13 @@ export default function OrdersPage() {
                     onClick={() => setShowEditModal(false)}
                     className="text-sm px-3 py-1.5 border rounded hover:bg-gray-50"
                   >
-                    Cancel
+                    Hủy
                   </button>
                   <button
                     type="submit"
                     className="text-sm px-3 py-1.5 bg-black text-white rounded hover:bg-gray-800"
                   >
-                    Update Order
+                    Cập nhật đơn
                   </button>
                 </div>
               </form>
@@ -2448,7 +2501,7 @@ export default function OrdersPage() {
                         }}
                       >
                         <option value="">Chọn KH cho tất cả...</option>
-                        {customers.map((c) => (
+                        {customers.filter(c => c.source !== "CRM").map((c) => (
                           <option key={c.id} value={c.id}>
                             {c.code} - {c.name}
                           </option>
@@ -2510,7 +2563,7 @@ export default function OrdersPage() {
                                 className="text-xs border rounded px-1 py-0.5 w-full"
                               >
                                 <option value="">Chọn...</option>
-                                {customers.map((c) => (
+                                {customers.filter(c => c.source !== "CRM").map((c) => (
                                   <option key={c.id} value={c.id}>
                                     {c.code}
                                   </option>

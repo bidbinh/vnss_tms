@@ -73,6 +73,7 @@ interface EmptyReturn {
   notes?: string;
   status: string;
   created_at?: string;
+  attached_files?: { url: string; name: string; document_type?: string }[];
 }
 
 interface PortOrder {

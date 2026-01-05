@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { apiFetch } from "@/lib/api";
-import DataTable, { Column, TablePagination } from "@/components/DataTable";
-import { Building2, Plus, Search, FileText } from "lucide-react";
+import { TablePagination } from "@/components/DataTable";
+import { Building2, Plus, Search, FileText, ArrowUpDown, ArrowUp, ArrowDown, Eye, Edit, Phone, Mail } from "lucide-react";
 
 // ============ Types ============
 type Customer = {
@@ -11,7 +13,13 @@ type Customer = {
   tenant_id: string;
   code: string;
   name: string;
+  short_name?: string | null;
   tax_code?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  city?: string | null;
+  is_active?: boolean;
+  crm_account_id?: string | null;
   contacts_json?: string | null;
   created_at?: string;
   updated_at?: string;
@@ -49,6 +57,7 @@ function StatCard({ icon: Icon, label, value, color }: { icon: any; label: strin
 
 // ============ Main Component ============
 export default function CustomersPage() {
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState<Customer[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -67,6 +76,10 @@ export default function CustomersPage() {
     tax_code: "",
     contacts_json: "",
   });
+
+  // Sorting
+  const [sortField, setSortField] = useState<string>("code");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 
   // ============ Data Fetching ============
   async function load() {
@@ -89,14 +102,39 @@ export default function CustomersPage() {
   // ============ Filtering & Pagination ============
   const filteredRows = useMemo(() => {
     const s = searchTerm.toLowerCase();
-    if (!s) return rows;
-    return rows.filter(
-      (r) =>
-        (r.code || "").toLowerCase().includes(s) ||
-        (r.name || "").toLowerCase().includes(s) ||
-        (r.tax_code || "").toLowerCase().includes(s)
-    );
-  }, [rows, searchTerm]);
+    let result = rows;
+
+    if (s) {
+      result = result.filter(
+        (r) =>
+          (r.code || "").toLowerCase().includes(s) ||
+          (r.name || "").toLowerCase().includes(s) ||
+          (r.tax_code || "").toLowerCase().includes(s) ||
+          (r.phone || "").toLowerCase().includes(s) ||
+          (r.city || "").toLowerCase().includes(s)
+      );
+    }
+
+    // Sort
+    result = [...result].sort((a, b) => {
+      let aVal: any = (a as any)[sortField] || "";
+      let bVal: any = (b as any)[sortField] || "";
+
+      if (sortField === "updated_at") {
+        aVal = aVal ? new Date(aVal).getTime() : 0;
+        bVal = bVal ? new Date(bVal).getTime() : 0;
+      } else if (typeof aVal === "string") {
+        aVal = aVal.toLowerCase();
+        bVal = (bVal || "").toLowerCase();
+      }
+
+      if (aVal < bVal) return sortOrder === "asc" ? -1 : 1;
+      if (aVal > bVal) return sortOrder === "asc" ? 1 : -1;
+      return 0;
+    });
+
+    return result;
+  }, [rows, searchTerm, sortField, sortOrder]);
 
   const paginatedRows = useMemo(() => {
     const startIndex = (currentPage - 1) * pageSize;
@@ -112,8 +150,9 @@ export default function CustomersPage() {
   // ============ Stats ============
   const stats = useMemo(() => {
     const withTaxCode = rows.filter((r) => r.tax_code).length;
-    const withContacts = rows.filter((r) => r.contacts_json).length;
-    return { total: rows.length, withTaxCode, withContacts };
+    const withCRM = rows.filter((r) => r.crm_account_id).length;
+    const active = rows.filter((r) => r.is_active !== false).length;
+    return { total: rows.length, withTaxCode, withCRM, active };
   }, [rows]);
 
   // ============ Modal Functions ============
@@ -121,18 +160,6 @@ export default function CustomersPage() {
     setMode("create");
     setEditing(null);
     setForm({ code: "", name: "", tax_code: "", contacts_json: "" });
-    setOpen(true);
-  }
-
-  function openEdit(row: Customer) {
-    setMode("edit");
-    setEditing(row);
-    setForm({
-      code: row.code || "",
-      name: row.name || "",
-      tax_code: row.tax_code || "",
-      contacts_json: row.contacts_json || "",
-    });
     setOpen(true);
   }
 
@@ -173,78 +200,114 @@ export default function CustomersPage() {
     }
   }
 
+  // ============ Sorting Functions ============
+  function handleSort(field: string) {
+    if (sortField === field) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortOrder("asc");
+    }
+  }
+
+  function getSortIcon(field: string) {
+    if (sortField !== field) return <ArrowUpDown className="w-3 h-3 opacity-40" />;
+    return sortOrder === "asc" ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />;
+  }
+
   // ============ Table Columns ============
-  const columns: Column<Customer>[] = [
-    {
-      key: "code",
-      header: "Mã KH",
-      width: 120,
-      render: (r) => <span className="font-semibold text-blue-600">{r.code}</span>,
-    },
-    {
-      key: "name",
-      header: "Tên khách hàng",
-      width: 300,
-      render: (r) => <span className="font-medium">{r.name}</span>,
-    },
-    {
-      key: "tax_code",
-      header: "Mã số thuế",
-      width: 150,
-      render: (r) => r.tax_code || <span className="text-gray-400">-</span>,
-    },
-    {
-      key: "contacts",
-      header: "Liên hệ",
-      width: 150,
-      render: (r) => {
-        if (!r.contacts_json) return <span className="text-gray-400">-</span>;
-        try {
-          const contacts = JSON.parse(r.contacts_json);
-          if (Array.isArray(contacts) && contacts.length > 0) {
-            return (
-              <span className="text-sm text-gray-700">
-                {contacts[0].name || contacts[0].phone || "Có thông tin"}
-                {contacts.length > 1 && <span className="text-gray-400 ml-1">(+{contacts.length - 1})</span>}
-              </span>
-            );
-          }
-        } catch {
-          return <span className="text-gray-400">-</span>;
-        }
-        return <span className="text-gray-400">-</span>;
-      },
-    },
-    {
-      key: "updated_at",
-      header: "Cập nhật",
-      width: 120,
-      render: (r) =>
-        r.updated_at ? (
-          <span className="text-xs text-gray-500">{new Date(r.updated_at).toLocaleDateString("vi-VN")}</span>
+  const columnDefs = [
+    { key: "code", header: "Mã KH", width: 100, sortable: true },
+    { key: "name", header: "Tên khách hàng", width: 250, sortable: true },
+    { key: "tax_code", header: "MST", width: 120, sortable: true },
+    { key: "contact", header: "Liên hệ", width: 180, sortable: false },
+    { key: "city", header: "Tỉnh/TP", width: 100, sortable: true },
+    { key: "status", header: "Trạng thái", width: 100, sortable: false },
+    { key: "updated_at", header: "Cập nhật", width: 100, sortable: true },
+    { key: "actions", header: "Thao tác", width: 100, sortable: false },
+  ];
+
+  function renderCell(row: Customer, key: string) {
+    switch (key) {
+      case "code":
+        return (
+          <Link href={`/tms/customers/${row.id}`} className="font-semibold text-blue-600 hover:underline">
+            {row.code}
+          </Link>
+        );
+      case "name":
+        return (
+          <div>
+            <Link href={`/tms/customers/${row.id}`} className="font-medium hover:text-blue-600">
+              {row.name}
+            </Link>
+            {row.short_name && <div className="text-xs text-gray-400">{row.short_name}</div>}
+          </div>
+        );
+      case "tax_code":
+        return row.tax_code || <span className="text-gray-400">-</span>;
+      case "contact":
+        return (
+          <div className="text-sm">
+            {row.phone && (
+              <div className="flex items-center gap-1 text-gray-600">
+                <Phone className="w-3 h-3" />
+                {row.phone}
+              </div>
+            )}
+            {row.email && (
+              <div className="flex items-center gap-1 text-gray-500 text-xs truncate max-w-[160px]">
+                <Mail className="w-3 h-3" />
+                {row.email}
+              </div>
+            )}
+            {!row.phone && !row.email && <span className="text-gray-400">-</span>}
+          </div>
+        );
+      case "city":
+        return row.city || <span className="text-gray-400">-</span>;
+      case "status":
+        return (
+          <div className="flex items-center gap-1">
+            {row.is_active !== false ? (
+              <span className="px-2 py-0.5 text-xs rounded-full bg-green-100 text-green-700">HĐ</span>
+            ) : (
+              <span className="px-2 py-0.5 text-xs rounded-full bg-red-100 text-red-700">Ngừng</span>
+            )}
+            {row.crm_account_id && (
+              <span className="px-2 py-0.5 text-xs rounded-full bg-purple-100 text-purple-700">CRM</span>
+            )}
+          </div>
+        );
+      case "updated_at":
+        return row.updated_at ? (
+          <span className="text-xs text-gray-500">{new Date(row.updated_at).toLocaleDateString("vi-VN")}</span>
         ) : (
           <span className="text-gray-400">-</span>
-        ),
-    },
-    {
-      key: "actions",
-      header: "Thao tác",
-      width: 80,
-      sortable: false,
-      align: "center",
-      render: (r) => (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            openEdit(r);
-          }}
-          className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-        >
-          Sửa
-        </button>
-      ),
-    },
-  ];
+        );
+      case "actions":
+        return (
+          <div className="flex items-center gap-2">
+            <Link
+              href={`/tms/customers/${row.id}`}
+              className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded"
+              title="Xem chi tiết"
+            >
+              <Eye className="w-4 h-4" />
+            </Link>
+            <Link
+              href={`/tms/customers/${row.id}/edit`}
+              className="p-1.5 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded"
+              title="Sửa"
+            >
+              <Edit className="w-4 h-4" />
+            </Link>
+          </div>
+        );
+      default:
+        return (row as any)[key] ?? "-";
+    }
+  }
 
   return (
     <div className="h-[calc(100vh-64px)] overflow-auto">
@@ -254,7 +317,7 @@ export default function CustomersPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Quản lý Khách hàng</h1>
-            <p className="text-sm text-gray-500 mt-1">Quản lý danh sách khách hàng (Master Data)</p>
+            <p className="text-sm text-gray-500 mt-1">Quản lý danh sách khách hàng vận tải (Master Data)</p>
           </div>
 
           <button
@@ -267,10 +330,11 @@ export default function CustomersPage() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <StatCard icon={Building2} label="Tổng khách hàng" value={stats.total} color="blue" />
           <StatCard icon={FileText} label="Có mã số thuế" value={stats.withTaxCode} color="green" />
-          <StatCard icon={Building2} label="Có thông tin liên hệ" value={stats.withContacts} color="gray" />
+          <StatCard icon={Building2} label="Liên kết CRM" value={stats.withCRM} color="gray" />
+          <StatCard icon={Building2} label="Đang hoạt động" value={stats.active} color="green" />
         </div>
       </div>
 
@@ -284,7 +348,7 @@ export default function CustomersPage() {
               <input
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Tìm theo mã, tên, mã số thuế..."
+                placeholder="Tìm theo mã, tên, MST, SĐT, tỉnh/TP..."
                 className="w-full pl-10 pr-4 py-2 rounded-xl border border-gray-300 outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 text-sm"
               />
             </div>
@@ -301,13 +365,17 @@ export default function CustomersPage() {
             <table className="w-full text-sm">
               <thead className="bg-gray-50 text-gray-700">
                 <tr>
-                  {columns.map((col) => (
+                  {columnDefs.map((col) => (
                     <th
                       key={col.key}
-                      className={`px-4 py-3 font-bold text-${col.align || "left"}`}
+                      className={`px-4 py-3 font-bold text-left ${col.sortable ? "cursor-pointer select-none hover:bg-gray-100" : ""}`}
                       style={{ width: col.width }}
+                      onClick={() => col.sortable && handleSort(col.key)}
                     >
-                      {col.header}
+                      <div className="flex items-center gap-1">
+                        {col.header}
+                        {col.sortable && getSortIcon(col.key)}
+                      </div>
                     </th>
                   ))}
                 </tr>
@@ -324,7 +392,7 @@ export default function CustomersPage() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={columns.length} className="px-4 py-8 text-center text-gray-500">
+                  <td colSpan={columnDefs.length} className="px-4 py-8 text-center text-gray-500">
                     <div className="flex items-center justify-center gap-2">
                       <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
                       Đang tải...
@@ -333,20 +401,30 @@ export default function CustomersPage() {
                 </tr>
               ) : paginatedRows.length === 0 ? (
                 <tr>
-                  <td colSpan={columns.length} className="px-4 py-8 text-center text-gray-500">
+                  <td colSpan={columnDefs.length} className="px-4 py-8 text-center text-gray-500">
                     Chưa có khách hàng nào
                   </td>
                 </tr>
               ) : (
-                paginatedRows.map((row, rowIndex) => (
-                  <tr key={row.id} className="border-t hover:bg-gray-50">
-                    {columns.map((col) => (
+                paginatedRows.map((row) => (
+                  <tr
+                    key={row.id}
+                    className="border-t hover:bg-gray-50 cursor-pointer"
+                    onClick={() => router.push(`/tms/customers/${row.id}`)}
+                  >
+                    {columnDefs.map((col) => (
                       <td
                         key={col.key}
-                        className={`px-4 py-3 text-${col.align || "left"}`}
+                        className="px-4 py-3 text-left"
                         style={{ width: col.width }}
+                        onClick={(e) => {
+                          // Prevent row click for action buttons and links
+                          if (col.key === "actions" || col.key === "code" || col.key === "name") {
+                            e.stopPropagation();
+                          }
+                        }}
                       >
-                        {col.render ? col.render(row, rowIndex) : (row as any)[col.key] ?? "-"}
+                        {renderCell(row, col.key)}
                       </td>
                     ))}
                   </tr>
@@ -370,7 +448,7 @@ export default function CustomersPage() {
         />
       </div>
 
-      {/* Modal */}
+      {/* Modal - Quick Create */}
       {open && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
           <div className="w-full max-w-lg rounded-2xl bg-white shadow-xl border border-gray-200">
@@ -384,6 +462,9 @@ export default function CustomersPage() {
             </div>
 
             <div className="p-6 space-y-4">
+              <p className="text-sm text-gray-500 mb-2">
+                Đây là form tạo nhanh. Để nhập đầy đủ thông tin, vui lòng tạo từ CRM hoặc chỉnh sửa sau.
+              </p>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs text-gray-600 mb-1">
@@ -416,16 +497,6 @@ export default function CustomersPage() {
                   onChange={(e) => setForm((s) => ({ ...s, name: e.target.value }))}
                   className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-200"
                   placeholder="An Dương Group"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs text-gray-600 mb-1">Contacts JSON (optional)</label>
-                <textarea
-                  value={form.contacts_json}
-                  onChange={(e) => setForm((s) => ({ ...s, contacts_json: e.target.value }))}
-                  className="w-full min-h-24 rounded-xl border border-gray-300 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-200"
-                  placeholder='[{"name":"A","phone":"..."}]'
                 />
               </div>
 

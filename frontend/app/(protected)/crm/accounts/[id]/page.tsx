@@ -16,6 +16,10 @@ import {
   Users,
   Target,
   FileText,
+  Truck,
+  RefreshCw,
+  Loader2,
+  CheckCircle,
 } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 
@@ -36,6 +40,7 @@ interface Account {
   is_active: boolean;
   created_at: string;
   updated_at: string | null;
+  tms_customer_id: string | null;
 }
 
 interface Contact {
@@ -81,6 +86,7 @@ export default function AccountDetailPage() {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [syncing, setSyncing] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("access_token");
@@ -116,6 +122,23 @@ export default function AccountDetailPage() {
     } catch (error) {
       console.error("Failed to delete account:", error);
       alert("Không thể xóa khách hàng này");
+    }
+  };
+
+  const handleSyncToTMS = async () => {
+    setSyncing(true);
+    try {
+      await apiFetch<{ customer_id: string }>(`/crm/accounts/${id}/sync-to-tms`, {
+        method: "POST",
+      });
+      // Refresh account data to get new tms_customer_id
+      await fetchData();
+      alert("Đã đồng bộ thành công sang TMS!");
+    } catch (error) {
+      console.error("Failed to sync to TMS:", error);
+      alert("Không thể đồng bộ sang TMS. Vui lòng thử lại.");
+    } finally {
+      setSyncing(false);
     }
   };
 
@@ -172,11 +195,39 @@ export default function AccountDetailPage() {
                 <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-700">
                   {TYPE_LABELS[account.type] || account.type}
                 </span>
+                {account.tms_customer_id && (
+                  <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700 flex items-center gap-1">
+                    <Truck className="w-3 h-3" />
+                    TMS
+                  </span>
+                )}
               </div>
               <p className="text-gray-600">{account.code}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {account.tms_customer_id ? (
+              <Link
+                href={`/tms/customers?id=${account.tms_customer_id}`}
+                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+              >
+                <Truck className="w-4 h-4" />
+                Xem trên TMS
+              </Link>
+            ) : (
+              <button
+                onClick={handleSyncToTMS}
+                disabled={syncing}
+                className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50"
+              >
+                {syncing ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="w-4 h-4" />
+                )}
+                Sync sang TMS
+              </button>
+            )}
             <Link
               href={`/crm/accounts/${id}/edit`}
               className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
@@ -342,6 +393,59 @@ export default function AccountDetailPage() {
 
         {/* Sidebar */}
         <div className="space-y-6">
+          {/* TMS Sync Status */}
+          <div className="bg-white rounded-lg shadow border border-gray-200 p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <Truck className="w-5 h-5" />
+              Tích hợp TMS
+            </h2>
+            {account.tms_customer_id ? (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-green-600">
+                  <CheckCircle className="w-5 h-5" />
+                  <span className="font-medium">Đã đồng bộ</span>
+                </div>
+                <Link
+                  href={`/tms/customers?id=${account.tms_customer_id}`}
+                  className="flex items-center gap-2 w-full px-3 py-2 text-center text-green-700 bg-green-50 hover:bg-green-100 rounded-lg"
+                >
+                  <Truck className="w-4 h-4" />
+                  Xem trên TMS
+                </Link>
+                <button
+                  onClick={handleSyncToTMS}
+                  disabled={syncing}
+                  className="flex items-center gap-2 w-full px-3 py-2 text-center text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-lg disabled:opacity-50"
+                >
+                  {syncing ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="w-4 h-4" />
+                  )}
+                  Cập nhật lại TMS
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-sm text-gray-500">
+                  Khách hàng này chưa được đồng bộ sang module TMS để sử dụng cho đặt đơn vận tải.
+                </p>
+                <button
+                  onClick={handleSyncToTMS}
+                  disabled={syncing}
+                  className="flex items-center justify-center gap-2 w-full px-3 py-2 text-center text-white bg-orange-600 hover:bg-orange-700 rounded-lg disabled:opacity-50"
+                >
+                  {syncing ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="w-4 h-4" />
+                  )}
+                  Đồng bộ sang TMS
+                </button>
+              </div>
+            )}
+          </div>
+
           <div className="bg-white rounded-lg shadow border border-gray-200 p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Thông tin hệ thống</h2>
             <div className="space-y-3">

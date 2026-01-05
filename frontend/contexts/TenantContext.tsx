@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import {
   getSubdomain,
   getTenantCode,
@@ -30,12 +31,22 @@ const TenantContext = createContext<TenantContextType>({
 });
 
 export function TenantProvider({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
   const [tenant, setTenant] = useState<TenantPublicInfo | null>(null);
   const [tenantCode, setTenantCode] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Skip tenant fetch for workspace pages (they have their own tenant context)
+  const isWorkspacePage = pathname?.startsWith("/workspace");
+
   const loadTenant = async () => {
+    // Skip for workspace pages
+    if (isWorkspacePage) {
+      setIsLoading(false);
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
 
@@ -71,7 +82,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     loadTenant();
-  }, []);
+  }, [isWorkspacePage]);
 
   const refreshTenant = async () => {
     await loadTenant();

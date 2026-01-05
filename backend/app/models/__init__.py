@@ -8,9 +8,11 @@ from .container import Container
 from .stop import Stop
 from .location import Location
 from .vehicle import Vehicle
-from .driver import Driver
+from .driver import Driver, DriverSource
+from .driver_availability import DriverAvailability, DriverAvailabilityTemplate, AvailabilityStatus, RecurrenceType
 from .trailer import Trailer
 from .vehicle_assignment import VehicleAssignment
+from .tractor_trailer_pairing import TractorTrailerPairing
 from .trip import Trip
 from .trip_document import TripDocument
 from .trip_finance_item import TripFinanceItem
@@ -144,7 +146,7 @@ __all__ = ["Tenant", "TenantModule", "TenantType", "SubscriptionPlan", "Subscrip
 __all__ += ["Role", "Permission", "UserRoleLink", "AVAILABLE_MODULES", "MODULE_RESOURCES", "DEFAULT_ROLE_TEMPLATES"]
 __all__ += ["Customer", "Order", "OrderSequence", "OrderStatusLog", "Shipment", "Container", "Stop", "Location"]
 
-__all__ += ["Vehicle", "Driver", "Trailer", "VehicleAssignment", "Trip"]
+__all__ += ["Vehicle", "Driver", "Trailer", "VehicleAssignment", "TractorTrailerPairing", "Trip"]
 
 __all__ += ["TripDocument"]
 __all__ += ["TripFinanceItem"]
@@ -505,4 +507,121 @@ __all__ += [
     "VehicleOperatingCost", "VehicleCostAllocation",
     "CostCategory", "CostType", "CostAllocationMethod",
     "COST_CATEGORY_CONFIGS",
+]
+
+# Activity Log Models
+from .activity_log import ActivityLog, ActionType
+from .action_cost import ActionCost, DEFAULT_ACTION_COSTS, get_action_cost
+
+__all__ += [
+    "ActivityLog", "ActionType",
+    "ActionCost", "DEFAULT_ACTION_COSTS", "get_action_cost",
+]
+
+# Personal Workspace Models
+from .worker import (
+    Worker, WorkerStatus,
+    WorkspaceInvitation, WorkspaceInvitationStatus,
+    WorkerTenantAccess,
+    WorkerTask,
+)
+
+__all__ += [
+    "Worker", "WorkerStatus",
+    "WorkspaceInvitation", "WorkspaceInvitationStatus",
+    "WorkerTenantAccess",
+    "WorkerTask",
+]
+
+# Worker Connection Models (Dispatcher <-> Driver Network)
+from .worker_connection import (
+    WorkerConnection, ConnectionStatus, ConnectionInitiator,
+)
+from .dispatcher_order import (
+    DispatcherOrder, DispatcherOrderStatus, PaymentStatus,
+    DispatcherOrderSequence,
+)
+
+__all__ += [
+    "WorkerConnection", "ConnectionStatus", "ConnectionInitiator",
+    "DispatcherOrder", "DispatcherOrderStatus", "PaymentStatus",
+    "DispatcherOrderSequence",
+]
+
+# ============================================
+# ACTOR-BASED MODELS (New Architecture)
+# ============================================
+
+# Actor Core
+from .actor import (
+    Actor, ActorType, ActorStatus,
+    ActorRelationship, RelationshipType, RelationshipStatus, RelationshipRole,
+)
+
+# Unified Order
+from .unified_order import (
+    UnifiedOrder, OrderSourceType, OrderStatus as UnifiedOrderStatus, PaymentStatus as UnifiedPaymentStatus,
+    EquipmentType, OrderAssignment, UnifiedOrderSequence, OrderStatusHistory,
+)
+
+# Unified Location
+from .unified_location import (
+    UnifiedLocation, UnifiedLocationType, UnifiedLocationStatus,
+    LocationAlias, UnifiedRate,
+)
+
+# Unified Vehicle
+from .vehicle_unified import (
+    UnifiedVehicle, VehicleType, VehicleStatus as UnifiedVehicleStatus, VehicleOwnershipType,
+    UnifiedVehicleAssignment, VehiclePairing,
+    VehicleMaintenanceLog, VehicleFuelLog,
+)
+
+# Financial
+from .financial import (
+    Invoice, InvoiceType, InvoiceStatus as UnifiedInvoiceStatus,
+    InvoiceItem, Payment as UnifiedPayment, PaymentMethod, PaymentTerm,
+    FinancialSummary, DriverEarning,
+)
+
+# Notification
+from .notification import (
+    Notification, NotificationType as UnifiedNotificationType,
+    NotificationChannel, NotificationPriority,
+    NotificationPreference, NotificationTemplate as UnifiedNotificationTemplate,
+    PushToken,
+)
+
+# Audit
+from .audit import (
+    AuditAction, AuditLog as UnifiedAuditLog,
+    ActorSession, LoginAttempt,
+)
+
+__all__ += [
+    # Actor Core
+    "Actor", "ActorType", "ActorStatus",
+    "ActorRelationship", "RelationshipType", "RelationshipStatus", "RelationshipRole",
+    # Unified Order
+    "UnifiedOrder", "OrderSourceType", "UnifiedOrderStatus", "UnifiedPaymentStatus",
+    "EquipmentType", "OrderAssignment", "UnifiedOrderSequence", "OrderStatusHistory",
+    # Unified Location
+    "UnifiedLocation", "UnifiedLocationType", "UnifiedLocationStatus",
+    "LocationAlias", "UnifiedRate",
+    # Unified Vehicle
+    "UnifiedVehicle", "VehicleType", "UnifiedVehicleStatus", "VehicleOwnershipType",
+    "UnifiedVehicleAssignment", "VehiclePairing",
+    "VehicleMaintenanceLog", "VehicleFuelLog",
+    # Financial
+    "Invoice", "InvoiceType", "UnifiedInvoiceStatus",
+    "InvoiceItem", "UnifiedPayment", "PaymentMethod", "PaymentTerm",
+    "FinancialSummary", "DriverEarning",
+    # Notification
+    "Notification", "UnifiedNotificationType",
+    "NotificationChannel", "NotificationPriority",
+    "NotificationPreference", "UnifiedNotificationTemplate",
+    "PushToken",
+    # Audit
+    "AuditAction", "UnifiedAuditLog",
+    "ActorSession", "LoginAttempt",
 ]

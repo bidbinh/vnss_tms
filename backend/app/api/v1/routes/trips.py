@@ -9,6 +9,7 @@ from app.models.trip import Trip
 from app.models.shipment import Shipment
 from app.models.location import Location
 from app.models.trip_stop import TripStop
+from app.models import User
 from app.schemas.trip import (
     TripCreate,
     TripUpdate,
@@ -19,26 +20,30 @@ from app.schemas.trip import (
 )
 from app.models.trip_shipment import TripShipment
 from app.schemas.trip_shipment import TripShipmentRead, TripShipmentsSetRequest
+from app.core.security import get_current_user
 
 router = APIRouter(prefix="/trips", tags=["trips"])
 
 
-def get_tenant_id_stub() -> str:
-    return "TENANT_DEMO"
-
-
 @router.get("", response_model=list[TripRead])
 @router.get("/", response_model=list[TripRead])
-def list_trips(session: Session = Depends(get_session)):
-    tenant_id = get_tenant_id_stub()
+def list_trips(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    tenant_id = str(current_user.tenant_id)
     q = select(Trip).where(Trip.tenant_id == tenant_id).order_by(Trip.updated_at.desc())
     return session.exec(q).all()
 
 
 @router.post("", response_model=TripRead)
 @router.post("/", response_model=TripRead)
-def create_trip(payload: TripCreate, session: Session = Depends(get_session)):
-    tenant_id = get_tenant_id_stub()
+def create_trip(
+    payload: TripCreate,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    tenant_id = str(current_user.tenant_id)
 
     shp = session.exec(
         select(Shipment).where(Shipment.id == payload.shipment_id, Shipment.tenant_id == tenant_id)
@@ -61,8 +66,12 @@ def create_trip(payload: TripCreate, session: Session = Depends(get_session)):
 
 
 @router.get("/{trip_id}", response_model=TripReadWithStops)
-def get_trip(trip_id: str, session: Session = Depends(get_session)):
-    tenant_id = get_tenant_id_stub()
+def get_trip(
+    trip_id: str,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    tenant_id = str(current_user.tenant_id)
 
     trip = session.exec(select(Trip).where(Trip.id == trip_id, Trip.tenant_id == tenant_id)).first()
     if not trip:
@@ -81,8 +90,13 @@ def get_trip(trip_id: str, session: Session = Depends(get_session)):
 
 
 @router.put("/{trip_id}", response_model=TripRead)
-def update_trip(trip_id: str, payload: TripUpdate, session: Session = Depends(get_session)):
-    tenant_id = get_tenant_id_stub()
+def update_trip(
+    trip_id: str,
+    payload: TripUpdate,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    tenant_id = str(current_user.tenant_id)
     trip = session.exec(select(Trip).where(Trip.id == trip_id, Trip.tenant_id == tenant_id)).first()
     if not trip:
         raise HTTPException(404, "Trip not found")
@@ -99,8 +113,13 @@ def update_trip(trip_id: str, payload: TripUpdate, session: Session = Depends(ge
 
 
 @router.post("/{trip_id}/assign")
-def assign_trip(trip_id: str, payload: TripAssignRequest, session: Session = Depends(get_session)):
-    tenant_id = get_tenant_id_stub()
+def assign_trip(
+    trip_id: str,
+    payload: TripAssignRequest,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    tenant_id = str(current_user.tenant_id)
 
     trip = session.exec(select(Trip).where(Trip.id == trip_id, Trip.tenant_id == tenant_id)).first()
     if not trip:
@@ -162,8 +181,12 @@ def assign_trip(trip_id: str, payload: TripAssignRequest, session: Session = Dep
     return {"ok": True, "trip_id": trip_id, "stops": len(payload.stops)}
 
 @router.get("/{trip_id}/shipments", response_model=list[TripShipmentRead])
-def list_trip_shipments(trip_id: str, session: Session = Depends(get_session)):
-    tenant_id = get_tenant_id_stub()
+def list_trip_shipments(
+    trip_id: str,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    tenant_id = str(current_user.tenant_id)
 
     trip = session.exec(select(Trip).where(Trip.id == trip_id, Trip.tenant_id == tenant_id)).first()
     if not trip:
@@ -177,8 +200,13 @@ def list_trip_shipments(trip_id: str, session: Session = Depends(get_session)):
     return session.exec(q).all()
 
 @router.post("/{trip_id}/shipments")
-def set_trip_shipments(trip_id: str, payload: TripShipmentsSetRequest, session: Session = Depends(get_session)):
-    tenant_id = get_tenant_id_stub()
+def set_trip_shipments(
+    trip_id: str,
+    payload: TripShipmentsSetRequest,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    tenant_id = str(current_user.tenant_id)
 
     trip = session.exec(select(Trip).where(Trip.id == trip_id, Trip.tenant_id == tenant_id)).first()
     if not trip:

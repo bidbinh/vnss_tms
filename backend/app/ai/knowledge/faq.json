@@ -1,0 +1,77 @@
+[
+  {
+    "question": "9log là gì?",
+    "answer": "9log.tech là nền tảng SaaS ERP dành cho ngành logistics Việt Nam. Chúng tôi cung cấp các module: TMS (quản lý vận tải container), WMS (quản lý kho), HRM (nhân sự), CRM (khách hàng), Accounting (kế toán). Phù hợp cho công ty vận tải, forwarder, cảng, ICD, depot, kho 3PL.",
+    "keywords": ["9log", "là gì", "giới thiệu", "about"]
+  },
+  {
+    "question": "Giá của 9log như thế nào?",
+    "answer": "9log có 4 gói: FREE (dùng thử miễn phí với giới hạn), STARTER (cho công ty nhỏ), PRO (công ty vừa, đầy đủ tính năng), ENTERPRISE (công ty lớn, custom). Giá tính theo số lượng đơn hàng/tháng và số user. Liên hệ sales@9log.tech để được báo giá chi tiết.",
+    "keywords": ["giá", "bao nhiêu", "pricing", "chi phí", "gói", "plan"]
+  },
+  {
+    "question": "Làm sao để đăng ký dùng thử?",
+    "answer": "Truy cập 9log.tech → Click 'Đăng ký dùng thử' → Điền thông tin công ty → Nhận email xác nhận → Đăng nhập và bắt đầu sử dụng. Gói FREE cho phép dùng thử 14 ngày với đầy đủ tính năng.",
+    "keywords": ["đăng ký", "dùng thử", "trial", "tạo tài khoản", "signup"]
+  },
+  {
+    "question": "Tôi quên mật khẩu, làm sao lấy lại?",
+    "answer": "Vào trang đăng nhập → Click 'Quên mật khẩu' → Nhập email đăng ký → Kiểm tra email và làm theo hướng dẫn reset password. Nếu không nhận được email, kiểm tra thư mục spam hoặc liên hệ support.",
+    "keywords": ["quên", "mật khẩu", "password", "reset", "lấy lại"]
+  },
+  {
+    "question": "Làm sao để tạo đơn hàng mới?",
+    "answer": "Vào menu TMS → Đơn hàng → Click 'Tạo mới' → Điền thông tin: khách hàng, điểm lấy/giao, container, ngày yêu cầu → Click 'Lưu'. Đơn hàng sẽ ở trạng thái 'Mới' và chờ điều phối.",
+    "keywords": ["tạo đơn", "đơn hàng", "order", "tạo mới"]
+  },
+  {
+    "question": "Làm sao để giao đơn cho tài xế?",
+    "answer": "Vào chi tiết đơn hàng → Click 'Phân tài xế' → Chọn tài xế từ danh sách → Chọn xe đầu kéo và rơ-moóc (nếu có) → Click 'Xác nhận'. Tài xế sẽ nhận được thông báo trên app.",
+    "keywords": ["giao đơn", "phân tài xế", "assign", "điều phối"]
+  },
+  {
+    "question": "Tôi có thể theo dõi xe ở đâu?",
+    "answer": "9log tích hợp GPS tracking. Vào menu TMS → Bản đồ để xem vị trí xe realtime. Hoặc vào chi tiết đơn hàng để xem lịch sử di chuyển của chuyến xe đó.",
+    "keywords": ["theo dõi", "GPS", "vị trí", "tracking", "bản đồ"]
+  },
+  {
+    "question": "Làm sao để xem báo cáo doanh thu?",
+    "answer": "Vào menu Báo cáo → Doanh thu → Chọn khoảng thời gian → Xem báo cáo theo khách hàng, theo tài xế, hoặc theo tuyến đường. Có thể xuất Excel để phân tích thêm.",
+    "keywords": ["báo cáo", "doanh thu", "revenue", "thống kê", "report"]
+  },
+  {
+    "question": "Làm sao để thêm tài xế mới?",
+    "answer": "Vào menu TMS → Tài xế → Click 'Thêm mới' → Điền thông tin: họ tên, SĐT, CCCD, bằng lái, ngân hàng → Upload ảnh CCCD và bằng lái → Click 'Lưu'.",
+    "keywords": ["thêm tài xế", "tạo tài xế", "driver", "lái xe"]
+  },
+  {
+    "question": "Làm sao để thanh toán hóa đơn?",
+    "answer": "Vào menu Tài khoản → Hóa đơn → Chọn hóa đơn cần thanh toán → Click 'Thanh toán' → Chọn phương thức (VNPay, chuyển khoản) → Hoàn tất thanh toán. Hóa đơn sẽ cập nhật trạng thái tự động.",
+    "keywords": ["thanh toán", "hóa đơn", "payment", "invoice", "trả tiền"]
+  },
+  {
+    "question": "Tôi cần hỗ trợ kỹ thuật",
+    "answer": "Bạn có thể: 1) Chat với AI support 24/7, 2) Gửi email support@9log.tech, 3) Gọi hotline 1900-xxxx (giờ hành chính). Với vấn đề khẩn cấp, chúng tôi cam kết phản hồi trong 2 giờ.",
+    "keywords": ["hỗ trợ", "support", "kỹ thuật", "liên hệ", "hotline"]
+  },
+  {
+    "question": "9log có app mobile không?",
+    "answer": "Có! 9log Driver App dành cho tài xế, có thể tải trên App Store và Google Play. Tài xế có thể nhận đơn, cập nhật trạng thái, chụp ảnh giao hàng trực tiếp từ app.",
+    "keywords": ["app", "mobile", "điện thoại", "ios", "android"]
+  },
+  {
+    "question": "Dữ liệu của tôi có an toàn không?",
+    "answer": "9log cam kết bảo mật: 1) Dữ liệu được mã hóa SSL/TLS, 2) Backup tự động hàng ngày, 3) Hosting tại datacenter Việt Nam, 4) Tuân thủ các quy định bảo mật. Mỗi công ty có dữ liệu riêng biệt hoàn toàn.",
+    "keywords": ["bảo mật", "an toàn", "security", "dữ liệu", "data"]
+  },
+  {
+    "question": "Tôi có thể export dữ liệu không?",
+    "answer": "Có! Bạn có thể export: danh sách đơn hàng, báo cáo doanh thu, danh sách khách hàng, tài xế... ra file Excel. Vào trang danh sách → Click nút 'Xuất Excel'.",
+    "keywords": ["export", "xuất", "excel", "download", "tải về"]
+  },
+  {
+    "question": "Làm sao để mời thêm nhân viên?",
+    "answer": "Vào Cài đặt → Quản lý người dùng → Click 'Thêm user' → Nhập email và chọn quyền (Admin, Dispatcher, Accountant...) → Gửi lời mời. Nhân viên sẽ nhận email để tạo mật khẩu.",
+    "keywords": ["thêm user", "mời nhân viên", "invite", "người dùng", "quyền"]
+  }
+]

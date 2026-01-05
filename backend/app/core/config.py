@@ -9,4 +9,10 @@ class Settings(BaseSettings):
     STORAGE_DIR: str = "storage"
     API_BASE_URL: str = os.getenv("API_BASE_URL", "http://127.0.0.1:3001/api/v1")
 
+    # Database pool settings for high traffic
+    DB_POOL_SIZE: int = int(os.getenv("DB_POOL_SIZE", "50"))  # Base connections
+    DB_MAX_OVERFLOW: int = int(os.getenv("DB_MAX_OVERFLOW", "100"))  # Extra connections when needed
+    DB_POOL_TIMEOUT: int = int(os.getenv("DB_POOL_TIMEOUT", "30"))  # Wait time for connection
+    DB_POOL_RECYCLE: int = int(os.getenv("DB_POOL_RECYCLE", "1800"))  # Recycle connections every 30 mins
+
 settings = Settings()

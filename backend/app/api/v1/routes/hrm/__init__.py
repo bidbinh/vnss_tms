@@ -18,6 +18,7 @@ from app.api.v1.routes.hrm.training import router as training_router
 from app.api.v1.routes.hrm.reports import router as reports_router
 from app.api.v1.routes.hrm.bonuses import router as bonuses_router
 from app.api.v1.routes.hrm.deductions import router as deductions_router
+from app.api.v1.routes.hrm.namecards import router as namecards_router
 
 hrm_router = APIRouter(prefix="/hrm", tags=["HRM"])
 
@@ -36,4 +37,5 @@ hrm_router.include_router(training_router)
 hrm_router.include_router(reports_router)
 hrm_router.include_router(bonuses_router)
 hrm_router.include_router(deductions_router)
+hrm_router.include_router(namecards_router)
 hrm_router.include_router(seed_router)

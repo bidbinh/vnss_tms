@@ -17,6 +17,10 @@ from app.api.v1.routes.auth import router as auth_router
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.v1.routes import api_router
 from app.core.tenant_middleware import TenantMiddleware
+from app.core.activity_log_middleware import ActivityLogMiddleware
+
+print("[Main] Starting FastAPI app...")
+print("[Main] ActivityLogMiddleware imported successfully")
 
 app = FastAPI(title="TMS Container v1")
 
@@ -32,15 +36,24 @@ app.add_middleware(
         "http://localhost:8001",
         "http://127.0.0.1:8001",
     ],
-    allow_origin_regex=r"https?://(\w+\.)?9log\.(tech|local)(:\d+)?",  # *.9log.tech & *.9log.local
+    allow_origin_regex=r"https?://([\w-]+\.)?9log\.(tech|local)(:\d+)?",  # *.9log.tech & *.9log.local (including hyphenated subdomains)
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
     expose_headers=["Content-Disposition"],  # Allow frontend to read download filename
 )
 
-# Add Tenant detection middleware
+# Note: Middleware runs in REVERSE order of add_middleware calls
+# So ActivityLogMiddleware runs AFTER TenantMiddleware
+# ActivityLogMiddleware is a pure ASGI middleware
+
+# Add Activity Log middleware
+app.add_middleware(ActivityLogMiddleware)
+print("[Main] ActivityLogMiddleware added to app")
+
+# Add Tenant detection middleware (runs first, sets tenant_id in request.state)
 app.add_middleware(TenantMiddleware)
+print("[Main] TenantMiddleware added to app")
 
 #app.include_router(orders_router)
 #app.include_router(shipments_router)
@@ -59,6 +72,8 @@ app.add_middleware(TenantMiddleware)
 #app.include_router(auth_router)
 app.include_router(api_router, prefix="/api/v1")
 
+
+# Tractor-Trailer Pairings route added
 
 @app.get("/health")
 def health():

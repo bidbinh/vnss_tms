@@ -3,18 +3,25 @@ from fastapi import APIRouter, Depends, Header, HTTPException
 from sqlmodel import Session, select
 
 from app.db.session import get_session
-from app.models import Trip, Shipment, Container, Stop, TripDocument
+from app.models import Trip, Shipment, Container, Stop, TripDocument, Driver
 
 
 router = APIRouter(prefix="/driver", tags=["driver_mobile"])
 
-def tenant() -> str:
-    return "TENANT_DEMO"
 
 def require_driver_id(x_driver_id: str | None = Header(default=None)) -> str:
     if not x_driver_id:
         raise HTTPException(401, "Missing X-Driver-Id header")
     return x_driver_id
+
+
+def get_driver_tenant_id(driver_id: str, session: Session) -> str:
+    """Get tenant_id from driver"""
+    driver = session.get(Driver, driver_id)
+    if not driver:
+        raise HTTPException(404, "Driver not found")
+    return str(driver.tenant_id)
+
 
 @router.get("/trips")
 def list_my_trips(
@@ -22,8 +29,9 @@ def list_my_trips(
     x_driver_id: str = Depends(require_driver_id),
     session: Session = Depends(get_session),
 ):
+    tenant_id = get_driver_tenant_id(x_driver_id, session)
     q = select(Trip).where(
-        Trip.tenant_id == tenant(),
+        Trip.tenant_id == tenant_id,
         Trip.driver_id == x_driver_id,
     )
     if status:
@@ -37,8 +45,9 @@ def get_trip_detail(
     x_driver_id: str = Depends(require_driver_id),
     session: Session = Depends(get_session),
 ):
+    tenant_id = get_driver_tenant_id(x_driver_id, session)
     trip = session.get(Trip, trip_id)
-    if not trip or trip.tenant_id != tenant():
+    if not trip or trip.tenant_id != tenant_id:
         raise HTTPException(404, "Trip not found")
     if trip.driver_id != x_driver_id:
         raise HTTPException(403, "Not your trip")
@@ -51,7 +60,7 @@ def get_trip_detail(
         select(Stop).where(Stop.shipment_id == trip.shipment_id).order_by(Stop.seq)
     ).all()
     docs = session.exec(
-        select(TripDocument).where(TripDocument.trip_id == trip_id, TripDocument.tenant_id == tenant())
+        select(TripDocument).where(TripDocument.trip_id == trip_id, TripDocument.tenant_id == tenant_id)
         .order_by(TripDocument.uploaded_at.desc())
     ).all()
 
@@ -76,8 +85,9 @@ def start_my_trip(
     x_driver_id: str = Depends(require_driver_id),
     session: Session = Depends(get_session),
 ):
+    tenant_id = get_driver_tenant_id(x_driver_id, session)
     trip = session.get(Trip, trip_id)
-    if not trip or trip.tenant_id != tenant():
+    if not trip or trip.tenant_id != tenant_id:
         raise HTTPException(404, "Trip not found")
     if trip.driver_id != x_driver_id:
         raise HTTPException(403, "Not your trip")
@@ -94,8 +104,9 @@ def complete_my_trip(
     x_driver_id: str = Depends(require_driver_id),
     session: Session = Depends(get_session),
 ):
+    tenant_id = get_driver_tenant_id(x_driver_id, session)
     trip = session.get(Trip, trip_id)
-    if not trip or trip.tenant_id != tenant():
+    if not trip or trip.tenant_id != tenant_id:
         raise HTTPException(404, "Trip not found")
     if trip.driver_id != x_driver_id:
         raise HTTPException(403, "Not your trip")
@@ -103,7 +114,7 @@ def complete_my_trip(
     # rule: bắt buộc đủ EIR + POD
     doc_types = set(session.exec(
         select(TripDocument.doc_type).where(
-            TripDocument.tenant_id == tenant(),
+            TripDocument.tenant_id == tenant_id,
             TripDocument.trip_id == trip_id,
         )
     ).all())
@@ -124,8 +135,9 @@ def arrive_stop(
     x_driver_id: str = Depends(require_driver_id),
     session: Session = Depends(get_session),
 ):
+    tenant_id = get_driver_tenant_id(x_driver_id, session)
     trip = session.get(Trip, trip_id)
-    if not trip or trip.tenant_id != tenant():
+    if not trip or trip.tenant_id != tenant_id:
         raise HTTPException(404, "Trip not found")
     if trip.driver_id != x_driver_id:
         raise HTTPException(403, "Not your trip")
@@ -148,8 +160,9 @@ def done_stop(
     x_driver_id: str = Depends(require_driver_id),
     session: Session = Depends(get_session),
 ):
+    tenant_id = get_driver_tenant_id(x_driver_id, session)
     trip = session.get(Trip, trip_id)
-    if not trip or trip.tenant_id != tenant():
+    if not trip or trip.tenant_id != tenant_id:
         raise HTTPException(404, "Trip not found")
     if trip.driver_id != x_driver_id:
         raise HTTPException(403, "Not your trip")

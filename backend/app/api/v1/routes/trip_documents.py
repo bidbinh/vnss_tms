@@ -9,14 +9,13 @@ from sqlmodel import Session, select
 
 from app.core.config import settings
 from app.db.session import get_session
-from app.models import Trip, TripDocument
+from app.models import Trip, TripDocument, User
+from app.core.security import get_current_user
 
 router = APIRouter(prefix="/trips", tags=["trip_documents"])
 
-def tenant() -> str:
-    return "TENANT_DEMO"
-
 ALLOWED_DOC_TYPES = {"EIR", "POD"}
+
 
 @router.post("/{trip_id}/documents")
 def upload_trip_document(
@@ -25,17 +24,19 @@ def upload_trip_document(
     note: str | None = Form(None),
     file: UploadFile = File(...),
     session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
 ):
+    tenant_id = str(current_user.tenant_id)
     doc_type = doc_type.strip().upper()
     if doc_type not in ALLOWED_DOC_TYPES:
         raise HTTPException(400, "doc_type must be EIR or POD")
 
     trip = session.get(Trip, trip_id)
-    if not trip:
+    if not trip or trip.tenant_id != tenant_id:
         raise HTTPException(404, "Trip not found")
 
     # storage path: storage/<tenant>/<trip>/<doc_type>/
-    base_dir = Path(settings.STORAGE_DIR) / tenant() / "trips" / trip_id / doc_type
+    base_dir = Path(settings.STORAGE_DIR) / tenant_id / "trips" / trip_id / doc_type
     base_dir.mkdir(parents=True, exist_ok=True)
 
     ext = Path(file.filename or "").suffix
@@ -52,7 +53,7 @@ def upload_trip_document(
     rel_path = str(save_path).replace("\\", "/")  # lưu tương đối/chuẩn hóa
 
     doc = TripDocument(
-        tenant_id=tenant(),
+        tenant_id=tenant_id,
         trip_id=trip_id,
         doc_type=doc_type,
         original_name=file.filename or safe_name,
@@ -78,14 +79,19 @@ def upload_trip_document(
     }
 
 @router.get("/{trip_id}/documents")
-def list_trip_documents(trip_id: str, session: Session = Depends(get_session)):
+def list_trip_documents(
+    trip_id: str,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    tenant_id = str(current_user.tenant_id)
     trip = session.get(Trip, trip_id)
-    if not trip:
+    if not trip or trip.tenant_id != tenant_id:
         raise HTTPException(404, "Trip not found")
 
     docs = session.exec(
         select(TripDocument)
-        .where(TripDocument.tenant_id == tenant(), TripDocument.trip_id == trip_id)
+        .where(TripDocument.tenant_id == tenant_id, TripDocument.trip_id == trip_id)
         .order_by(TripDocument.uploaded_at.desc())
     ).all()
 
@@ -103,9 +109,14 @@ def list_trip_documents(trip_id: str, session: Session = Depends(get_session)):
     ]
 
 @router.get("/documents/{doc_id}/download")
-def download_doc(doc_id: str, session: Session = Depends(get_session)):
+def download_doc(
+    doc_id: str,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    tenant_id = str(current_user.tenant_id)
     doc = session.get(TripDocument, doc_id)
-    if not doc or doc.tenant_id != tenant():
+    if not doc or doc.tenant_id != tenant_id:
         raise HTTPException(404, "Document not found")
 
     path = Path(doc.file_path)

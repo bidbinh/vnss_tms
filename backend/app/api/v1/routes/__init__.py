@@ -27,6 +27,7 @@ from app.api.v1.routes.maintenance_reports import router as maintenance_reports_
 from app.api.v1.routes.ai_assistant import router as ai_assistant_router
 from app.api.v1.routes.users import router as users_router
 from app.api.v1.routes.role_permissions import router as role_permissions_router
+from app.api.v1.routes.roles import router as roles_router
 from app.api.v1.routes.mobile_api import router as mobile_api_router
 from app.api.v1.routes.mobile_warehouse import router as mobile_warehouse_router
 from app.api.v1.routes.mobile_business import router as mobile_business_router
@@ -51,6 +52,20 @@ from app.api.v1.routes.invoice_automation import router as invoice_automation_ro
 from app.api.v1.routes.dispatch import router as dispatch_router
 from app.api.v1.routes.gps_settings import router as gps_settings_router
 from app.api.v1.routes.vehicle_costs import router as vehicle_costs_router
+from app.api.v1.routes.tractor_trailer_pairings import router as tractor_trailer_pairings_router
+from app.api.v1.routes.public_namecard import router as public_namecard_router
+from app.api.v1.routes.activity_logs import router as activity_logs_router
+from app.api.v1.routes.worker_auth import router as worker_auth_router
+from app.api.v1.routes.workspace import router as workspace_router
+from app.api.v1.routes.worker_tenant_api import router as worker_tenant_api_router
+from app.api.v1.routes.driver_availability import router as driver_availability_router
+from app.api.v1.routes.worker_connections import router as worker_connections_router
+from app.api.v1.routes.dispatcher_orders import router as dispatcher_orders_router
+from app.api.v1.routes.ai_chat import router as ai_chat_router
+
+# Actor-Based Architecture Routes
+from app.api.v1.routes.actors import router as actors_router
+from app.api.v1.routes.unified_orders import router as unified_orders_router
 
 api_router = APIRouter()
 api_router.include_router(auth_router)
@@ -81,6 +96,7 @@ api_router.include_router(maintenance_reports_router)
 api_router.include_router(ai_assistant_router)
 api_router.include_router(users_router)
 api_router.include_router(role_permissions_router)
+api_router.include_router(roles_router)
 api_router.include_router(mobile_api_router)
 api_router.include_router(mobile_warehouse_router)
 api_router.include_router(mobile_business_router)
@@ -105,3 +121,17 @@ api_router.include_router(invoice_automation_router)
 api_router.include_router(dispatch_router)
 api_router.include_router(gps_settings_router)
 api_router.include_router(vehicle_costs_router)
+api_router.include_router(tractor_trailer_pairings_router)
+api_router.include_router(public_namecard_router)
+api_router.include_router(activity_logs_router)
+api_router.include_router(worker_auth_router, tags=["Personal Workspace - Auth"])
+api_router.include_router(workspace_router, tags=["Personal Workspace"])
+api_router.include_router(worker_tenant_api_router, tags=["Worker Tenant API"])
+api_router.include_router(driver_availability_router, tags=["Driver Availability"])
+api_router.include_router(worker_connections_router, tags=["Worker Connections"])
+api_router.include_router(dispatcher_orders_router, tags=["Dispatcher Orders"])
+api_router.include_router(ai_chat_router, tags=["AI Support"])
+
+# Actor-Based Architecture
+api_router.include_router(actors_router, tags=["Actors"])
+api_router.include_router(unified_orders_router, tags=["Unified Orders"])

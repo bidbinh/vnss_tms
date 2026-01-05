@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { apiFetch } from "@/lib/api";
 import DataTable, { Column, TablePagination } from "@/components/DataTable";
-import { MapPin, Plus, Search, Factory, Building, Anchor, Warehouse, Trash2, RotateCcw } from "lucide-react";
+import { MapPin, Plus, Search, Factory, Building, Anchor, Warehouse, Trash2, RotateCcw, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 
 // ============ Types ============
 type Location = {
@@ -93,6 +93,10 @@ export default function LocationsPage() {
 
   const [form, setForm] = useState<LocationForm>(emptyForm);
 
+  // Sorting
+  const [sortField, setSortField] = useState<string>("code");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+
   // ============ Data Fetching ============
   async function load() {
     setLoading(true);
@@ -134,8 +138,23 @@ export default function LocationsPage() {
       );
     }
 
+    // Sort
+    result = [...result].sort((a, b) => {
+      let aVal: any = (a as any)[sortField] || "";
+      let bVal: any = (b as any)[sortField] || "";
+
+      if (typeof aVal === "string") {
+        aVal = aVal.toLowerCase();
+        bVal = (bVal || "").toLowerCase();
+      }
+
+      if (aVal < bVal) return sortOrder === "asc" ? -1 : 1;
+      if (aVal > bVal) return sortOrder === "asc" ? 1 : -1;
+      return 0;
+    });
+
     return result;
-  }, [rows, searchTerm, filterType]);
+  }, [rows, searchTerm, filterType, sortField, sortOrder]);
 
   const paginatedRows = useMemo(() => {
     const startIndex = (currentPage - 1) * pageSize;
@@ -237,6 +256,94 @@ export default function LocationsPage() {
       await load();
     } catch (e: any) {
       alert(e?.message || "Restore failed");
+    }
+  }
+
+  // ============ Sorting Functions ============
+  function handleSort(field: string) {
+    if (sortField === field) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortOrder("asc");
+    }
+  }
+
+  function getSortIcon(field: string) {
+    if (sortField !== field) return <ArrowUpDown className="w-3 h-3 opacity-40" />;
+    return sortOrder === "asc" ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />;
+  }
+
+  // ============ Table Column Definitions ============
+  const columnDefs = [
+    { key: "code", header: "Mã", width: 130, sortable: true },
+    { key: "name", header: "Tên", width: 200, sortable: true },
+    { key: "type", header: "Loại", width: 100, sortable: true },
+    { key: "ward", header: "Xã/Phường", width: 120, sortable: true },
+    { key: "district", header: "Quận/Huyện", width: 130, sortable: true },
+    { key: "province", header: "Tỉnh/TP", width: 130, sortable: true },
+    { key: "actions", header: "Thao tác", width: 100, sortable: false },
+  ];
+
+  function renderCell(row: Location, key: string) {
+    switch (key) {
+      case "code":
+        return (
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-gray-900">{row.code}</span>
+            {!row.is_active && (
+              <span className="px-1.5 py-0.5 text-xs bg-red-100 text-red-600 rounded">Đã xóa</span>
+            )}
+          </div>
+        );
+      case "name":
+        return <span className={`font-medium ${!row.is_active ? "text-gray-400" : ""}`}>{row.name}</span>;
+      case "type": {
+        const config = TYPE_CONFIG[row.type] || { label: row.type, color: "bg-gray-100 text-gray-800" };
+        return <span className={`px-2 py-1 rounded-lg text-xs font-medium ${config.color}`}>{config.label}</span>;
+      }
+      case "ward":
+        return row.ward || <span className="text-gray-400">-</span>;
+      case "district":
+        return row.district || <span className="text-gray-400">-</span>;
+      case "province":
+        return row.province || <span className="text-gray-400">-</span>;
+      case "actions":
+        return row.is_active ? (
+          <div className="flex items-center justify-center gap-2">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                openEdit(row);
+              }}
+              className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+            >
+              Sửa
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDelete(row.id);
+              }}
+              className="text-red-600 hover:text-red-800 text-sm font-medium"
+            >
+              Xóa
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleRestore(row.id);
+            }}
+            className="text-green-600 hover:text-green-800 text-sm font-medium flex items-center gap-1"
+          >
+            <RotateCcw className="w-3 h-3" />
+            Khôi phục
+          </button>
+        );
+      default:
+        return (row as any)[key] ?? "-";
     }
   }
 
@@ -424,13 +531,17 @@ export default function LocationsPage() {
             <table className="w-full text-sm">
               <thead className="bg-gray-50 text-gray-700">
                 <tr>
-                  {columns.map((col) => (
+                  {columnDefs.map((col) => (
                     <th
                       key={col.key}
-                      className={`px-4 py-3 font-bold text-${col.align || "left"}`}
+                      className={`px-4 py-3 font-bold text-left ${col.sortable ? "cursor-pointer select-none hover:bg-gray-100" : ""}`}
                       style={{ width: col.width }}
+                      onClick={() => col.sortable && handleSort(col.key)}
                     >
-                      {col.header}
+                      <div className="flex items-center gap-1">
+                        {col.header}
+                        {col.sortable && getSortIcon(col.key)}
+                      </div>
                     </th>
                   ))}
                 </tr>
@@ -447,7 +558,7 @@ export default function LocationsPage() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={columns.length} className="px-4 py-8 text-center text-gray-500">
+                  <td colSpan={columnDefs.length} className="px-4 py-8 text-center text-gray-500">
                     <div className="flex items-center justify-center gap-2">
                       <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
                       Đang tải...
@@ -456,20 +567,20 @@ export default function LocationsPage() {
                 </tr>
               ) : paginatedRows.length === 0 ? (
                 <tr>
-                  <td colSpan={columns.length} className="px-4 py-8 text-center text-gray-500">
+                  <td colSpan={columnDefs.length} className="px-4 py-8 text-center text-gray-500">
                     Chưa có location nào
                   </td>
                 </tr>
               ) : (
-                paginatedRows.map((row, rowIndex) => (
+                paginatedRows.map((row) => (
                   <tr key={row.id} className="border-t hover:bg-gray-50">
-                    {columns.map((col) => (
+                    {columnDefs.map((col) => (
                       <td
                         key={col.key}
-                        className={`px-4 py-3 text-${col.align || "left"}`}
+                        className="px-4 py-3 text-left"
                         style={{ width: col.width }}
                       >
-                        {col.render ? col.render(row, rowIndex) : (row as any)[col.key] ?? "-"}
+                        {renderCell(row, col.key)}
                       </td>
                     ))}
                   </tr>

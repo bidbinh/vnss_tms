@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta, timezone
 from typing import Optional
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, Request
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt, JWTError
 from passlib.context import CryptContext
@@ -16,6 +16,16 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login", auto_error=False)
+
+
+def get_token_from_request(request: Request, token_from_header: str | None = None) -> str | None:
+    """Get token from cookie or Authorization header (cookie takes priority for cross-subdomain)"""
+    # First try cookie
+    cookie_token = request.cookies.get("access_token")
+    if cookie_token:
+        return cookie_token
+    # Fallback to header (for API clients, mobile apps, etc.)
+    return token_from_header
 
 
 def hash_password(password: str) -> str:
@@ -44,11 +54,17 @@ def decode_token(token: str) -> dict:
 
 
 def get_current_user(
+    request: Request,
     token: str = Depends(oauth2_scheme),
     session: Session = Depends(get_session),
 ) -> User:
+    # Get token from cookie or header
+    actual_token = get_token_from_request(request, token)
+    if not actual_token:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(actual_token, SECRET_KEY, algorithms=[ALGORITHM])
         user_id = payload.get("sub")
         if not user_id:
             raise HTTPException(status_code=401, detail="Invalid token")
@@ -62,14 +78,18 @@ def get_current_user(
 
 
 def get_current_user_optional(
+    request: Request,
     token: str = Depends(oauth2_scheme),
     session: Session = Depends(get_session),
 ) -> User | None:
     """Get current user but don't require authentication"""
+    # Get token from cookie or header
+    actual_token = get_token_from_request(request, token)
+
     try:
-        if not token or token == "":
+        if not actual_token or actual_token == "":
             return None
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(actual_token, SECRET_KEY, algorithms=[ALGORITHM])
         user_id = payload.get("sub")
         if not user_id:
             return None

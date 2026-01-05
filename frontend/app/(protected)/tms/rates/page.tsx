@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo, useRef } from "react";
 import { apiFetch } from "@/lib/api";
 import DataTable, { Column, TablePagination } from "@/components/DataTable";
-import { DollarSign, Plus, Search, MapPin, TrendingUp, CheckCircle, Clock, Copy, ChevronDown, X } from "lucide-react";
+import { DollarSign, Plus, Search, MapPin, TrendingUp, CheckCircle, Clock, Copy, ChevronDown, X, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 
 // ============ Types ============
 type Location = {
@@ -247,6 +247,10 @@ export default function RatesPage() {
 
   const [form, setForm] = useState<RateForm>(emptyForm);
 
+  // Sorting
+  const [sortField, setSortField] = useState<string>("pickup_location_name");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+
   // ============ Data Fetching ============
   async function load() {
     setLoading(true);
@@ -293,8 +297,62 @@ export default function RatesPage() {
       );
     }
 
+    // Sort
+    result = [...result].sort((a, b) => {
+      let aVal: any = "";
+      let bVal: any = "";
+
+      switch (sortField) {
+        case "pickup":
+          aVal = a.pickup_location_name || "";
+          bVal = b.pickup_location_name || "";
+          break;
+        case "delivery":
+          aVal = a.delivery_location_name || "";
+          bVal = b.delivery_location_name || "";
+          break;
+        case "km":
+          aVal = a.distance_km ?? 0;
+          bVal = b.distance_km ?? 0;
+          break;
+        case "pricing_type":
+          aVal = a.pricing_type || "";
+          bVal = b.pricing_type || "";
+          break;
+        case "prices":
+          // Sort by price_cont_20 or price_per_trip
+          aVal = a.price_cont_20 || a.price_per_trip || 0;
+          bVal = b.price_cont_20 || b.price_per_trip || 0;
+          break;
+        case "customer":
+          aVal = a.customer_names || "Tất cả";
+          bVal = b.customer_names || "Tất cả";
+          break;
+        case "dates":
+          aVal = a.effective_date || "";
+          bVal = b.effective_date || "";
+          break;
+        case "status":
+          aVal = a.status || "";
+          bVal = b.status || "";
+          break;
+        default:
+          aVal = (a as any)[sortField] || "";
+          bVal = (b as any)[sortField] || "";
+      }
+
+      if (typeof aVal === "string") {
+        aVal = aVal.toLowerCase();
+        bVal = (bVal || "").toLowerCase();
+      }
+
+      if (aVal < bVal) return sortOrder === "asc" ? -1 : 1;
+      if (aVal > bVal) return sortOrder === "asc" ? 1 : -1;
+      return 0;
+    });
+
     return result;
-  }, [rows, searchTerm, filterType]);
+  }, [rows, searchTerm, filterType, sortField, sortOrder]);
 
   const paginatedRows = useMemo(() => {
     const startIndex = (currentPage - 1) * pageSize;
@@ -434,6 +492,149 @@ export default function RatesPage() {
         ? prev.customer_ids.filter((id) => id !== customerId)
         : [...prev.customer_ids, customerId],
     }));
+  }
+
+  // ============ Sorting Functions ============
+  function handleSort(field: string) {
+    if (sortField === field) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortOrder("asc");
+    }
+  }
+
+  function getSortIcon(field: string) {
+    if (sortField !== field) return <ArrowUpDown className="w-3 h-3 opacity-40" />;
+    return sortOrder === "asc" ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />;
+  }
+
+  // ============ Table Column Definitions ============
+  const columnDefs = [
+    { key: "pickup", header: "Điểm đi", width: 160, sortable: true },
+    { key: "delivery", header: "Điểm đến", width: 160, sortable: true },
+    { key: "km", header: "Km", width: 60, sortable: true, align: "right" as const },
+    { key: "pricing_type", header: "Loại", width: 90, sortable: true },
+    { key: "prices", header: "Giá", width: 180, sortable: true },
+    { key: "customer", header: "Khách hàng", width: 120, sortable: true },
+    { key: "dates", header: "Hiệu lực", width: 130, sortable: true },
+    { key: "status", header: "TT", width: 80, sortable: true },
+    { key: "actions", header: "Thao tác", width: 100, sortable: false, align: "center" as const },
+  ];
+
+  function renderCell(row: Rate, key: string) {
+    switch (key) {
+      case "pickup":
+        return (
+          <div>
+            <div className="font-medium text-sm">{row.pickup_location_name || "-"}</div>
+            {row.pickup_location_code && <div className="text-xs text-gray-500">{row.pickup_location_code}</div>}
+          </div>
+        );
+      case "delivery":
+        return (
+          <div>
+            <div className="font-medium text-sm">{row.delivery_location_name || "-"}</div>
+            {row.delivery_location_code && <div className="text-xs text-gray-500">{row.delivery_location_code}</div>}
+          </div>
+        );
+      case "km":
+        return <span className="text-sm">{row.distance_km ?? "-"}</span>;
+      case "pricing_type":
+        return (
+          <span
+            className={`px-2 py-1 rounded-lg text-xs font-medium ${
+              row.pricing_type === "CONTAINER" ? "bg-blue-100 text-blue-800" : "bg-purple-100 text-purple-800"
+            }`}
+          >
+            {row.pricing_type === "CONTAINER" ? "Cont" : "Trip"}
+          </span>
+        );
+      case "prices":
+        return (
+          <div className="text-sm">
+            {row.pricing_type === "CONTAINER" ? (
+              <div className="space-y-0.5">
+                <div>
+                  20&apos;:{" "}
+                  <span className="font-medium text-green-700">{formatCurrency(row.price_cont_20)}</span>
+                </div>
+                <div>
+                  40&apos;:{" "}
+                  <span className="font-medium text-green-700">{formatCurrency(row.price_cont_40)}</span>
+                </div>
+              </div>
+            ) : (
+              <div>
+                Trip: <span className="font-medium text-green-700">{formatCurrency(row.price_per_trip)}</span>
+              </div>
+            )}
+          </div>
+        );
+      case "customer":
+        return row.customer_names ? (
+          <span className="text-sm" title={row.customer_names}>
+            {row.customer_codes || row.customer_names}
+          </span>
+        ) : (
+          <span className="text-xs px-2 py-0.5 bg-gray-100 rounded">Tất cả</span>
+        );
+      case "dates": {
+        const startDate = row.effective_date ? new Date(row.effective_date).toLocaleDateString("vi-VN") : "-";
+        const endDate = row.end_date ? new Date(row.end_date).toLocaleDateString("vi-VN") : "Không giới hạn";
+        return (
+          <div className="text-xs">
+            <div>{startDate}</div>
+            <div className="text-gray-500">{endDate}</div>
+          </div>
+        );
+      }
+      case "status":
+        return (
+          <span
+            className={`px-2 py-1 rounded-lg text-xs font-semibold ${
+              row.status === "ACTIVE" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
+            }`}
+          >
+            {row.status === "ACTIVE" ? "On" : "Off"}
+          </span>
+        );
+      case "actions":
+        return (
+          <div className="flex items-center justify-center gap-2">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                openDuplicate(row);
+              }}
+              className="text-green-600 hover:text-green-800 text-sm font-medium"
+              title="Nhân bản"
+            >
+              <Copy className="w-4 h-4" />
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                openEdit(row);
+              }}
+              className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+            >
+              Sửa
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDelete(row.id);
+              }}
+              className="text-red-600 hover:text-red-800 text-sm font-medium"
+            >
+              Xóa
+            </button>
+          </div>
+        );
+      default:
+        return (row as any)[key] ?? "-";
+    }
   }
 
   // ============ Table Columns ============
@@ -669,13 +870,17 @@ export default function RatesPage() {
             <table className="w-full text-sm">
               <thead className="bg-gray-50 text-gray-700">
                 <tr>
-                  {columns.map((col) => (
+                  {columnDefs.map((col) => (
                     <th
                       key={col.key}
-                      className={`px-4 py-3 font-bold text-${col.align || "left"}`}
+                      className={`px-4 py-3 font-bold text-${col.align || "left"} ${col.sortable ? "cursor-pointer select-none hover:bg-gray-100" : ""}`}
                       style={{ width: col.width }}
+                      onClick={() => col.sortable && handleSort(col.key)}
                     >
-                      {col.header}
+                      <div className={`flex items-center gap-1 ${col.align === "right" ? "justify-end" : col.align === "center" ? "justify-center" : ""}`}>
+                        {col.header}
+                        {col.sortable && getSortIcon(col.key)}
+                      </div>
                     </th>
                   ))}
                 </tr>
@@ -692,7 +897,7 @@ export default function RatesPage() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={columns.length} className="px-4 py-8 text-center text-gray-500">
+                  <td colSpan={columnDefs.length} className="px-4 py-8 text-center text-gray-500">
                     <div className="flex items-center justify-center gap-2">
                       <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
                       Đang tải...
@@ -701,20 +906,20 @@ export default function RatesPage() {
                 </tr>
               ) : paginatedRows.length === 0 ? (
                 <tr>
-                  <td colSpan={columns.length} className="px-4 py-8 text-center text-gray-500">
+                  <td colSpan={columnDefs.length} className="px-4 py-8 text-center text-gray-500">
                     Chưa có bảng giá nào
                   </td>
                 </tr>
               ) : (
-                paginatedRows.map((row, rowIndex) => (
+                paginatedRows.map((row) => (
                   <tr key={row.id} className="border-t hover:bg-gray-50">
-                    {columns.map((col) => (
+                    {columnDefs.map((col) => (
                       <td
                         key={col.key}
                         className={`px-4 py-3 text-${col.align || "left"}`}
                         style={{ width: col.width }}
                       >
-                        {col.render ? col.render(row, rowIndex) : (row as any)[col.key] ?? "-"}
+                        {renderCell(row, col.key)}
                       </td>
                     ))}
                   </tr>

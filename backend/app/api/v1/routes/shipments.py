@@ -3,20 +3,21 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 
 from app.db.session import get_session
-from app.models import Order, Shipment, Container, Stop
+from app.models import Order, Shipment, Container, Stop, User
 from app.schemas.shipment import ShipmentCreate, ShipmentRead
 from app.schemas.shipment_full import ShipmentFull
+from app.core.security import get_current_user
 
 router = APIRouter(prefix="/shipments", tags=["shipments"])
 
 
-def get_tenant_id_stub() -> str:
-    return "TENANT_DEMO"
-
-
 @router.post("", response_model=ShipmentRead)
-def create_shipment(payload: ShipmentCreate, session: Session = Depends(get_session)):
-    tenant_id = get_tenant_id_stub()
+def create_shipment(
+    payload: ShipmentCreate,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    tenant_id = str(current_user.tenant_id)
 
     order = session.exec(
         select(Order).where(Order.tenant_id == tenant_id, Order.id == payload.order_id)
@@ -51,8 +52,12 @@ def create_shipment(payload: ShipmentCreate, session: Session = Depends(get_sess
 
 
 @router.get("/{shipment_id}", response_model=ShipmentFull)
-def get_shipment_full(shipment_id: str, session: Session = Depends(get_session)):
-    tenant_id = get_tenant_id_stub()
+def get_shipment_full(
+    shipment_id: str,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    tenant_id = str(current_user.tenant_id)
 
     shp = session.exec(
         select(Shipment).where(
@@ -86,9 +91,10 @@ def get_shipment_full(shipment_id: str, session: Session = Depends(get_session))
 @router.get("", response_model=List[ShipmentRead])
 def list_shipments(
     order_id: Optional[str] = None,
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
 ):
-    tenant_id = get_tenant_id_stub()
+    tenant_id = str(current_user.tenant_id)
 
     q = select(Shipment).where(Shipment.tenant_id == tenant_id)
 

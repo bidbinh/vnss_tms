@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { apiFetch } from "@/lib/api";
 import { TablePagination } from "@/components/DataTable";
 import Link from "next/link";
-import { Users, Truck, RefreshCw, Plus, Search, UserCheck, UserX, Edit2, Eye, X, Save, Award, CreditCard, Calendar, Phone, Mail, Building2, User } from "lucide-react";
+import { Users, Truck, RefreshCw, Plus, Search, UserCheck, UserX, Edit2, Eye, X, Save, Award, CreditCard, Calendar, Phone, Mail, Building2, User, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 
 // ============ Types ============
 type Vehicle = {
@@ -124,6 +124,10 @@ export default function DriversPage() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [syncing, setSyncing] = useState(false);
 
+  // Sorting
+  const [sortField, setSortField] = useState<string>("name");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+
   // ============ Data Fetching ============
   async function load() {
     setLoading(true);
@@ -172,16 +176,58 @@ export default function DriversPage() {
   // ============ Filtering & Pagination ============
   const filteredRows = useMemo(() => {
     const s = searchTerm.toLowerCase();
-    if (!s) return rows;
-    return rows.filter(
-      (r) =>
-        (r.name || "").toLowerCase().includes(s) ||
-        (r.short_name || "").toLowerCase().includes(s) ||
-        (r.phone || "").toLowerCase().includes(s) ||
-        (r.citizen_id || "").toLowerCase().includes(s) ||
-        (r.employee?.employee_code || "").toLowerCase().includes(s)
-    );
-  }, [rows, searchTerm]);
+    let result = rows;
+
+    if (s) {
+      result = result.filter(
+        (r) =>
+          (r.name || "").toLowerCase().includes(s) ||
+          (r.short_name || "").toLowerCase().includes(s) ||
+          (r.phone || "").toLowerCase().includes(s) ||
+          (r.citizen_id || "").toLowerCase().includes(s) ||
+          (r.employee?.employee_code || "").toLowerCase().includes(s)
+      );
+    }
+
+    // Sort
+    result = [...result].sort((a, b) => {
+      let aVal: any = "";
+      let bVal: any = "";
+
+      switch (sortField) {
+        case "employee_code":
+          aVal = a.employee?.employee_code || "";
+          bVal = b.employee?.employee_code || "";
+          break;
+        case "license_expiry":
+          aVal = a.license_expiry ? new Date(a.license_expiry).getTime() : 0;
+          bVal = b.license_expiry ? new Date(b.license_expiry).getTime() : 0;
+          break;
+        case "tractor":
+          aVal = a.tractor?.plate_no || "";
+          bVal = b.tractor?.plate_no || "";
+          break;
+        case "trailer":
+          aVal = a.trailer?.plate_no || "";
+          bVal = b.trailer?.plate_no || "";
+          break;
+        default:
+          aVal = (a as any)[sortField] || "";
+          bVal = (b as any)[sortField] || "";
+      }
+
+      if (typeof aVal === "string") {
+        aVal = aVal.toLowerCase();
+        bVal = (bVal || "").toLowerCase();
+      }
+
+      if (aVal < bVal) return sortOrder === "asc" ? -1 : 1;
+      if (aVal > bVal) return sortOrder === "asc" ? 1 : -1;
+      return 0;
+    });
+
+    return result;
+  }, [rows, searchTerm, sortField, sortOrder]);
 
   const paginatedRows = useMemo(() => {
     const startIndex = (currentPage - 1) * pageSize;
@@ -263,17 +309,32 @@ export default function DriversPage() {
   const assignedTrailerIds = rows.filter((d) => d.id !== selectedDriver?.id && d.trailer_id).map((d) => d.trailer_id);
   const availableTrailers = vehicles.filter((v) => v.type === "TRAILER" && v.status === "ACTIVE" && !assignedTrailerIds.includes(v.id));
 
+  // ============ Sorting Functions ============
+  function handleSort(field: string) {
+    if (sortField === field) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortOrder("asc");
+    }
+  }
+
+  function getSortIcon(field: string) {
+    if (sortField !== field) return <ArrowUpDown className="w-3 h-3 opacity-40" />;
+    return sortOrder === "asc" ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />;
+  }
+
   // ============ Table Columns ============
   const columns = [
-    { key: "employee_code", header: "Mã NV", width: 90 },
-    { key: "name", header: "Họ và Tên", width: 160 },
-    { key: "short_name", header: "Tên tắt", width: 80 },
-    { key: "phone", header: "SĐT", width: 110 },
-    { key: "license", header: "Bằng lái", width: 130 },
-    { key: "tractor", header: "Đầu kéo", width: 100 },
-    { key: "trailer", header: "Rơ mooc", width: 100 },
-    { key: "status", header: "Trạng thái", width: 90 },
-    { key: "actions", header: "", width: 80 },
+    { key: "employee_code", header: "Mã NV", width: 90, sortable: true },
+    { key: "name", header: "Họ và Tên", width: 160, sortable: true },
+    { key: "short_name", header: "Tên tắt", width: 80, sortable: true },
+    { key: "phone", header: "SĐT", width: 110, sortable: true },
+    { key: "license", header: "Bằng lái", width: 130, sortable: false },
+    { key: "tractor", header: "Đầu kéo", width: 100, sortable: true },
+    { key: "trailer", header: "Rơ mooc", width: 100, sortable: true },
+    { key: "status", header: "Trạng thái", width: 90, sortable: true },
+    { key: "actions", header: "", width: 80, sortable: false },
   ];
 
   function renderCell(row: Driver, colKey: string) {
@@ -428,10 +489,14 @@ export default function DriversPage() {
                   {columns.map((col) => (
                     <th
                       key={col.key}
-                      className="px-4 py-3 font-bold text-left"
+                      className={`px-4 py-3 font-bold text-left ${col.sortable ? "cursor-pointer select-none hover:bg-gray-100" : ""}`}
                       style={{ width: col.width }}
+                      onClick={() => col.sortable && handleSort(col.key)}
                     >
-                      {col.header}
+                      <div className="flex items-center gap-1">
+                        {col.header}
+                        {col.sortable && getSortIcon(col.key)}
+                      </div>
                     </th>
                   ))}
                 </tr>

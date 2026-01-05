@@ -3,6 +3,13 @@ from typing import Optional
 from datetime import date
 from .base import BaseUUIDModel, TimestampMixin, TenantScoped
 
+
+class DriverSource:
+    """Driver source types"""
+    INTERNAL = "INTERNAL"  # Company employee
+    EXTERNAL = "EXTERNAL"  # External worker from 9log platform
+
+
 class Driver(BaseUUIDModel, TimestampMixin, TenantScoped, SQLModel, table=True):
     __tablename__ = "drivers"
 
@@ -38,5 +45,10 @@ class Driver(BaseUUIDModel, TimestampMixin, TenantScoped, SQLModel, table=True):
     status: str = Field(default="ACTIVE")  # ACTIVE, INACTIVE
     work_status: Optional[str] = Field(default=None)  # Trạng thái làm việc (Đang làm việc, Công tác viên, etc.)
 
-    # Link to HRM Employee
+    # Link to HRM Employee (internal)
     employee_id: Optional[str] = Field(default=None, foreign_key="hrm_employees.id", index=True)
+
+    # External Worker Integration
+    source: str = Field(default=DriverSource.INTERNAL, index=True)  # INTERNAL or EXTERNAL
+    external_worker_id: Optional[str] = Field(default=None, index=True)  # Link to workers table (9log platform)
+    external_worker_username: Optional[str] = Field(default=None)  # Username for display

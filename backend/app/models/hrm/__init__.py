@@ -23,6 +23,7 @@ from .evaluation import (
     EmployeeEvaluation, EvaluationScore
 )
 from .recruitment import JobPosting, Candidate, CandidateStatus, Interview
+from .namecard import EmployeeNameCard, NameCardTemplate
 
 __all__ = [
     # Organization
@@ -53,4 +54,6 @@ __all__ = [
     "EmployeeEvaluation", "EvaluationScore",
     # Recruitment
     "JobPosting", "Candidate", "CandidateStatus", "Interview",
+    # Name Card
+    "EmployeeNameCard", "NameCardTemplate",
 ]

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Save, User, Loader2 } from "lucide-react";
+import { ArrowLeft, Save, User, Loader2, Link as LinkIcon, Copy, ExternalLink, Eye, RefreshCw, Share2 } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import BankSelect from "@/components/BankSelect";
 
@@ -30,6 +30,15 @@ interface Employee {
   employee_code: string;
   full_name: string;
   position_name?: string;
+}
+
+interface NameCard {
+  id: string;
+  token: string;
+  public_url: string;
+  is_active: boolean;
+  view_count: number;
+  last_viewed_at: string | null;
 }
 
 interface EmployeeDetail {
@@ -59,6 +68,12 @@ interface EmployeeDetail {
   social_insurance_number: string | null;
   health_insurance_number: string | null;
   notes: string | null;
+  avatar_url: string | null;
+  zalo_phone: string | null;
+  facebook_url: string | null;
+  linkedin_url: string | null;
+  website_url: string | null;
+  namecard: NameCard | null;
 }
 
 export default function EditEmployeePage() {
@@ -72,6 +87,7 @@ export default function EditEmployeePage() {
   const [positions, setPositions] = useState<Position[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [namecard, setNamecard] = useState<NameCard | null>(null);
 
   const [formData, setFormData] = useState({
     employee_code: "",
@@ -99,6 +115,11 @@ export default function EditEmployeePage() {
     social_insurance_number: "",
     health_insurance_number: "",
     notes: "",
+    avatar_url: "",
+    zalo_phone: "",
+    facebook_url: "",
+    linkedin_url: "",
+    website_url: "",
   });
 
   useEffect(() => {
@@ -121,6 +142,9 @@ export default function EditEmployeePage() {
       setBranches(branchData);
       // Filter out current employee from manager list
       setEmployees(employeesData.items.filter(e => e.id !== employeeId));
+
+      // Set namecard
+      setNamecard(employee.namecard);
 
       // Map employee data to form
       setFormData({
@@ -149,6 +173,11 @@ export default function EditEmployeePage() {
         social_insurance_number: employee.social_insurance_number || "",
         health_insurance_number: employee.health_insurance_number || "",
         notes: employee.notes || "",
+        avatar_url: employee.avatar_url || "",
+        zalo_phone: employee.zalo_phone || "",
+        facebook_url: employee.facebook_url || "",
+        linkedin_url: employee.linkedin_url || "",
+        website_url: employee.website_url || "",
       });
     } catch (error) {
       console.error("Failed to fetch employee:", error);
@@ -230,17 +259,15 @@ export default function EditEmployeePage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Mã nhân viên *
+                Mã nhân viên
               </label>
               <input
                 type="text"
-                name="employee_code"
                 value={formData.employee_code}
-                onChange={handleChange}
-                placeholder="VD: NV001"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                required
+                disabled
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-700 font-semibold"
               />
+              <p className="text-xs text-gray-500 mt-1">Mã không thể thay đổi</p>
             </div>
 
             <div>
@@ -636,6 +663,159 @@ export default function EditEmployeePage() {
             placeholder="Ghi chú thêm..."
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
           />
+        </div>
+
+        {/* Social Links & Avatar */}
+        <div className="bg-white rounded-lg shadow border border-gray-200 p-6">
+          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <Share2 className="w-5 h-5 text-indigo-600" />
+            Thông tin Name Card
+          </h2>
+          <p className="text-sm text-gray-500 mb-4">
+            Thông tin này sẽ hiển thị trên Name Card online của nhân viên
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Ảnh đại diện (URL)
+              </label>
+              <input
+                type="url"
+                name="avatar_url"
+                value={formData.avatar_url}
+                onChange={handleChange}
+                placeholder="https://example.com/avatar.jpg"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              />
+              <p className="text-xs text-gray-500 mt-1">Link ảnh đại diện (upload lên cloud rồi dán link vào)</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Số Zalo
+              </label>
+              <input
+                type="tel"
+                name="zalo_phone"
+                value={formData.zalo_phone}
+                onChange={handleChange}
+                placeholder="0901234567"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              />
+              <p className="text-xs text-gray-500 mt-1">Số điện thoại Zalo (thường giống số phone)</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Facebook
+              </label>
+              <input
+                type="url"
+                name="facebook_url"
+                value={formData.facebook_url}
+                onChange={handleChange}
+                placeholder="https://facebook.com/username"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                LinkedIn
+              </label>
+              <input
+                type="url"
+                name="linkedin_url"
+                value={formData.linkedin_url}
+                onChange={handleChange}
+                placeholder="https://linkedin.com/in/username"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Website cá nhân
+              </label>
+              <input
+                type="url"
+                name="website_url"
+                value={formData.website_url}
+                onChange={handleChange}
+                placeholder="https://portfolio.com"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Name Card */}
+        <div className="bg-white rounded-lg shadow border border-gray-200 p-6">
+          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <LinkIcon className="w-5 h-5 text-purple-600" />
+            Name Card Online
+          </h2>
+
+          {namecard ? (
+            <div className="space-y-4">
+              {/* Status */}
+              <div className="flex items-center gap-3">
+                <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                  namecard.is_active
+                    ? "bg-green-100 text-green-800"
+                    : "bg-gray-100 text-gray-600"
+                }`}>
+                  {namecard.is_active ? "Đang hoạt động" : "Đã vô hiệu hóa"}
+                </span>
+                {namecard.view_count > 0 && (
+                  <span className="text-sm text-gray-500 flex items-center gap-1">
+                    <Eye className="w-4 h-4" />
+                    {namecard.view_count} lượt xem
+                  </span>
+                )}
+              </div>
+
+              {/* Link */}
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={`${typeof window !== 'undefined' ? window.location.origin : ''}${namecard.public_url}`}
+                  readOnly
+                  className="flex-1 px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-sm text-gray-700"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const url = `${window.location.origin}${namecard.public_url}`;
+                    navigator.clipboard.writeText(url);
+                    alert("Đã sao chép link!");
+                  }}
+                  className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                  title="Sao chép link"
+                >
+                  <Copy className="w-5 h-5" />
+                </button>
+                <a
+                  href={namecard.public_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-2 text-gray-600 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                  title="Xem Name Card"
+                >
+                  <ExternalLink className="w-5 h-5" />
+                </a>
+              </div>
+
+              <p className="text-xs text-gray-500">
+                Link này có thể chia sẻ công khai. Người xem không cần đăng nhập.
+              </p>
+            </div>
+          ) : (
+            <div className="text-gray-500 text-sm">
+              Name Card sẽ được tạo tự động khi lưu nhân viên.
+            </div>
+          )}
         </div>
 
         {/* Actions */}

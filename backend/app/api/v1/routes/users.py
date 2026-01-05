@@ -11,7 +11,7 @@ from pydantic import BaseModel, EmailStr
 from app.db.session import get_session
 from app.models import User
 from app.models.user import UserRole, UserStatus, ROLE_PERMISSIONS
-from app.core.security import get_current_user, hash_password
+from app.core.security import get_current_user, hash_password, verify_password
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -41,6 +41,11 @@ class UserUpdate(BaseModel):
 
 
 class PasswordChange(BaseModel):
+    new_password: str
+
+
+class SelfPasswordChange(BaseModel):
+    current_password: str
     new_password: str
 
 
@@ -456,6 +461,71 @@ def update_user(
     }
 
 
+@router.patch("/{user_id}")
+def patch_user(
+    user_id: str,
+    data: UserUpdate,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Partial update a user (same as PUT but explicit PATCH method)"""
+    # Users can update their own profile (limited fields)
+    is_self_update = user_id == current_user.id
+
+    if not is_self_update:
+        check_admin_or_hr(current_user)
+
+    user = session.exec(
+        select(User).where(
+            User.id == user_id,
+            User.tenant_id == current_user.tenant_id
+        )
+    ).first()
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # HR cannot modify ADMIN users
+    if current_user.role == UserRole.HR.value and user.role == UserRole.ADMIN.value:
+        raise HTTPException(
+            status_code=403,
+            detail="HR cannot modify ADMIN users"
+        )
+
+    # Self-update can only change limited fields (full_name, email, phone)
+    if is_self_update and current_user.role != UserRole.ADMIN.value:
+        if data.role or data.status:
+            raise HTTPException(
+                status_code=403,
+                detail="You cannot change your own role or status"
+            )
+
+    # Update fields
+    update_data = data.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        if value is not None:
+            setattr(user, key, value)
+
+    user.updated_at = datetime.utcnow()
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+
+    return {
+        "message": "User updated successfully",
+        "user": {
+            "id": user.id,
+            "username": user.username,
+            "full_name": user.full_name,
+            "email": user.email,
+            "phone": user.phone,
+            "role": user.role,
+            "role_label": ROLE_LABELS.get(user.role, (user.role, ""))[0],
+            "status": user.status,
+        }
+    }
+
+
 @router.put("/{user_id}/password")
 def change_user_password(
     user_id: str,
@@ -463,11 +533,8 @@ def change_user_password(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
-    """Change user password (admin only, or user changing own password)"""
-    is_self_update = user_id == current_user.id
-
-    if not is_self_update:
-        check_admin_only(current_user)
+    """Change user password (admin only - reset password without current password)"""
+    check_admin_only(current_user)
 
     user = session.exec(
         select(User).where(
@@ -487,11 +554,61 @@ def change_user_password(
         )
 
     user.password_hash = hash_password(data.new_password)
+    user.password_changed_at = datetime.utcnow().isoformat()
     user.updated_at = datetime.utcnow()
     session.add(user)
     session.commit()
 
     return {"message": "Password changed successfully"}
+
+
+@router.post("/{user_id}/change-password")
+def self_change_password(
+    user_id: str,
+    data: SelfPasswordChange,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Change own password (requires current password verification)"""
+    # Only allow users to change their own password via this endpoint
+    if user_id != current_user.id:
+        raise HTTPException(
+            status_code=403,
+            detail="You can only change your own password"
+        )
+
+    user = session.exec(
+        select(User).where(
+            User.id == user_id,
+            User.tenant_id == current_user.tenant_id
+        )
+    ).first()
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Verify current password
+    if not verify_password(data.current_password, user.password_hash):
+        raise HTTPException(
+            status_code=400,
+            detail="Mat khau hien tai khong dung"
+        )
+
+    # Validate new password length
+    if len(data.new_password) < 6:
+        raise HTTPException(
+            status_code=400,
+            detail="Mat khau moi phai co it nhat 6 ky tu"
+        )
+
+    # Update password
+    user.password_hash = hash_password(data.new_password)
+    user.password_changed_at = datetime.utcnow().isoformat()
+    user.updated_at = datetime.utcnow()
+    session.add(user)
+    session.commit()
+
+    return {"message": "Doi mat khau thanh cong"}
 
 
 @router.delete("/{user_id}")

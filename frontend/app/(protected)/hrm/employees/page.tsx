@@ -14,7 +14,6 @@ import {
   Briefcase,
   Phone,
   Mail,
-  Database,
 } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import DataTable, { Column, TablePagination, PageSizeSelector } from "@/components/DataTable";
@@ -73,7 +72,6 @@ function PageContent() {
   const [search, setSearch] = useState(searchParams.get("search") || "");
   const [statusFilter, setStatusFilter] = useState(searchParams.get("status") || "");
   const [typeFilter, setTypeFilter] = useState(searchParams.get("type") || "");
-  const [seeding, setSeeding] = useState(false);
 
   useEffect(() => {
     fetchEmployees();
@@ -127,45 +125,6 @@ function PageContent() {
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return "-";
     return new Date(dateStr).toLocaleDateString("vi-VN");
-  };
-
-  const handleSeedData = async () => {
-    if (!confirm("Tạo dữ liệu mẫu HRM đầy đủ:\n- 2 chi nhánh, 8 phòng ban, 7 chức vụ, 48 nhân viên\n- Chấm công, lương, đào tạo tháng 11 & 12/2024\n\nTiếp tục?")) return;
-
-    setSeeding(true);
-    try {
-      // Step 1: Seed basic data (branches, departments, positions, employees)
-      const result = await apiFetch<{ success: boolean; message: string; summary: any }>("/hrm/seed", {
-        method: "POST",
-      });
-
-      // Step 2: Seed monthly data (attendance, payroll, training) for Nov & Dec
-      const monthlyResult = await apiFetch<{ success: boolean; message: string; summary: any }>(
-        "/hrm/seed/monthly-data?year=2024&months=11,12",
-        { method: "POST" }
-      );
-
-      alert(
-        `Thành công!\n\n` +
-        `Dữ liệu cơ bản:\n` +
-        `- ${result.summary.branches} chi nhánh\n` +
-        `- ${result.summary.departments} phòng ban\n` +
-        `- ${result.summary.positions} chức vụ\n` +
-        `- ${result.summary.employees} nhân viên\n\n` +
-        `Dữ liệu tháng 11 & 12:\n` +
-        `- ${monthlyResult.summary.attendance_records} bản ghi chấm công\n` +
-        `- ${monthlyResult.summary.payroll_periods} kỳ lương\n` +
-        `- ${monthlyResult.summary.payroll_records} bảng lương\n` +
-        `- ${monthlyResult.summary.training_sessions} khóa đào tạo\n` +
-        `- ${monthlyResult.summary.training_participants} lượt tham gia`
-      );
-      fetchEmployees();
-    } catch (error: any) {
-      console.error("Failed to seed data:", error);
-      alert(error.message || "Không thể tạo dữ liệu mẫu");
-    } finally {
-      setSeeding(false);
-    }
   };
 
   const handlePageSizeChange = (newSize: number) => {
@@ -331,15 +290,6 @@ function PageContent() {
           <p className="text-gray-600 mt-1">Quản lý thông tin nhân viên</p>
         </div>
         <div className="flex items-center gap-2">
-          <button
-            onClick={handleSeedData}
-            disabled={seeding}
-            className="flex items-center justify-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 disabled:opacity-50"
-            title="Tạo dữ liệu mẫu"
-          >
-            <Database className="w-4 h-4" />
-            {seeding ? "Đang tạo..." : "Tạo dữ liệu mẫu"}
-          </button>
           <Link
             href="/hrm/employees/new"
             className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"

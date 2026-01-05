@@ -35,8 +35,9 @@ export default function NewAccountPage() {
   const [saving, setSaving] = useState(false);
   const [customerGroups, setCustomerGroups] = useState<CustomerGroup[]>([]);
   const [formData, setFormData] = useState({
+    code: "",
     name: "",
-    type: "CUSTOMER",
+    account_type: "CUSTOMER",
     industry: "",
     customer_group_id: "",
     phone: "",
@@ -45,7 +46,7 @@ export default function NewAccountPage() {
     tax_code: "",
     address: "",
     city: "",
-    description: "",
+    notes: "",
   });
 
   useEffect(() => {
@@ -136,6 +137,19 @@ export default function NewAccountPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
+                Mã khách hàng <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={formData.code}
+                onChange={(e) => handleChange("code", e.target.value.toUpperCase())}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="VD: KH001"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Loại
               </label>
               <SearchableSelect
@@ -143,8 +157,8 @@ export default function NewAccountPage() {
                   value: opt.value,
                   label: opt.label,
                 }))}
-                value={formData.type}
-                onChange={(value) => handleChange("type", value)}
+                value={formData.account_type}
+                onChange={(value) => handleChange("account_type", value)}
                 placeholder="Chọn loại..."
                 clearable={false}
               />
@@ -255,15 +269,15 @@ export default function NewAccountPage() {
           </div>
         </div>
 
-        {/* Mô tả */}
+        {/* Ghi chú */}
         <div className="bg-white rounded-lg shadow border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Mô tả</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Ghi chú</h2>
           <textarea
-            value={formData.description}
-            onChange={(e) => handleChange("description", e.target.value)}
+            value={formData.notes}
+            onChange={(e) => handleChange("notes", e.target.value)}
             rows={4}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            placeholder="Thêm mô tả về khách hàng này..."
+            placeholder="Thêm ghi chú về khách hàng này..."
           />
         </div>
 

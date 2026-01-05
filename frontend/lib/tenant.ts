@@ -83,9 +83,10 @@ export async function fetchTenantPublicInfo(
   tenantCode: string
 ): Promise<TenantPublicInfo | null> {
   try {
-    const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api/v1";
+    // Use relative path to leverage Next.js rewrites
     const response = await fetch(
-      `${apiUrl}/tenant/public/${tenantCode}`
+      `/api/v1/tenant/public/${tenantCode}`,
+      { credentials: "include" }
     );
 
     if (!response.ok) {
@@ -122,6 +123,7 @@ export function buildTenantUrl(tenantCode: string, path: string = "/"): string {
 
 /**
  * Redirect to correct tenant subdomain after login
+ * Cookie is shared across all subdomains via domain=.9log.tech
  */
 export function redirectToTenantSubdomain(tenantCode: string): void {
   if (typeof window === "undefined") return;
@@ -139,7 +141,7 @@ export function redirectToTenantSubdomain(tenantCode: string): void {
     return;
   }
 
-  // Redirect to tenant subdomain
-  const newUrl = buildTenantUrl(tenantCode, "/");
+  // Redirect to tenant subdomain dashboard (cookie will be sent automatically)
+  const newUrl = buildTenantUrl(tenantCode, "/dashboard");
   window.location.href = newUrl;
 }

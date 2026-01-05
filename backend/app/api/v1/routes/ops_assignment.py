@@ -4,10 +4,11 @@ from typing import List
 from datetime import datetime
 
 from app.db.session import get_session
-from app.api.deps import get_current_user
+from app.core.security import get_current_user
 from app.models.order import Order
 from app.models.shipment import Shipment
 from app.models.trip import Trip
+from app.models import User
 from app.schemas.order import OrderCreate, OrderRead
 from app.schemas.shipment import ShipmentCreate, ShipmentRead
 from app.schemas.trip import TripCreate, TripRead
@@ -20,9 +21,9 @@ router = APIRouter(prefix="/ops", tags=["ops"])
 def create_order(
     payload: OrderCreate,
     session: Session = Depends(get_session),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
-    tenant_id = current_user.get("tenant_id", "TENANT_DEMO")
+    tenant_id = str(current_user.tenant_id)
     order_code = payload.order_code or next_order_code(session, tenant_id, "TMS", datetime.utcnow())
     o = Order(
         **payload.dict(exclude={"order_code"}),
@@ -41,9 +42,9 @@ def accept_order(
     order_id: str,
     payload: ShipmentCreate | None = None,
     session: Session = Depends(get_session),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
-    tenant_id = current_user.get("tenant_id", "TENANT_DEMO")
+    tenant_id = str(current_user.tenant_id)
     order = session.get(Order, order_id)
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
@@ -66,9 +67,9 @@ def create_trip(
     payload: TripCreate,
     assigned_by: str | None = None,
     session: Session = Depends(get_session),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
-    tenant_id = current_user.get("tenant_id", "TENANT_DEMO")
+    tenant_id = str(current_user.tenant_id)
     # minimal checks
     shp = session.get(Shipment, payload.shipment_id)
     if not shp:
@@ -93,8 +94,12 @@ def create_trip(
 
 
 @router.get("/orders", response_model=List[OrderRead])
-def list_orders(session: Session = Depends(get_session)):
-    q = select(Order).order_by(Order.created_at.desc())
+def list_orders(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    tenant_id = str(current_user.tenant_id)
+    q = select(Order).where(Order.tenant_id == tenant_id).order_by(Order.created_at.desc())
     return session.exec(q).all()
 
 
@@ -102,14 +107,16 @@ def list_orders(session: Session = Depends(get_session)):
 def create_shipment(
     payload: ShipmentCreate,
     session: Session = Depends(get_session),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
-    tenant_id = current_user.get("tenant_id", "TENANT_DEMO")
-    # verify order exists
-    order = session.get(Order, payload.order_id)
+    tenant_id = str(current_user.tenant_id)
+    # verify order exists and belongs to tenant
+    order = session.exec(
+        select(Order).where(Order.id == payload.order_id, Order.tenant_id == tenant_id)
+    ).first()
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
-    
+
     shp = Shipment(**payload.dict(), tenant_id=tenant_id)
     session.add(shp)
     session.commit()
@@ -118,8 +125,12 @@ def create_shipment(
 
 
 @router.get("/shipments", response_model=List[ShipmentRead])
-def list_shipments(session: Session = Depends(get_session)):
-    q = select(Shipment).order_by(Shipment.created_at.desc())
+def list_shipments(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    tenant_id = str(current_user.tenant_id)
+    q = select(Shipment).where(Shipment.tenant_id == tenant_id).order_by(Shipment.created_at.desc())
     try:
         return session.exec(q).all()
     except Exception as e:
@@ -129,6 +140,10 @@ def list_shipments(session: Session = Depends(get_session)):
 
 
 @router.get("/trips", response_model=List[TripRead])
-def list_trips(session: Session = Depends(get_session)):
-    q = select(Trip).order_by(Trip.created_at.desc())
+def list_trips(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    tenant_id = str(current_user.tenant_id)
+    q = select(Trip).where(Trip.tenant_id == tenant_id).order_by(Trip.created_at.desc())
     return session.exec(q).all()

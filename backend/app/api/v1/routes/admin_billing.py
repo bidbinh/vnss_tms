@@ -31,6 +31,7 @@ from app.models.billing import (
     BillingCycle,
 )
 from app.models.tenant import Tenant
+from app.models.activity_log import ActivityLog
 from app.services.billing import (
     seed_billing_data,
     get_usage_breakdown,
@@ -282,17 +283,49 @@ def list_tenant_billing(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
 ):
-    """List all tenants with their billing info"""
+    """List all tenants with their billing info (including Activity Logs usage)"""
     # Get all active tenants
     query = select(Tenant).where(Tenant.is_active == True)
     tenants = session.exec(query.offset(skip).limit(limit)).all()
 
+    # Get current month date range
+    now = datetime.utcnow()
+    start_of_month = datetime(now.year, now.month, 1)
+    if now.month == 12:
+        end_of_month = datetime(now.year + 1, 1, 1)
+    else:
+        end_of_month = datetime(now.year, now.month + 1, 1)
+
+    # Get activity usage per tenant for current month
+    activity_usage_query = select(
+        ActivityLog.tenant_id,
+        func.count(ActivityLog.id).label("total_actions"),
+        func.coalesce(func.sum(ActivityLog.cost_tokens), 0).label("total_tokens")
+    ).where(
+        and_(
+            ActivityLog.created_at >= start_of_month,
+            ActivityLog.created_at < end_of_month,
+            ActivityLog.success == True
+        )
+    ).group_by(ActivityLog.tenant_id)
+
+    activity_usage = {
+        str(row[0]): {"actions": row[1], "tokens": int(row[2] or 0)}
+        for row in session.exec(activity_usage_query).all()
+    }
+
+    # Token pricing config
+    TOKEN_PRICE_VND = 10
+    MIN_CHARGE_VND = 50000
+
     result = []
     for tenant in tenants:
+        tenant_id_str = str(tenant.id)
+
         # Get subscription
         subscription = session.exec(
             select(TenantSubscription)
-            .where(TenantSubscription.tenant_id == str(tenant.id))
+            .where(TenantSubscription.tenant_id == tenant_id_str)
             .order_by(TenantSubscription.created_at.desc())
         ).first()
 
@@ -306,20 +339,21 @@ def list_tenant_billing(
             if plan_filter and plan and plan.code != plan_filter:
                 continue
 
-        credits_used = subscription.credits_used if subscription else Decimal("0")
+        # Get activity usage for this tenant
+        tenant_activity = activity_usage.get(tenant_id_str, {"actions": 0, "tokens": 0})
+        activity_tokens = tenant_activity["tokens"]
+
+        # Use activity tokens as credits_used
+        credits_used = Decimal(str(activity_tokens))
         credits_limit = subscription.credits_limit if subscription else 0
         usage_percent = (credits_used / credits_limit * 100) if credits_limit > 0 else Decimal("0")
 
-        # Calculate amount due (simplified)
-        amount_due = Decimal("0")
-        if subscription and plan:
-            amount_due = plan.price_per_month
-            if subscription.overage_credits > 0:
-                discount = plan.overage_discount / Decimal("100")
-                amount_due += subscription.overage_credits * (1 - discount)
+        # Calculate amount due from activity tokens
+        token_cost = activity_tokens * TOKEN_PRICE_VND
+        amount_due = Decimal(str(max(token_cost, MIN_CHARGE_VND) if activity_tokens > 0 else 0))
 
         result.append(TenantBillingInfo(
-            tenant_id=str(tenant.id),
+            tenant_id=tenant_id_str,
             tenant_name=tenant.name,
             tenant_code=tenant.code,
             plan_code=plan.code if plan else None,
@@ -328,7 +362,7 @@ def list_tenant_billing(
             billing_cycle=subscription.billing_cycle if subscription else None,
             credits_used=credits_used,
             credits_limit=credits_limit,
-            usage_percent=usage_percent.quantize(Decimal("0.1")),
+            usage_percent=usage_percent.quantize(Decimal("0.1")) if credits_limit > 0 else Decimal("0"),
             overage_credits=subscription.overage_credits if subscription else Decimal("0"),
             is_in_grace=subscription.is_in_grace if subscription else False,
             next_billing_date=subscription.next_billing_date if subscription else None,

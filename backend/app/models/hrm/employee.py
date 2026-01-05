@@ -135,6 +135,12 @@ class Employee(BaseUUIDModel, TimestampMixin, TenantScoped, SQLModel, table=True
     avatar_url: Optional[str] = Field(default=None, max_length=500)
     notes: Optional[str] = Field(default=None, max_length=2000)
 
+    # === SOCIAL LINKS (for NameCard) ===
+    zalo_phone: Optional[str] = Field(default=None, max_length=20)  # Số Zalo (thường = phone)
+    facebook_url: Optional[str] = Field(default=None, max_length=500)
+    linkedin_url: Optional[str] = Field(default=None, max_length=500)
+    website_url: Optional[str] = Field(default=None, max_length=500)  # Personal website/portfolio
+
     class Config:
         use_enum_values = True
 

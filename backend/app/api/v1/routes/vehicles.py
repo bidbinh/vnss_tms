@@ -114,3 +114,28 @@ def update_vehicle(
     session.commit()
     session.refresh(vehicle)
     return vehicle
+
+
+@router.delete("/{vehicle_id}")
+def delete_vehicle(
+    vehicle_id: str,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Delete vehicle (ADMIN only) - soft delete by setting status to DISPOSED"""
+    if current_user.role != "ADMIN":
+        raise HTTPException(403, "Only ADMIN can delete vehicles")
+
+    tenant_id = str(current_user.tenant_id)
+    vehicle = session.get(Vehicle, vehicle_id)
+    if not vehicle:
+        raise HTTPException(404, "Vehicle not found")
+    if str(vehicle.tenant_id) != tenant_id:
+        raise HTTPException(403, "Access denied")
+
+    # Soft delete - set status to DISPOSED
+    vehicle.status = "DISPOSED"
+    vehicle.inactive_reason = "Đã xóa"
+    session.add(vehicle)
+    session.commit()
+    return {"message": "Vehicle deleted (disposed)"}

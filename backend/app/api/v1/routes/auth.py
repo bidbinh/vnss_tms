@@ -1,5 +1,6 @@
 from datetime import datetime
-from fastapi import APIRouter, Depends, HTTPException
+import os
+from fastapi import APIRouter, Depends, HTTPException, Response, Request, Form
 from sqlmodel import Session, select
 from app.db.session import get_session
 from app.models import User, Tenant
@@ -7,6 +8,33 @@ from app.models.user import UserStatus, UserRole, ROLE_PERMISSIONS
 from app.core.security import verify_password, create_access_token, get_current_user
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+# Cookie settings for cross-subdomain auth
+# For localhost dev: COOKIE_DOMAIN should be empty or "localhost"
+COOKIE_DOMAIN = os.getenv("COOKIE_DOMAIN", ".9log.tech")  # Share across all subdomains
+COOKIE_SECURE = os.getenv("COOKIE_SECURE", "true").lower() == "true"
+COOKIE_MAX_AGE = 60 * 60 * 24  # 24 hours
+
+def get_cookie_settings(request: Request) -> dict:
+    """Get cookie settings based on request origin (localhost vs production)"""
+    origin = request.headers.get("origin", "")
+    host = request.headers.get("host", "")
+
+    # Check if running on localhost
+    is_localhost = "localhost" in origin or "localhost" in host or "127.0.0.1" in origin or "127.0.0.1" in host
+
+    if is_localhost:
+        return {
+            "domain": None,  # Don't set domain for localhost
+            "secure": False,
+            "samesite": "lax",
+        }
+    else:
+        return {
+            "domain": COOKIE_DOMAIN,
+            "secure": COOKIE_SECURE,
+            "samesite": "lax",
+        }
 
 # Role labels
 ROLE_LABELS = {
@@ -19,10 +47,17 @@ ROLE_LABELS = {
 
 
 @router.post("/login")
-def login(username: str, password: str, session: Session = Depends(get_session)):
+def login(
+    request: Request,
+    response: Response,
+    username: str = Form(...),
+    password: str = Form(...),
+    session: Session = Depends(get_session)
+):
     """
     Login with username, email, or phone number.
     The 'username' parameter accepts any of these formats.
+    Accepts form data (application/x-www-form-urlencoded).
     """
     from sqlalchemy import or_
 
@@ -62,9 +97,24 @@ def login(username: str, password: str, session: Session = Depends(get_session))
 
     token = create_access_token({
         "sub": str(user.id),
+        "name": user.full_name or user.username,
         "role": user.role,
+        "email": user.email,
         "tenant_id": str(user.tenant_id),
     })
+
+    # Set cookie for cross-subdomain auth (auto-detect localhost vs production)
+    cookie_settings = get_cookie_settings(request)
+    response.set_cookie(
+        key="access_token",
+        value=token,
+        domain=cookie_settings["domain"],
+        max_age=COOKIE_MAX_AGE,
+        httponly=True,
+        secure=cookie_settings["secure"],
+        samesite=cookie_settings["samesite"],
+        path="/",
+    )
 
     # Get permissions for role
     role_enum = UserRole(user.role) if user.role in [r.value for r in UserRole] else None
@@ -121,3 +171,15 @@ def get_me(
         "tenant_code": tenant_code,
         "tenant_name": tenant_name,
     }
+
+
+@router.post("/logout")
+def logout(request: Request, response: Response):
+    """Logout - clear auth cookie"""
+    cookie_settings = get_cookie_settings(request)
+    response.delete_cookie(
+        key="access_token",
+        domain=cookie_settings["domain"],
+        path="/",
+    )
+    return {"message": "Logged out successfully"}

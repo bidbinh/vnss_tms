@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { apiFetch } from "@/lib/api";
 import DataTable, { Column, TablePagination } from "@/components/DataTable";
-import { MapPin, Plus, Search, Building2, Anchor, Phone, RotateCcw } from "lucide-react";
+import { MapPin, Plus, Search, Building2, Anchor, Phone, RotateCcw, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 
 // ============ Types ============
 type Location = {
@@ -105,6 +105,10 @@ export default function SitesPage() {
 
   const [form, setForm] = useState<SiteForm>(emptyForm);
 
+  // Sorting
+  const [sortField, setSortField] = useState<string>("code");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+
   // ============ Data Fetching ============
   async function load() {
     setLoading(true);
@@ -149,8 +153,37 @@ export default function SitesPage() {
       );
     }
 
+    // Sort
+    result = [...result].sort((a, b) => {
+      let aVal: any = "";
+      let bVal: any = "";
+
+      switch (sortField) {
+        case "location":
+          aVal = a.location_name || "";
+          bVal = b.location_name || "";
+          break;
+        case "contact":
+          aVal = a.contact_name || "";
+          bVal = b.contact_name || "";
+          break;
+        default:
+          aVal = (a as any)[sortField] || "";
+          bVal = (b as any)[sortField] || "";
+      }
+
+      if (typeof aVal === "string") {
+        aVal = aVal.toLowerCase();
+        bVal = (bVal || "").toLowerCase();
+      }
+
+      if (aVal < bVal) return sortOrder === "asc" ? -1 : 1;
+      if (aVal > bVal) return sortOrder === "asc" ? 1 : -1;
+      return 0;
+    });
+
     return result;
-  }, [rows, searchTerm, filterType]);
+  }, [rows, searchTerm, filterType, sortField, sortOrder]);
 
   const paginatedRows = useMemo(() => {
     const startIndex = (currentPage - 1) * pageSize;
@@ -247,6 +280,104 @@ export default function SitesPage() {
       await load();
     } catch (e: any) {
       alert(e?.message || "Delete failed");
+    }
+  }
+
+  // ============ Sorting Functions ============
+  function handleSort(field: string) {
+    if (sortField === field) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortOrder("asc");
+    }
+  }
+
+  function getSortIcon(field: string) {
+    if (sortField !== field) return <ArrowUpDown className="w-3 h-3 opacity-40" />;
+    return sortOrder === "asc" ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />;
+  }
+
+  // ============ Table Column Definitions ============
+  const columnDefs = [
+    { key: "code", header: "Mã", width: 100, sortable: true },
+    { key: "company_name", header: "Tên công ty", width: 200, sortable: true },
+    { key: "site_type", header: "Loại", width: 100, sortable: true },
+    { key: "location", header: "Location", width: 150, sortable: true },
+    { key: "detailed_address", header: "Địa chỉ", width: 200, sortable: true },
+    { key: "contact", header: "Liên hệ", width: 130, sortable: true },
+    { key: "status", header: "TT", width: 80, sortable: true },
+    { key: "actions", header: "Thao tác", width: 100, sortable: false },
+  ];
+
+  function renderCell(row: Site, key: string) {
+    switch (key) {
+      case "code":
+        return <span className="font-semibold text-gray-900">{row.code || "-"}</span>;
+      case "company_name":
+        return <span className="font-medium">{row.company_name}</span>;
+      case "site_type": {
+        const config = SITE_TYPE_CONFIG[row.site_type] || { label: row.site_type, color: "bg-gray-100 text-gray-800" };
+        return <span className={`px-2 py-1 rounded-lg text-xs font-medium ${config.color}`}>{config.label}</span>;
+      }
+      case "location":
+        return (
+          <div>
+            <div className="font-medium text-sm">{row.location_name || "-"}</div>
+            {row.location_code && <div className="text-xs text-gray-500">{row.location_code}</div>}
+          </div>
+        );
+      case "detailed_address":
+        return row.detailed_address || <span className="text-gray-400">-</span>;
+      case "contact":
+        return row.contact_name ? (
+          <div>
+            <div className="text-sm">{row.contact_name}</div>
+            {row.contact_phone && (
+              <div className="text-xs text-gray-500 flex items-center gap-1">
+                <Phone className="w-3 h-3" />
+                {row.contact_phone}
+              </div>
+            )}
+          </div>
+        ) : (
+          <span className="text-gray-400">-</span>
+        );
+      case "status":
+        return (
+          <span
+            className={`px-2 py-1 rounded-lg text-xs font-semibold ${
+              row.status === "ACTIVE" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
+            }`}
+          >
+            {row.status === "ACTIVE" ? "On" : "Off"}
+          </span>
+        );
+      case "actions":
+        return (
+          <div className="flex items-center justify-center gap-2">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                openEdit(row);
+              }}
+              className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+            >
+              Sửa
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDelete(row.id);
+              }}
+              className="text-red-600 hover:text-red-800 text-sm font-medium"
+            >
+              Xóa
+            </button>
+          </div>
+        );
+      default:
+        return (row as any)[key] ?? "-";
     }
   }
 
@@ -435,13 +566,17 @@ export default function SitesPage() {
             <table className="w-full text-sm">
               <thead className="bg-gray-50 text-gray-700">
                 <tr>
-                  {columns.map((col) => (
+                  {columnDefs.map((col) => (
                     <th
                       key={col.key}
-                      className={`px-4 py-3 font-bold text-${col.align || "left"}`}
+                      className={`px-4 py-3 font-bold text-left ${col.sortable ? "cursor-pointer select-none hover:bg-gray-100" : ""}`}
                       style={{ width: col.width }}
+                      onClick={() => col.sortable && handleSort(col.key)}
                     >
-                      {col.header}
+                      <div className="flex items-center gap-1">
+                        {col.header}
+                        {col.sortable && getSortIcon(col.key)}
+                      </div>
                     </th>
                   ))}
                 </tr>
@@ -458,7 +593,7 @@ export default function SitesPage() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={columns.length} className="px-4 py-8 text-center text-gray-500">
+                  <td colSpan={columnDefs.length} className="px-4 py-8 text-center text-gray-500">
                     <div className="flex items-center justify-center gap-2">
                       <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
                       Đang tải...
@@ -467,20 +602,20 @@ export default function SitesPage() {
                 </tr>
               ) : paginatedRows.length === 0 ? (
                 <tr>
-                  <td colSpan={columns.length} className="px-4 py-8 text-center text-gray-500">
+                  <td colSpan={columnDefs.length} className="px-4 py-8 text-center text-gray-500">
                     Chưa có site nào
                   </td>
                 </tr>
               ) : (
-                paginatedRows.map((row, rowIndex) => (
+                paginatedRows.map((row) => (
                   <tr key={row.id} className="border-t hover:bg-gray-50">
-                    {columns.map((col) => (
+                    {columnDefs.map((col) => (
                       <td
                         key={col.key}
-                        className={`px-4 py-3 text-${col.align || "left"}`}
+                        className="px-4 py-3 text-left"
                         style={{ width: col.width }}
                       >
-                        {col.render ? col.render(row, rowIndex) : (row as any)[col.key] ?? "-"}
+                        {renderCell(row, col.key)}
                       </td>
                     ))}
                   </tr>

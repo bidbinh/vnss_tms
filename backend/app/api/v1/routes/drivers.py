@@ -14,81 +14,139 @@ router = APIRouter(prefix="/drivers", tags=["drivers"])
 def list_drivers(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
+    limit: int = 50,
+    offset: int = 0,
+    status: str = None,
+    simple: bool = False,
 ):
-    """List all drivers for current tenant with tractor, trailer and HRM employee info"""
-    tenant_id = str(current_user.tenant_id)
-    drivers = session.exec(
-        select(Driver).where(Driver.tenant_id == tenant_id).order_by(Driver.created_at.desc())
-    ).all()
+    """List all drivers for current tenant with tractor, trailer and HRM employee info
 
-    # Enrich with tractor, trailer and HRM employee info
+    Query params:
+    - limit: max results (default 50, max 200)
+    - offset: skip first N results
+    - status: filter by driver status (ACTIVE, INACTIVE, etc.)
+    - simple: if true, return only basic driver info (faster for dropdowns)
+    """
+    tenant_id = str(current_user.tenant_id)
+
+    # Limit max results for performance
+    limit = min(limit, 200)
+
+    query = select(Driver).where(Driver.tenant_id == tenant_id)
+
+    if status:
+        query = query.where(Driver.status == status)
+
+    query = query.order_by(Driver.created_at.desc()).offset(offset).limit(limit)
+    drivers = session.exec(query).all()
+
+    # Fast path: simple mode for dropdowns (no N+1 queries)
+    if simple:
+        return [
+            {
+                "id": d.id,
+                "name": d.name,
+                "short_name": d.short_name,
+                "phone": d.phone,
+                "status": d.status,
+            }
+            for d in drivers
+        ]
+
+    # Batch fetch vehicles and employees to avoid N+1 queries
+    vehicle_ids = set()
+    employee_ids = set()
+    driver_ids = []
+
+    for driver in drivers:
+        driver_ids.append(driver.id)
+        if driver.tractor_id:
+            vehicle_ids.add(driver.tractor_id)
+        if driver.vehicle_id:
+            vehicle_ids.add(driver.vehicle_id)
+        if driver.trailer_id:
+            vehicle_ids.add(driver.trailer_id)
+        if hasattr(driver, 'employee_id') and driver.employee_id:
+            employee_ids.add(driver.employee_id)
+
+    # Batch fetch vehicles
+    vehicles_map = {}
+    if vehicle_ids:
+        vehicles = session.exec(
+            select(Vehicle).where(Vehicle.id.in_(list(vehicle_ids)))
+        ).all()
+        vehicles_map = {v.id: v for v in vehicles}
+
+    # Batch fetch employees by employee_id and driver_id
+    employees_by_id = {}
+    employees_by_driver = {}
+    try:
+        if employee_ids:
+            employees = session.exec(
+                select(Employee).where(Employee.id.in_(list(employee_ids)))
+            ).all()
+            employees_by_id = {e.id: e for e in employees}
+
+        # Also fetch by driver_id for those without employee_id link
+        employees_by_driver_list = session.exec(
+            select(Employee).where(
+                Employee.tenant_id == tenant_id,
+                Employee.driver_id.in_(driver_ids)
+            )
+        ).all()
+        employees_by_driver = {e.driver_id: e for e in employees_by_driver_list}
+    except Exception:
+        pass  # HRM tables may not exist
+
+    # Build result with pre-fetched data
     result = []
     for driver in drivers:
         driver_dict = driver.model_dump()
 
-        # Use tractor_id if available, fallback to vehicle_id
+        # Tractor from pre-fetched map
         tractor_id = driver.tractor_id or driver.vehicle_id
-        if tractor_id:
-            tractor = session.get(Vehicle, tractor_id)
-            driver_dict["tractor"] = tractor.model_dump() if tractor else None
+        tractor = vehicles_map.get(tractor_id) if tractor_id else None
+        driver_dict["tractor"] = tractor.model_dump() if tractor else None
+
+        # Trailer from pre-fetched map
+        trailer = vehicles_map.get(driver.trailer_id) if driver.trailer_id else None
+        driver_dict["trailer"] = trailer.model_dump() if trailer else None
+
+        # Employee from pre-fetched maps
+        employee = None
+        if hasattr(driver, 'employee_id') and driver.employee_id:
+            employee = employees_by_id.get(driver.employee_id)
+        if not employee:
+            employee = employees_by_driver.get(driver.id)
+
+        if employee:
+            driver_dict["employee"] = {
+                "id": employee.id,
+                "employee_code": employee.employee_code,
+                "full_name": employee.full_name,
+                "phone": employee.phone,
+                "email": employee.email,
+                "date_of_birth": employee.date_of_birth,
+                "id_number": employee.id_number,
+                "bank_name": employee.bank_name,
+                "bank_account": employee.bank_account,
+                "bank_account_name": employee.bank_account_name,
+                "license_number": employee.license_number,
+                "license_class": employee.license_class,
+                "license_expiry": employee.license_expiry,
+                "status": employee.status,
+                "join_date": employee.join_date,
+                "branch_id": employee.branch_id,
+                "department_id": employee.department_id,
+                "salary_type": employee.salary_type,
+            }
+            driver_dict["name"] = employee.full_name
+            driver_dict["phone"] = employee.phone
+            driver_dict["citizen_id"] = employee.id_number
+            driver_dict["bank_name"] = employee.bank_name
+            driver_dict["bank_account"] = employee.bank_account
+            driver_dict["license_no"] = employee.license_number
         else:
-            driver_dict["tractor"] = None
-
-        # Trailer info from vehicles table (type=TRAILER)
-        if driver.trailer_id:
-            trailer = session.get(Vehicle, driver.trailer_id)
-            driver_dict["trailer"] = trailer.model_dump() if trailer else None
-        else:
-            driver_dict["trailer"] = None
-
-        # HRM Employee info (single source of truth for personal data)
-        # Wrap in try-except in case HRM tables don't exist yet
-        try:
-            employee = None
-            employee_id = getattr(driver, 'employee_id', None)
-            if employee_id:
-                employee = session.get(Employee, employee_id)
-            if not employee:
-                # Fallback: find by driver_id link in employee
-                employee = session.exec(
-                    select(Employee).where(
-                        Employee.tenant_id == tenant_id,
-                        Employee.driver_id == driver.id
-                    )
-                ).first()
-
-            if employee:
-                driver_dict["employee"] = {
-                    "id": employee.id,
-                    "employee_code": employee.employee_code,
-                    "full_name": employee.full_name,
-                    "phone": employee.phone,
-                    "email": employee.email,
-                    "date_of_birth": employee.date_of_birth,
-                    "id_number": employee.id_number,
-                    "bank_name": employee.bank_name,
-                    "bank_account": employee.bank_account,
-                    "bank_account_name": employee.bank_account_name,
-                    "license_number": employee.license_number,
-                    "license_class": employee.license_class,
-                    "license_expiry": employee.license_expiry,
-                    "status": employee.status,
-                    "join_date": employee.join_date,
-                    "branch_id": employee.branch_id,
-                    "department_id": employee.department_id,
-                    "salary_type": employee.salary_type,
-                }
-                # Override driver personal info with HRM data (single source of truth)
-                driver_dict["name"] = employee.full_name
-                driver_dict["phone"] = employee.phone
-                driver_dict["citizen_id"] = employee.id_number
-                driver_dict["bank_name"] = employee.bank_name
-                driver_dict["bank_account"] = employee.bank_account
-                driver_dict["license_no"] = employee.license_number
-            else:
-                driver_dict["employee"] = None
-        except Exception:
-            # HRM tables may not exist yet
             driver_dict["employee"] = None
 
         result.append(driver_dict)

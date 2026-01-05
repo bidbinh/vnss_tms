@@ -1,25 +1,23 @@
 from datetime import datetime, timedelta
 from fastapi import APIRouter, Depends, Query
 from sqlmodel import Session, select
-from sqlalchemy import func
+from sqlalchemy import func, case
 
 from app.db.session import get_session
-from app.models import Driver
-from sqlalchemy import func, case
-from app.models import Trip, TripFinanceItem, CostNorm, Vehicle
+from app.models import Driver, Trip, TripFinanceItem, CostNorm, Vehicle, User
+from app.core.security import get_current_user
 
 router = APIRouter(prefix="/reports", tags=["reports"])
 
-def tenant():
-    return "TENANT_DEMO"
 
 @router.get("/profit")
 def profit_report(
     from_date: str | None = Query(default=None, alias="from"),
     to_date: str | None = Query(default=None, alias="to"),
     session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
 ):
-    tenant_id = tenant()
+    tenant_id = str(current_user.tenant_id)
 
     if from_date:
         start = datetime.fromisoformat(from_date)
@@ -66,8 +64,9 @@ def profit_by_vehicle(
     from_date: str | None = Query(default=None, alias="from"),
     to_date: str | None = Query(default=None, alias="to"),
     session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
 ):
-    tenant_id = tenant()
+    tenant_id = str(current_user.tenant_id)
 
     if from_date:
         start = datetime.fromisoformat(from_date)
@@ -137,8 +136,9 @@ def profit_by_driver(
     from_date: str | None = Query(default=None, alias="from"),
     to_date: str | None = Query(default=None, alias="to"),
     session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
 ):
-    tenant_id = tenant()
+    tenant_id = str(current_user.tenant_id)
 
     if from_date:
         start = datetime.fromisoformat(from_date)
@@ -150,8 +150,9 @@ def profit_by_trip(
     from_date: str | None = Query(default=None, alias="from"),
     to_date: str | None = Query(default=None, alias="to"),
     session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
 ):
-    tenant_id = tenant()
+    tenant_id = str(current_user.tenant_id)
 
     if from_date:
         start = datetime.fromisoformat(from_date)
@@ -255,8 +256,9 @@ def trip_cost_variance(
     distance_km: float = 0,
     route_code: str | None = None,
     session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
 ):
-    tenant_id = tenant()
+    tenant_id = str(current_user.tenant_id)
 
     trip = session.get(Trip, trip_id)
     if not trip or trip.tenant_id != tenant_id:
@@ -353,8 +355,9 @@ def trip_cost_variance(
 def trips_over_budget(
     threshold: float = 0.1,   # 10%
     session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
 ):
-    tenant_id = tenant()
+    tenant_id = str(current_user.tenant_id)
 
     trips = session.exec(
         select(Trip)

@@ -2,7 +2,6 @@
 
 import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { API_BASE } from "@/lib/api";
 import { useTenant } from "@/contexts/TenantContext";
 import { redirectToTenantSubdomain } from "@/lib/tenant";
 
@@ -51,7 +50,7 @@ function LoginForm() {
       body.set("username", username);
       body.set("password", password);
 
-      const url = `${API_BASE}/auth/login?username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`;
+      const url = `/api/v1/auth/login?username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`;
 
       const res = await fetch(url, {
         method: "POST",
@@ -61,6 +60,7 @@ function LoginForm() {
           ...(tenantCode ? { "X-Tenant-Code": tenantCode } : {}),
         },
         body: body.toString(),
+        credentials: "include", // Allow cookie to be set by backend
       });
 
       if (!res.ok) {
@@ -72,7 +72,7 @@ function LoginForm() {
 
       const data = (await res.json()) as LoginResponse;
 
-      localStorage.setItem("access_token", data.access_token);
+      // Token is now stored in cookie by backend, only save user info to localStorage
       if (data.user) localStorage.setItem("user", JSON.stringify(data.user));
 
       // If user's tenant code doesn't match current subdomain, redirect
@@ -80,7 +80,9 @@ function LoginForm() {
         redirectToTenantSubdomain(data.user.tenant_code);
       }
 
-      router.replace(nextUrl);
+      // Use window.location to ensure cookie is properly set before navigation
+      // router.replace can sometimes navigate before cookie is fully processed
+      window.location.href = nextUrl;
     } catch (err: unknown) {
       const errorMessage =
         err instanceof Error ? err.message : "Có lỗi xảy ra.";

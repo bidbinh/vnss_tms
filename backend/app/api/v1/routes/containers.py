@@ -1,17 +1,20 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 from app.db.session import get_session
-from app.models import Shipment, Container
+from app.models import Shipment, Container, User
 from app.schemas.container import ContainerCreate, ContainerRead
+from app.core.security import get_current_user
 
 router = APIRouter(prefix="/containers", tags=["containers"])
 
-def get_tenant_id_stub() -> str:
-    return "TENANT_DEMO"
 
 @router.post("", response_model=ContainerRead)
-def create_container(payload: ContainerCreate, session: Session = Depends(get_session)):
-    tenant_id = get_tenant_id_stub()
+def create_container(
+    payload: ContainerCreate,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    tenant_id = str(current_user.tenant_id)
 
     shp = session.exec(
         select(Shipment).where(Shipment.tenant_id == tenant_id, Shipment.id == payload.shipment_id)

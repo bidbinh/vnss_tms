@@ -273,34 +273,24 @@ export default function TenantBillingPage() {
                         )}
                       </td>
                       <td className="px-4 py-3">
-                        {tenant.credits_limit > 0 ? (
+                        {tenant.credits_used > 0 ? (
                           <div className="w-[150px]">
                             <div className="flex justify-between text-xs text-gray-500 mb-1">
-                              <span>
-                                {formatNumber(tenant.credits_used)} /{" "}
-                                {formatNumber(tenant.credits_limit)}
+                              <span className="font-medium text-gray-700">
+                                {formatNumber(tenant.credits_used)} tokens
                               </span>
-                              <span>{tenant.usage_percent}%</span>
                             </div>
                             <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                               <div
-                                className={`h-full ${getUsageBarColor(
-                                  tenant.usage_percent,
-                                  tenant.is_in_grace
-                                )}`}
+                                className="h-full bg-blue-500"
                                 style={{
-                                  width: `${Math.min(100, tenant.usage_percent)}%`,
+                                  width: `${Math.min(100, (tenant.credits_used / 1000) * 100)}%`,
                                 }}
                               />
                             </div>
-                            {tenant.overage_credits > 0 && (
-                              <div className="text-xs text-red-600 mt-1">
-                                +{formatNumber(tenant.overage_credits)} overage
-                              </div>
-                            )}
                           </div>
                         ) : (
-                          <span className="text-sm text-gray-400">Unlimited</span>
+                          <span className="text-sm text-gray-400">Chưa có hoạt động</span>
                         )}
                       </td>
                       <td className="px-4 py-3 text-right">

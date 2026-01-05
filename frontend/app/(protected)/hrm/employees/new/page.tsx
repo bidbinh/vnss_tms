@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Save, User } from "lucide-react";
+import { ArrowLeft, Save, User, Key, Shield } from "lucide-react";
 import { apiFetch } from "@/lib/api";
+import { toast } from "sonner";
 import BankSelect from "@/components/BankSelect";
 
 interface Department {
@@ -32,6 +33,13 @@ interface Employee {
   position_name?: string;
 }
 
+interface Role {
+  id: string;
+  name: string;
+  code: string;
+  description: string | null;
+}
+
 export default function NewEmployeePage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -39,9 +47,19 @@ export default function NewEmployeePage() {
   const [positions, setPositions] = useState<Position[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [nextCode, setNextCode] = useState<string>("");
+  const [roles, setRoles] = useState<Role[]>([]);
+
+  // User account state
+  const [createUserAccount, setCreateUserAccount] = useState(false);
+  const [userAccountData, setUserAccountData] = useState({
+    username: "",
+    password: "",
+    role_ids: [] as string[],
+  });
+  const [generatedPassword, setGeneratedPassword] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
-    employee_code: "",
     full_name: "",
     date_of_birth: "",
     gender: "",
@@ -74,16 +92,20 @@ export default function NewEmployeePage() {
 
   const fetchOptions = async () => {
     try {
-      const [deptData, posData, branchData, employeesData] = await Promise.all([
+      const [deptData, posData, branchData, employeesData, nextCodeData, rolesData] = await Promise.all([
         apiFetch<Department[]>("/hrm/departments").catch(() => []),
         apiFetch<Position[]>("/hrm/positions").catch(() => []),
         apiFetch<Branch[]>("/hrm/branches").catch(() => []),
         apiFetch<{ items: Employee[] }>("/hrm/employees?page_size=200").catch(() => ({ items: [] })),
+        apiFetch<{ next_code: string }>("/hrm/employees/next-code").catch(() => ({ next_code: "1" })),
+        apiFetch<{ roles: Role[] }>("/roles?limit=50").catch(() => ({ roles: [] })),
       ]);
       setDepartments(deptData);
       setPositions(posData);
       setBranches(branchData);
       setEmployees(employeesData.items);
+      setNextCode(nextCodeData.next_code);
+      setRoles(rolesData.roles);
     } catch (error) {
       console.error("Failed to fetch options:", error);
     }
@@ -96,9 +118,21 @@ export default function NewEmployeePage() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleRoleToggle = (roleId: string) => {
+    setUserAccountData((prev) => {
+      const current = prev.role_ids;
+      if (current.includes(roleId)) {
+        return { ...prev, role_ids: current.filter((id) => id !== roleId) };
+      } else {
+        return { ...prev, role_ids: [...current, roleId] };
+      }
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setGeneratedPassword(null);
 
     try {
       // Filter out empty strings
@@ -109,15 +143,39 @@ export default function NewEmployeePage() {
         }
       }
 
-      await apiFetch("/hrm/employees", {
+      // Add user account data if checkbox is checked
+      if (createUserAccount) {
+        payload.user_account = {
+          create_account: true,
+          username: userAccountData.username || undefined,
+          password: userAccountData.password || undefined,
+          role_ids: userAccountData.role_ids,
+        };
+      }
+
+      const result = await apiFetch<any>("/hrm/employees", {
         method: "POST",
         body: JSON.stringify(payload),
       });
 
-      router.push("/hrm/employees");
+      // Show generated password if available
+      if (result.user_account?.generated_password) {
+        setGeneratedPassword(result.user_account.generated_password);
+        toast.success(
+          `Tạo nhân viên thành công! Mật khẩu tài khoản: ${result.user_account.generated_password}`,
+          { duration: 10000 }
+        );
+        // Wait for user to see the password before redirecting
+        setTimeout(() => {
+          router.push("/hrm/employees");
+        }, 3000);
+      } else {
+        toast.success("Tạo nhân viên thành công!");
+        router.push("/hrm/employees");
+      }
     } catch (error: any) {
       console.error("Failed to create employee:", error);
-      alert(error.message || "Không thể tạo nhân viên");
+      toast.error(error.message || "Không thể tạo nhân viên");
     } finally {
       setLoading(false);
     }
@@ -150,17 +208,15 @@ export default function NewEmployeePage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Mã nhân viên *
+                Mã nhân viên
               </label>
               <input
                 type="text"
-                name="employee_code"
-                value={formData.employee_code}
-                onChange={handleChange}
-                placeholder="VD: NV001"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                required
+                value={nextCode || "Đang tạo..."}
+                disabled
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-700 font-semibold"
               />
+              <p className="text-xs text-gray-500 mt-1">Mã tự động tăng</p>
             </div>
 
             <div>
@@ -538,6 +594,117 @@ export default function NewEmployeePage() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
               />
             </div>
+          </div>
+        </div>
+
+        {/* User Account */}
+        <div className="bg-white rounded-lg shadow border border-gray-200 p-6">
+          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <Key className="w-5 h-5 text-green-600" />
+            Tài khoản đăng nhập
+          </h2>
+
+          <div className="space-y-4">
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={createUserAccount}
+                onChange={(e) => setCreateUserAccount(e.target.checked)}
+                className="w-5 h-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+              />
+              <span className="font-medium">Tạo tài khoản đăng nhập cho nhân viên này</span>
+            </label>
+
+            {createUserAccount && (
+              <div className="pl-8 space-y-4 border-l-2 border-blue-200">
+                <p className="text-sm text-gray-600">
+                  Tài khoản sẽ được tạo với username là số điện thoại hoặc email của nhân viên.
+                  Nếu không nhập mật khẩu, hệ thống sẽ tự động tạo.
+                </p>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Username (tùy chọn)
+                    </label>
+                    <input
+                      type="text"
+                      value={userAccountData.username}
+                      onChange={(e) =>
+                        setUserAccountData((prev) => ({ ...prev, username: e.target.value }))
+                      }
+                      placeholder="Mặc định: SĐT hoặc Email"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Mật khẩu (tùy chọn)
+                    </label>
+                    <input
+                      type="password"
+                      value={userAccountData.password}
+                      onChange={(e) =>
+                        setUserAccountData((prev) => ({ ...prev, password: e.target.value }))
+                      }
+                      placeholder="Để trống = tự động tạo"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Role Selection */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                    <Shield className="w-4 h-4" />
+                    Phân quyền (chọn 1 hoặc nhiều role)
+                  </label>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                    {roles.map((role) => (
+                      <label
+                        key={role.id}
+                        className={`flex items-center gap-2 p-3 border rounded-lg cursor-pointer transition-colors ${
+                          userAccountData.role_ids.includes(role.id)
+                            ? "border-blue-500 bg-blue-50"
+                            : "border-gray-200 hover:border-gray-300"
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={userAccountData.role_ids.includes(role.id)}
+                          onChange={() => handleRoleToggle(role.id)}
+                          className="w-4 h-4 text-blue-600 rounded border-gray-300"
+                        />
+                        <div>
+                          <div className="font-medium text-sm">{role.name}</div>
+                          <div className="text-xs text-gray-500">{role.code}</div>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                  {roles.length === 0 && (
+                    <p className="text-sm text-gray-500">Chưa có role nào. Vui lòng tạo role trước.</p>
+                  )}
+                  {userAccountData.role_ids.length === 0 && roles.length > 0 && (
+                    <p className="text-xs text-amber-600 mt-2">
+                      * Nếu không chọn, hệ thống sẽ gán role mặc định dựa trên loại nhân viên
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {generatedPassword && (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <p className="text-green-800 font-medium">
+                  Mật khẩu được tạo: <span className="font-mono bg-green-100 px-2 py-1 rounded">{generatedPassword}</span>
+                </p>
+                <p className="text-green-600 text-sm mt-1">
+                  Hãy ghi lại mật khẩu này để cung cấp cho nhân viên.
+                </p>
+              </div>
+            )}
           </div>
         </div>
 

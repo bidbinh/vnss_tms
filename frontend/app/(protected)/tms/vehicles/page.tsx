@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { apiFetch } from "@/lib/api";
 import DataTable, { Column, TablePagination } from "@/components/DataTable";
-import { Truck, Plus, Search, CheckCircle, XCircle, Wrench, Calendar } from "lucide-react";
+import { Truck, Plus, Search, CheckCircle, XCircle, Wrench, Calendar, Pencil, Trash2, Copy, ArrowUpDown, ArrowUp, ArrowDown, Ban, Link2, Unlink } from "lucide-react";
 
 // ============ Types ============
 type Vehicle = {
@@ -28,6 +28,18 @@ type Vehicle = {
   inactive_reason?: string;
   created_at?: string;
   updated_at?: string;
+};
+
+type TractorTrailerPairing = {
+  id: string;
+  tractor_id: string;
+  trailer_id: string;
+  tractor?: { id: string; code: string; plate_no: string } | null;
+  trailer?: { id: string; code: string; plate_no: string } | null;
+  effective_date: string;
+  end_date: string | null;
+  notes: string | null;
+  is_active: boolean;
 };
 
 type VehicleForm = {
@@ -89,6 +101,24 @@ export default function VehiclesPage() {
   const [mode, setMode] = useState<"create" | "edit">("create");
   const [editing, setEditing] = useState<Vehicle | null>(null);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState<string | null>(null);
+
+  // Sorting
+  const [sortField, setSortField] = useState<string>("code");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+
+  // Pairing modal
+  const [pairingModalOpen, setPairingModalOpen] = useState(false);
+  const [pairings, setPairings] = useState<TractorTrailerPairing[]>([]);
+  const [pairingsLoading, setPairingsLoading] = useState(false);
+  const [pairingForm, setPairingForm] = useState({
+    tractor_id: "",
+    trailer_id: "",
+    effective_date: new Date().toISOString().split("T")[0],
+    end_date: "",
+    notes: "",
+  });
+  const [pairingSaving, setPairingSaving] = useState(false);
 
   const emptyForm: VehicleForm = {
     code: "",
@@ -151,8 +181,30 @@ export default function VehiclesPage() {
       );
     }
 
+    // Sort
+    result = [...result].sort((a, b) => {
+      let aVal: any = (a as any)[sortField] || "";
+      let bVal: any = (b as any)[sortField] || "";
+
+      // Handle special fields
+      if (sortField === "registration_expiry") {
+        aVal = aVal ? new Date(aVal).getTime() : 0;
+        bVal = bVal ? new Date(bVal).getTime() : 0;
+      } else if (sortField === "year_of_manufacture") {
+        aVal = aVal || 0;
+        bVal = bVal || 0;
+      } else if (typeof aVal === "string") {
+        aVal = aVal.toLowerCase();
+        bVal = (bVal || "").toLowerCase();
+      }
+
+      if (aVal < bVal) return sortOrder === "asc" ? -1 : 1;
+      if (aVal > bVal) return sortOrder === "asc" ? 1 : -1;
+      return 0;
+    });
+
     return result;
-  }, [rows, searchTerm, filterType]);
+  }, [rows, searchTerm, filterType, sortField, sortOrder]);
 
   const paginatedRows = useMemo(() => {
     const startIndex = (currentPage - 1) * pageSize;
@@ -167,11 +219,14 @@ export default function VehiclesPage() {
 
   // ============ Stats ============
   const stats = useMemo(() => {
-    const tractors = rows.filter((r) => r.type === "TRACTOR").length;
-    const trailers = rows.filter((r) => r.type === "TRAILER").length;
+    const tractors = rows.filter((r) => r.type === "TRACTOR");
+    const trailers = rows.filter((r) => r.type === "TRAILER");
+    const tractorsActive = tractors.filter((r) => r.status === "ACTIVE").length;
+    const trailersActive = trailers.filter((r) => r.status === "ACTIVE").length;
     const active = rows.filter((r) => r.status === "ACTIVE").length;
     const maintenance = rows.filter((r) => r.status === "MAINTENANCE").length;
     const inactive = rows.filter((r) => r.status === "INACTIVE").length;
+    const disposed = rows.filter((r) => r.status === "DISPOSED").length;
 
     // Vehicles with registration expiring soon (within 30 days)
     const today = new Date();
@@ -182,7 +237,18 @@ export default function VehiclesPage() {
       return expiry <= thirtyDaysLater && expiry >= today;
     }).length;
 
-    return { total: rows.length, tractors, trailers, active, maintenance, inactive, expiringRegistration };
+    return {
+      total: rows.length,
+      tractors: tractors.length,
+      tractorsActive,
+      trailers: trailers.length,
+      trailersActive,
+      active,
+      maintenance,
+      inactive,
+      disposed,
+      expiringRegistration
+    };
   }, [rows]);
 
   // ============ Modal Functions ============
@@ -217,6 +283,149 @@ export default function VehiclesPage() {
     });
     setOpen(true);
   }
+
+  function openDuplicate(row: Vehicle) {
+    setMode("create");
+    setEditing(null);
+    setForm({
+      code: "", // New code required
+      plate_no: "", // New plate required
+      type: row.type || "TRACTOR",
+      vehicle_type_name: row.vehicle_type_name || "",
+      manufacturer: row.manufacturer || "",
+      model: row.model || "",
+      country_of_origin: row.country_of_origin || "",
+      year_of_manufacture: row.year_of_manufacture?.toString() || "",
+      chassis_number: "", // Must be unique
+      engine_number: "", // Must be unique
+      curb_weight: row.curb_weight?.toString() || "",
+      payload_capacity: row.payload_capacity?.toString() || "",
+      gross_weight: row.gross_weight?.toString() || "",
+      dimensions: row.dimensions || "",
+      registration_expiry: "",
+      status: "ACTIVE",
+      inactive_reason: "",
+    });
+    setOpen(true);
+  }
+
+  async function onDelete(id: string) {
+    if (!confirm("Bạn có chắc muốn xóa phương tiện này?")) return;
+    setDeleting(id);
+    try {
+      await apiFetch(`/api/v1/vehicles/${id}`, { method: "DELETE" });
+      await load();
+    } catch (e: any) {
+      alert("Xóa thất bại: " + (e?.message || "Unknown error"));
+    } finally {
+      setDeleting(null);
+    }
+  }
+
+  // ============ Sorting ============
+  function handleSort(field: string) {
+    if (sortField === field) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortOrder("asc");
+    }
+  }
+
+  function getSortIcon(field: string) {
+    if (sortField !== field) return <ArrowUpDown className="w-3 h-3 opacity-40" />;
+    return sortOrder === "asc" ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />;
+  }
+
+  // ============ Pairing Functions ============
+  async function loadPairings() {
+    setPairingsLoading(true);
+    try {
+      const data = await apiFetch<TractorTrailerPairing[]>("/api/v1/tractor-trailer-pairings?active_only=false");
+      setPairings(data);
+    } catch (e: any) {
+      console.error("Failed to load pairings:", e);
+    } finally {
+      setPairingsLoading(false);
+    }
+  }
+
+  function openPairingModal() {
+    setPairingModalOpen(true);
+    loadPairings();
+    setPairingForm({
+      tractor_id: "",
+      trailer_id: "",
+      effective_date: new Date().toISOString().split("T")[0],
+      end_date: "",
+      notes: "",
+    });
+  }
+
+  async function createPairing() {
+    if (!pairingForm.tractor_id || !pairingForm.trailer_id) {
+      alert("Vui lòng chọn đầu kéo và rơ mooc");
+      return;
+    }
+    if (!pairingForm.effective_date) {
+      alert("Vui lòng chọn ngày hiệu lực");
+      return;
+    }
+
+    setPairingSaving(true);
+    try {
+      await apiFetch("/api/v1/tractor-trailer-pairings", {
+        method: "POST",
+        body: JSON.stringify({
+          tractor_id: pairingForm.tractor_id,
+          trailer_id: pairingForm.trailer_id,
+          effective_date: pairingForm.effective_date,
+          end_date: pairingForm.end_date || null,
+          notes: pairingForm.notes || null,
+        }),
+      });
+      await loadPairings();
+      setPairingForm({
+        tractor_id: "",
+        trailer_id: "",
+        effective_date: new Date().toISOString().split("T")[0],
+        end_date: "",
+        notes: "",
+      });
+    } catch (e: any) {
+      alert("Lỗi: " + (e?.message || "Không thể tạo ghép cặp"));
+    } finally {
+      setPairingSaving(false);
+    }
+  }
+
+  async function endPairing(id: string) {
+    if (!confirm("Bạn có chắc muốn kết thúc ghép cặp này?")) return;
+    try {
+      await apiFetch(`/api/v1/tractor-trailer-pairings/${id}/end`, {
+        method: "POST",
+      });
+      await loadPairings();
+    } catch (e: any) {
+      alert("Lỗi: " + (e?.message || "Không thể kết thúc ghép cặp"));
+    }
+  }
+
+  async function deletePairing(id: string) {
+    if (!confirm("Bạn có chắc muốn xóa ghép cặp này?")) return;
+    try {
+      await apiFetch(`/api/v1/tractor-trailer-pairings/${id}`, {
+        method: "DELETE",
+      });
+      await loadPairings();
+    } catch (e: any) {
+      alert("Lỗi: " + (e?.message || "Không thể xóa ghép cặp"));
+    }
+  }
+
+  // Get tractors and trailers for pairing dropdown
+  const tractors = useMemo(() => rows.filter(r => r.type === "TRACTOR" && r.status === "ACTIVE"), [rows]);
+  const trailers = useMemo(() => rows.filter(r => r.type === "TRAILER" && r.status === "ACTIVE"), [rows]);
 
   async function onSave() {
     setSaving(true);
@@ -269,63 +478,47 @@ export default function VehiclesPage() {
   }
 
   // ============ Table Columns ============
-  const columns: Column<Vehicle>[] = [
-    {
-      key: "code",
-      header: "Mã",
-      width: 80,
-      render: (r) => <span className="font-medium">{r.code || "-"}</span>,
-    },
-    {
-      key: "plate_no",
-      header: "Biển số",
-      width: 120,
-      render: (r) => <span className="font-semibold text-gray-900">{r.plate_no}</span>,
-    },
-    {
-      key: "type",
-      header: "Loại",
-      width: 110,
-      render: (r) => (
-        <span
-          className={`px-2 py-1 rounded-lg text-xs font-medium ${
-            r.type === "TRACTOR" ? "bg-blue-100 text-blue-800" : "bg-purple-100 text-purple-800"
-          }`}
-        >
-          {r.type === "TRACTOR" ? "Đầu kéo" : "Rơ mooc"}
-        </span>
-      ),
-    },
-    {
-      key: "manufacturer",
-      header: "Hãng xe",
-      width: 120,
-      render: (r) => r.manufacturer || <span className="text-gray-400">-</span>,
-    },
-    {
-      key: "model",
-      header: "Dòng xe",
-      width: 100,
-      render: (r) => r.model || <span className="text-gray-400">-</span>,
-    },
-    {
-      key: "year_of_manufacture",
-      header: "Năm SX",
-      width: 80,
-      render: (r) => r.year_of_manufacture || <span className="text-gray-400">-</span>,
-    },
-    {
-      key: "registration_expiry",
-      header: "Đăng kiểm",
-      width: 110,
-      render: (r) => {
-        if (!r.registration_expiry) return <span className="text-gray-400">-</span>;
-        const expiry = new Date(r.registration_expiry);
+  const columnDefs = [
+    { key: "code", header: "Mã", width: 70, sortable: true },
+    { key: "plate_no", header: "Biển số", width: 110, sortable: true },
+    { key: "type", header: "Loại", width: 90, sortable: true },
+    { key: "manufacturer", header: "Hãng xe", width: 100, sortable: true },
+    { key: "model", header: "Dòng xe", width: 90, sortable: true },
+    { key: "year_of_manufacture", header: "Năm SX", width: 70, sortable: true },
+    { key: "registration_expiry", header: "Đăng kiểm", width: 100, sortable: true },
+    { key: "status", header: "Trạng thái", width: 100, sortable: true },
+    { key: "actions", header: "Thao tác", width: 110, sortable: false },
+  ];
+
+  function renderCell(row: Vehicle, key: string) {
+    switch (key) {
+      case "code":
+        return <span className="font-medium">{row.code || "-"}</span>;
+      case "plate_no":
+        return <span className="font-semibold text-gray-900">{row.plate_no}</span>;
+      case "type":
+        return (
+          <span
+            className={`px-2 py-1 rounded-lg text-xs font-medium ${
+              row.type === "TRACTOR" ? "bg-blue-100 text-blue-800" : "bg-purple-100 text-purple-800"
+            }`}
+          >
+            {row.type === "TRACTOR" ? "Đầu kéo" : "Rơ mooc"}
+          </span>
+        );
+      case "manufacturer":
+        return row.manufacturer || <span className="text-gray-400">-</span>;
+      case "model":
+        return row.model || <span className="text-gray-400">-</span>;
+      case "year_of_manufacture":
+        return row.year_of_manufacture || <span className="text-gray-400">-</span>;
+      case "registration_expiry":
+        if (!row.registration_expiry) return <span className="text-gray-400">-</span>;
+        const expiry = new Date(row.registration_expiry);
         const today = new Date();
         const isExpired = expiry < today;
         const thirtyDaysLater = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000);
         const isExpiringSoon = expiry <= thirtyDaysLater && !isExpired;
-
         return (
           <span
             className={`text-xs ${isExpired ? "text-red-600 font-medium" : isExpiringSoon ? "text-orange-600 font-medium" : "text-gray-700"}`}
@@ -333,45 +526,59 @@ export default function VehiclesPage() {
             {expiry.toLocaleDateString("vi-VN")}
           </span>
         );
-      },
-    },
-    {
-      key: "status",
-      header: "Trạng thái",
-      width: 100,
-      render: (r) => (
-        <span
-          className={`px-2 py-1 rounded-lg text-xs font-semibold ${
-            r.status === "ACTIVE"
-              ? "bg-green-100 text-green-800"
-              : r.status === "MAINTENANCE"
-              ? "bg-yellow-100 text-yellow-800"
-              : "bg-gray-100 text-gray-800"
-          }`}
-        >
-          {r.status === "ACTIVE" ? "Hoạt động" : r.status === "MAINTENANCE" ? "Bảo trì" : "Ngừng"}
-        </span>
-      ),
-    },
-    {
-      key: "actions",
-      header: "Thao tác",
-      width: 80,
-      sortable: false,
-      align: "center",
-      render: (r) => (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            openEdit(r);
-          }}
-          className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-        >
-          Sửa
-        </button>
-      ),
-    },
-  ];
+      case "status":
+        const statusColors: Record<string, string> = {
+          ACTIVE: "bg-green-100 text-green-800",
+          MAINTENANCE: "bg-yellow-100 text-yellow-800",
+          INACTIVE: "bg-gray-100 text-gray-800",
+          DISPOSED: "bg-red-100 text-red-800",
+        };
+        const statusLabels: Record<string, string> = {
+          ACTIVE: "Hoạt động",
+          MAINTENANCE: "Bảo trì",
+          INACTIVE: "Ngừng",
+          DISPOSED: "Đã thanh lý",
+        };
+        return (
+          <span className={`px-2 py-1 rounded-lg text-xs font-semibold ${statusColors[row.status] || statusColors.INACTIVE}`}>
+            {statusLabels[row.status] || row.status}
+          </span>
+        );
+      case "actions":
+        return (
+          <div className="flex items-center gap-1">
+            <button
+              onClick={(e) => { e.stopPropagation(); openEdit(row); }}
+              className="p-1.5 hover:bg-blue-50 rounded-lg text-blue-600 hover:text-blue-800"
+              title="Sửa"
+            >
+              <Pencil className="w-4 h-4" />
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); openDuplicate(row); }}
+              className="p-1.5 hover:bg-green-50 rounded-lg text-green-600 hover:text-green-800"
+              title="Nhân bản"
+            >
+              <Copy className="w-4 h-4" />
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); onDelete(row.id); }}
+              disabled={deleting === row.id}
+              className="p-1.5 hover:bg-red-50 rounded-lg text-red-600 hover:text-red-800 disabled:opacity-50"
+              title="Xóa"
+            >
+              {deleting === row.id ? (
+                <div className="w-4 h-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Trash2 className="w-4 h-4" />
+              )}
+            </button>
+          </div>
+        );
+      default:
+        return (row as any)[key] ?? "-";
+    }
+  }
 
   return (
     <div className="h-[calc(100vh-64px)] overflow-auto">
@@ -384,21 +591,31 @@ export default function VehiclesPage() {
             <p className="text-sm text-gray-500 mt-1">Quản lý xe đầu kéo và rơ mooc</p>
           </div>
 
-          <button
-            onClick={openCreate}
-            className="rounded-xl bg-blue-600 text-white px-4 py-2 text-sm font-medium hover:bg-blue-700 flex items-center gap-2"
-          >
-            <Plus className="w-4 h-4" />
-            Thêm phương tiện
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={openPairingModal}
+              className="rounded-xl bg-purple-600 text-white px-4 py-2 text-sm font-medium hover:bg-purple-700 flex items-center gap-2"
+            >
+              <Link2 className="w-4 h-4" />
+              Ghép cặp
+            </button>
+            <button
+              onClick={openCreate}
+              className="rounded-xl bg-blue-600 text-white px-4 py-2 text-sm font-medium hover:bg-blue-700 flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              Thêm phương tiện
+            </button>
+          </div>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
           <StatCard icon={Truck} label="Tổng phương tiện" value={stats.total} color="blue" />
-          <StatCard icon={Truck} label="Đầu kéo" value={stats.tractors} color="blue" />
-          <StatCard icon={Truck} label="Rơ mooc" value={stats.trailers} color="purple" />
+          <StatCard icon={Truck} label="Đầu kéo" value={`${stats.tractorsActive}/${stats.tractors}`} color="blue" />
+          <StatCard icon={Truck} label="Rơ mooc" value={`${stats.trailersActive}/${stats.trailers}`} color="purple" />
           <StatCard icon={CheckCircle} label="Đang hoạt động" value={stats.active} color="green" />
+          <StatCard icon={Ban} label="Đã thanh lý" value={stats.disposed} color="gray" />
           <StatCard icon={Calendar} label="Sắp hết hạn ĐK" value={stats.expiringRegistration} color="yellow" />
         </div>
       </div>
@@ -453,13 +670,17 @@ export default function VehiclesPage() {
             <table className="w-full text-sm">
               <thead className="bg-gray-50 text-gray-700">
                 <tr>
-                  {columns.map((col) => (
+                  {columnDefs.map((col) => (
                     <th
                       key={col.key}
-                      className={`px-4 py-3 font-bold text-${col.align || "left"}`}
+                      className={`px-3 py-3 font-bold text-left ${col.sortable ? "cursor-pointer select-none hover:bg-gray-100" : ""}`}
                       style={{ width: col.width }}
+                      onClick={() => col.sortable && handleSort(col.key)}
                     >
-                      {col.header}
+                      <div className="flex items-center gap-1">
+                        {col.header}
+                        {col.sortable && getSortIcon(col.key)}
+                      </div>
                     </th>
                   ))}
                 </tr>
@@ -476,7 +697,7 @@ export default function VehiclesPage() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={columns.length} className="px-4 py-8 text-center text-gray-500">
+                  <td colSpan={columnDefs.length} className="px-4 py-8 text-center text-gray-500">
                     <div className="flex items-center justify-center gap-2">
                       <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
                       Đang tải...
@@ -485,20 +706,20 @@ export default function VehiclesPage() {
                 </tr>
               ) : paginatedRows.length === 0 ? (
                 <tr>
-                  <td colSpan={columns.length} className="px-4 py-8 text-center text-gray-500">
+                  <td colSpan={columnDefs.length} className="px-4 py-8 text-center text-gray-500">
                     Chưa có phương tiện nào
                   </td>
                 </tr>
               ) : (
-                paginatedRows.map((row, rowIndex) => (
+                paginatedRows.map((row) => (
                   <tr key={row.id} className="border-t hover:bg-gray-50">
-                    {columns.map((col) => (
+                    {columnDefs.map((col) => (
                       <td
                         key={col.key}
-                        className={`px-4 py-3 text-${col.align || "left"}`}
+                        className="px-3 py-2.5 text-left"
                         style={{ width: col.width }}
                       >
-                        {col.render ? col.render(row, rowIndex) : (row as any)[col.key] ?? "-"}
+                        {renderCell(row, col.key)}
                       </td>
                     ))}
                   </tr>
@@ -730,6 +951,7 @@ export default function VehiclesPage() {
                       <option value="ACTIVE">ACTIVE - Hoạt động</option>
                       <option value="INACTIVE">INACTIVE - Ngừng hoạt động</option>
                       <option value="MAINTENANCE">MAINTENANCE - Bảo trì</option>
+                      <option value="DISPOSED">DISPOSED - Đã thanh lý</option>
                     </select>
                   </div>
                   {form.status === "INACTIVE" && (
@@ -762,6 +984,219 @@ export default function VehiclesPage() {
                 className="rounded-xl bg-blue-600 text-white px-4 py-2 text-sm font-medium disabled:opacity-60 hover:bg-blue-700"
               >
                 {saving ? "Đang lưu..." : "Lưu"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Pairing Modal */}
+      {pairingModalOpen && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
+          <div className="w-full max-w-4xl rounded-2xl bg-white shadow-xl border border-gray-200 max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="px-6 py-4 border-b flex items-center justify-between bg-white">
+              <div className="font-semibold text-lg flex items-center gap-2">
+                <Link2 className="w-5 h-5 text-purple-600" />
+                Ghép cặp Đầu kéo - Rơ mooc
+              </div>
+              <button onClick={() => setPairingModalOpen(false)} className="text-gray-500 hover:text-black text-xl">
+                &times;
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+              {/* Create Pairing Form */}
+              <div className="border border-purple-200 rounded-xl p-4 bg-purple-50/50">
+                <h3 className="text-sm font-semibold mb-3 text-purple-800 flex items-center gap-2">
+                  <Plus className="w-4 h-4" />
+                  Tạo ghép cặp mới
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">
+                      Đầu kéo <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      value={pairingForm.tractor_id}
+                      onChange={(e) => setPairingForm(s => ({ ...s, tractor_id: e.target.value }))}
+                      className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-purple-200"
+                    >
+                      <option value="">-- Chọn đầu kéo --</option>
+                      {tractors.map(t => (
+                        <option key={t.id} value={t.id}>
+                          {t.code ? `${t.code} - ` : ""}{t.plate_no}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">
+                      Rơ mooc <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      value={pairingForm.trailer_id}
+                      onChange={(e) => setPairingForm(s => ({ ...s, trailer_id: e.target.value }))}
+                      className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-purple-200"
+                    >
+                      <option value="">-- Chọn rơ mooc --</option>
+                      {trailers.map(t => (
+                        <option key={t.id} value={t.id}>
+                          {t.code ? `${t.code} - ` : ""}{t.plate_no}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">
+                      Ngày hiệu lực <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="date"
+                      value={pairingForm.effective_date}
+                      onChange={(e) => setPairingForm(s => ({ ...s, effective_date: e.target.value }))}
+                      className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-purple-200"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Ngày kết thúc (để trống nếu chưa biết)</label>
+                    <input
+                      type="date"
+                      value={pairingForm.end_date}
+                      onChange={(e) => setPairingForm(s => ({ ...s, end_date: e.target.value }))}
+                      className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-purple-200"
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <label className="block text-xs text-gray-600 mb-1">Ghi chú</label>
+                    <input
+                      value={pairingForm.notes}
+                      onChange={(e) => setPairingForm(s => ({ ...s, notes: e.target.value }))}
+                      className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-purple-200"
+                      placeholder="Ghi chú (tuỳ chọn)"
+                    />
+                  </div>
+                  <div className="col-span-2 flex justify-end">
+                    <button
+                      onClick={createPairing}
+                      disabled={pairingSaving}
+                      className="rounded-xl bg-purple-600 text-white px-4 py-2 text-sm font-medium disabled:opacity-60 hover:bg-purple-700 flex items-center gap-2"
+                    >
+                      {pairingSaving ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          Đang lưu...
+                        </>
+                      ) : (
+                        <>
+                          <Link2 className="w-4 h-4" />
+                          Tạo ghép cặp
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Pairings List */}
+              <div>
+                <h3 className="text-sm font-semibold mb-3 text-gray-800 flex items-center gap-2">
+                  <div className="w-1 h-4 bg-purple-600 rounded"></div>
+                  Danh sách ghép cặp ({pairings.length})
+                </h3>
+
+                {pairingsLoading ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <div className="w-6 h-6 border-2 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+                    Đang tải...
+                  </div>
+                ) : pairings.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    Chưa có ghép cặp nào
+                  </div>
+                ) : (
+                  <div className="border border-gray-200 rounded-xl overflow-hidden">
+                    <table className="w-full text-sm">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-3 py-2.5 text-left font-semibold text-gray-700">Đầu kéo</th>
+                          <th className="px-3 py-2.5 text-left font-semibold text-gray-700">Rơ mooc</th>
+                          <th className="px-3 py-2.5 text-left font-semibold text-gray-700">Ngày hiệu lực</th>
+                          <th className="px-3 py-2.5 text-left font-semibold text-gray-700">Ngày kết thúc</th>
+                          <th className="px-3 py-2.5 text-left font-semibold text-gray-700">Trạng thái</th>
+                          <th className="px-3 py-2.5 text-left font-semibold text-gray-700">Thao tác</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {pairings.map((p) => (
+                          <tr key={p.id} className="border-t hover:bg-gray-50">
+                            <td className="px-3 py-2.5">
+                              <span className="font-medium text-blue-700">
+                                {p.tractor?.code || p.tractor?.plate_no || p.tractor_id.slice(0, 8)}
+                              </span>
+                              {p.tractor?.plate_no && p.tractor?.code && (
+                                <span className="text-gray-500 ml-1 text-xs">({p.tractor.plate_no})</span>
+                              )}
+                            </td>
+                            <td className="px-3 py-2.5">
+                              <span className="font-medium text-purple-700">
+                                {p.trailer?.code || p.trailer?.plate_no || p.trailer_id.slice(0, 8)}
+                              </span>
+                              {p.trailer?.plate_no && p.trailer?.code && (
+                                <span className="text-gray-500 ml-1 text-xs">({p.trailer.plate_no})</span>
+                              )}
+                            </td>
+                            <td className="px-3 py-2.5 text-gray-700">
+                              {new Date(p.effective_date).toLocaleDateString("vi-VN")}
+                            </td>
+                            <td className="px-3 py-2.5 text-gray-700">
+                              {p.end_date ? new Date(p.end_date).toLocaleDateString("vi-VN") : <span className="text-gray-400">-</span>}
+                            </td>
+                            <td className="px-3 py-2.5">
+                              {p.is_active ? (
+                                <span className="px-2 py-1 rounded-lg text-xs font-semibold bg-green-100 text-green-800">
+                                  Đang hoạt động
+                                </span>
+                              ) : (
+                                <span className="px-2 py-1 rounded-lg text-xs font-semibold bg-gray-100 text-gray-600">
+                                  Đã kết thúc
+                                </span>
+                              )}
+                            </td>
+                            <td className="px-3 py-2.5">
+                              <div className="flex items-center gap-1">
+                                {p.is_active && (
+                                  <button
+                                    onClick={() => endPairing(p.id)}
+                                    className="p-1.5 hover:bg-orange-50 rounded-lg text-orange-600 hover:text-orange-800"
+                                    title="Kết thúc ghép cặp"
+                                  >
+                                    <Unlink className="w-4 h-4" />
+                                  </button>
+                                )}
+                                <button
+                                  onClick={() => deletePairing(p.id)}
+                                  className="p-1.5 hover:bg-red-50 rounded-lg text-red-600 hover:text-red-800"
+                                  title="Xóa"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="px-6 py-4 border-t bg-white">
+              <button
+                onClick={() => setPairingModalOpen(false)}
+                className="rounded-xl border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50"
+              >
+                Đóng
               </button>
             </div>
           </div>

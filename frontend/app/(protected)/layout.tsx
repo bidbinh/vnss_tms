@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import Topbar from "@/components/Topbar";
+import AIChatWidget from "@/components/AIChatWidget";
 
 export default function ProtectedLayout({
   children,
@@ -11,15 +12,38 @@ export default function ProtectedLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-
-  
+  const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem("access_token");
-    if (!token) {
-      router.replace("/login");
+    // Check auth by calling /auth/me - cookie will be sent automatically
+    async function checkAuth() {
+      try {
+        const res = await fetch(`/api/v1/auth/me`, {
+          credentials: "include",
+        });
+        if (!res.ok) {
+          router.replace("/login");
+          return;
+        }
+        // Update user info in localStorage
+        const userData = await res.json();
+        localStorage.setItem("user", JSON.stringify(userData));
+      } catch {
+        router.replace("/login");
+        return;
+      }
+      setIsChecking(false);
     }
+    checkAuth();
   }, [router]);
+
+  if (isChecking) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-gray-500">Đang kiểm tra đăng nhập...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-screen flex bg-gray-50 overflow-hidden">
@@ -28,6 +52,7 @@ export default function ProtectedLayout({
         <Topbar />
         <main className="flex-1 overflow-auto">{children}</main>
       </div>
+      <AIChatWidget />
     </div>
   );
 }

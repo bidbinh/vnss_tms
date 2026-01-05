@@ -73,6 +73,7 @@ import {
   CreditCard,
   FileCheck,
   Building,
+  UserPlus,
   // Accounting Icons
   BookOpen,
   ArrowUpDown,
@@ -282,6 +283,7 @@ const HRM_CONFIG: ModuleConfig = {
       label: "Employees",
       items: [
         { label: "Employee List", href: "/hrm/employees", icon: Users },
+        { label: "External Workers", href: "/hrm/workers", icon: UserPlus },
         { label: "Branches", href: "/hrm/branches", icon: Building2 },
         { label: "Departments", href: "/hrm/departments", icon: Building },
         { label: "Teams", href: "/hrm/teams", icon: Users2 },
@@ -941,6 +943,7 @@ const ALL_MODULES: ModuleConfig[] = [
 const SUPER_ADMIN_MENU: MenuItem[] = [
   { label: "Admin Console", href: "/admin/tenants", icon: Building2 },
   { label: "Billing", href: "/admin/billing", icon: BadgeDollarSign },
+  { label: "Activity Logs", href: "/admin/activity-logs", icon: History },
 ];
 
 // LocalStorage keys
@@ -948,8 +951,8 @@ const STARRED_MENUS_KEY = "sidebar_starred_menus";
 const MODULE_ORDER_KEY = "sidebar_module_order";
 const GROUP_ITEM_ORDER_KEY = "sidebar_group_item_order";
 
-// API base URL
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api/v1";
+// API base URL - using Next.js rewrites, so just use relative path
+const API_BASE_URL = "/api/v1";
 
 // =====================================================
 // SORTABLE COMPONENTS
@@ -1152,7 +1155,7 @@ export default function Sidebar() {
       if (!token) return;
 
       try {
-        const res = await fetch(`${API_BASE}/tenant/enabled-modules`, {
+        const res = await fetch(`${API_BASE_URL}/tenant/enabled-modules`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (res.ok) {
