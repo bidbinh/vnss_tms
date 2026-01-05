@@ -140,7 +140,8 @@
       "Bash(git push:*)",
       "Bash(ssh tms@103.179.190.59 \"cd /home/tms && ./deploy.sh\")",
       "Bash(ssh root@103.179.190.59 \"cd /home/tms && ./deploy.sh\")",
-      "Bash(ssh root@103.176.20.95 \"cd /home/tms && ./deploy.sh\")"
+      "Bash(ssh root@103.176.20.95 \"cd /home/tms && ./deploy.sh\")",
+      "Bash(npm install:*)"
     ]
   }
 }
