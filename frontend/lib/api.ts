@@ -10,7 +10,13 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
   if (init.body) {
     headers.set("Content-Type", "application/json");
   }
-  // Token is now sent via cookie automatically with credentials: 'include'
+  // Add Authorization header from localStorage token
+  if (typeof window !== "undefined") {
+    const token = localStorage.getItem("access_token");
+    if (token) {
+      headers.set("Authorization", `Bearer ${token}`);
+    }
+  }
 
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
   // If caller already passed an /api/v1 path, keep it; otherwise prefix once.
@@ -23,6 +29,7 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
   const res = await fetch(url, { ...init, headers, credentials: "include" });
 
   if (res.status === 401 && typeof window !== "undefined") {
+    localStorage.removeItem("access_token");
     localStorage.removeItem("user");
     window.location.href = "/login";
     throw new Error("Unauthorized");
@@ -50,7 +57,14 @@ function joinUrl(base: string, path: string) {
 
 // Upload file với FormData (không set Content-Type, để browser tự set với boundary)
 export async function apiUpload<T>(path: string, formData: FormData): Promise<T> {
-  // Token is now sent via cookie automatically with credentials: 'include'
+  // Add Authorization header from localStorage token
+  const headers: Record<string, string> = {};
+  if (typeof window !== "undefined") {
+    const token = localStorage.getItem("access_token");
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+  }
   // KHÔNG set Content-Type - browser sẽ tự set với boundary cho multipart/form-data
 
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
@@ -62,11 +76,13 @@ export async function apiUpload<T>(path: string, formData: FormData): Promise<T>
 
   const res = await fetch(url, {
     method: "POST",
+    headers,
     body: formData,
     credentials: "include",
   });
 
   if (res.status === 401 && typeof window !== "undefined") {
+    localStorage.removeItem("access_token");
     localStorage.removeItem("user");
     window.location.href = "/login";
     throw new Error("Unauthorized");
