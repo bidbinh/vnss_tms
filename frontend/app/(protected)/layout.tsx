@@ -17,18 +17,23 @@ export default function ProtectedLayout({
   useEffect(() => {
     // Check auth by calling /auth/me - cookie will be sent automatically
     async function checkAuth() {
+      console.log("[ProtectedLayout] Checking auth...");
       try {
         const res = await fetch(`/api/v1/auth/me`, {
           credentials: "include",
         });
+        console.log("[ProtectedLayout] /auth/me response:", res.status, res.ok);
         if (!res.ok) {
+          console.log("[ProtectedLayout] Not authenticated, redirecting to login");
           router.replace("/login");
           return;
         }
         // Update user info in localStorage
         const userData = await res.json();
+        console.log("[ProtectedLayout] User authenticated:", userData.username);
         localStorage.setItem("user", JSON.stringify(userData));
-      } catch {
+      } catch (err) {
+        console.error("[ProtectedLayout] Auth check error:", err);
         router.replace("/login");
         return;
       }
