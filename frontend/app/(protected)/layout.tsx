@@ -15,16 +15,30 @@ export default function ProtectedLayout({
   const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
-    // Check auth by calling /auth/me - cookie will be sent automatically
+    // Check auth using token from localStorage
     async function checkAuth() {
       console.log("[ProtectedLayout] Checking auth...");
+
+      // Get token from localStorage
+      const token = localStorage.getItem("access_token");
+      if (!token) {
+        console.log("[ProtectedLayout] No token found, redirecting to login");
+        router.replace("/login");
+        return;
+      }
+
       try {
         const res = await fetch(`/api/v1/auth/me`, {
+          headers: {
+            "Authorization": `Bearer ${token}`,
+          },
           credentials: "include",
         });
         console.log("[ProtectedLayout] /auth/me response:", res.status, res.ok);
         if (!res.ok) {
           console.log("[ProtectedLayout] Not authenticated, redirecting to login");
+          localStorage.removeItem("access_token");
+          localStorage.removeItem("user");
           router.replace("/login");
           return;
         }

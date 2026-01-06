@@ -73,8 +73,13 @@ function LoginForm() {
       const data = (await res.json()) as LoginResponse;
       console.log("[Login] Success, user:", data.user);
 
-      // Token is now stored in cookie by backend, only save user info to localStorage
-      if (data.user) localStorage.setItem("user", JSON.stringify(data.user));
+      // Store token in localStorage (cookies may be blocked by browser privacy settings)
+      if (data.access_token) {
+        localStorage.setItem("access_token", data.access_token);
+      }
+      if (data.user) {
+        localStorage.setItem("user", JSON.stringify(data.user));
+      }
 
       // If user's tenant code doesn't match current subdomain, redirect
       if (data.user?.tenant_code) {
@@ -82,8 +87,7 @@ function LoginForm() {
         redirectToTenantSubdomain(data.user.tenant_code);
       }
 
-      // Use window.location to ensure cookie is properly set before navigation
-      // router.replace can sometimes navigate before cookie is fully processed
+      // Use window.location to ensure data is properly set before navigation
       console.log("[Login] Redirecting to:", nextUrl);
       window.location.href = nextUrl;
     } catch (err: unknown) {
