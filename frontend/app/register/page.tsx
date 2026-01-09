@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { API_BASE } from "@/lib/api";
 
 // Company types
 const COMPANY_TYPES = [
@@ -77,7 +76,7 @@ export default function RegisterPage() {
     const timeout = setTimeout(async () => {
       try {
         const res = await fetch(
-          `${API_BASE}/tenant/check-subdomain/${subdomain}`
+          `/api/v1/tenant/check-subdomain/${subdomain}`
         );
         const data = await res.json();
         setSubdomainStatus({
@@ -134,7 +133,7 @@ export default function RegisterPage() {
     setSubmitting(true);
 
     try {
-      const res = await fetch(`${API_BASE}/tenant/register`, {
+      const res = await fetch(`/api/v1/tenant/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
