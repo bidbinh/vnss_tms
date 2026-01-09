@@ -50,21 +50,35 @@ def upgrade():
     add_column_if_not_exists('fms_hs_codes', sa.Column('notes', sa.Text(), nullable=True))
     add_column_if_not_exists('fms_hs_codes', sa.Column('updated_at', sa.DateTime(), nullable=True))
 
-    # Copy data from old columns to new columns
-    op.execute("""
-        UPDATE fms_hs_codes SET
-            hs_description = COALESCE(hs_description, description),
-            product_name = COALESCE(product_name, description),
-            country_of_origin = COALESCE(country_of_origin, origin_country),
-            import_duty_rate = COALESCE(import_duty_rate, duty_rate, 0),
-            import_duty_amount = COALESCE(import_duty_amount, duty_amount, 0),
-            special_consumption_rate = COALESCE(special_consumption_rate, sct_rate, 0),
-            special_consumption_amount = COALESCE(special_consumption_amount, sct_amount, 0),
-            total_tax_amount = COALESCE(total_tax_amount, COALESCE(duty_amount, 0) + COALESCE(vat_amount, 0) + COALESCE(sct_amount, 0)),
-            customs_value = COALESCE(customs_value, total_value, 0),
-            notes = COALESCE(notes, remarks),
-            updated_at = COALESCE(updated_at, created_at)
-    """)
+    # Copy data from old columns to new columns (only if old columns exist)
+    # Check which old columns exist and build dynamic UPDATE
+    old_column_mappings = [
+        ('description', 'hs_description'),
+        ('description', 'product_name'),
+        ('origin_country', 'country_of_origin'),
+        ('duty_rate', 'import_duty_rate'),
+        ('duty_amount', 'import_duty_amount'),
+        ('sct_rate', 'special_consumption_rate'),
+        ('sct_amount', 'special_consumption_amount'),
+        ('remarks', 'notes'),
+    ]
+
+    updates = []
+    for old_col, new_col in old_column_mappings:
+        if column_exists('fms_hs_codes', old_col):
+            updates.append(f"{new_col} = COALESCE({new_col}, {old_col})")
+
+    # Always update these with defaults
+    updates.append("import_duty_rate = COALESCE(import_duty_rate, 0)")
+    updates.append("import_duty_amount = COALESCE(import_duty_amount, 0)")
+    updates.append("special_consumption_rate = COALESCE(special_consumption_rate, 0)")
+    updates.append("special_consumption_amount = COALESCE(special_consumption_amount, 0)")
+    updates.append("total_tax_amount = COALESCE(total_tax_amount, 0)")
+    updates.append("customs_value = COALESCE(customs_value, 0)")
+    updates.append("updated_at = COALESCE(updated_at, created_at)")
+
+    if updates:
+        op.execute(f"UPDATE fms_hs_codes SET {', '.join(updates)}")
 
 
 def downgrade():
