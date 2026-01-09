@@ -169,14 +169,14 @@ function LoginForm() {
         <form className="p-6 space-y-4" onSubmit={onSubmit}>
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              {t("auth.username")}
+              {t("auth.usernameOrEmailOrPhone")}
             </label>
             <input
               className="mt-1 w-full rounded-xl border border-gray-300 px-3 py-2 outline-none focus:ring-2 focus:ring-red-100 focus:border-red-300"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               autoComplete="username"
-              placeholder={t("auth.username")}
+              placeholder={t("auth.usernameOrEmailOrPhonePlaceholder")}
             />
           </div>
 

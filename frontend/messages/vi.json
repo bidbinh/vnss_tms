@@ -95,6 +95,8 @@
     "resetPassword": "Đặt lại mật khẩu",
     "changePassword": "Đổi mật khẩu",
     "username": "Tên đăng nhập",
+    "usernameOrEmailOrPhone": "Email / SĐT / Username",
+    "usernameOrEmailOrPhonePlaceholder": "Nhập email, số điện thoại hoặc username",
     "password": "Mật khẩu",
     "confirmPassword": "Xác nhận mật khẩu",
     "email": "Email",

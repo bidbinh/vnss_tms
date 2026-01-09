@@ -95,6 +95,8 @@
     "resetPassword": "Reset Password",
     "changePassword": "Change Password",
     "username": "Username",
+    "usernameOrEmailOrPhone": "Email / Phone / Username",
+    "usernameOrEmailOrPhonePlaceholder": "Enter email, phone or username",
     "password": "Password",
     "confirmPassword": "Confirm Password",
     "email": "Email",
