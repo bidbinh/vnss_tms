@@ -28,7 +28,12 @@ RUN pip install --no-cache-dir \
     bcrypt==4.2.0 \
     alembic==1.13.2 \
     pydantic-settings==2.2.1 \
-    openpyxl==3.1.5
+    openpyxl==3.1.5 \
+    pandas==2.2.0 \
+    google-generativeai==0.8.0 \
+    pdfplumber==0.11.0 \
+    httpx==0.27.0 \
+    aiohttp==3.10.0
 
 # Copy application code
 COPY app /app/app
