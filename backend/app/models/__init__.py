@@ -518,6 +518,17 @@ __all__ += [
     "ActionCost", "DEFAULT_ACTION_COSTS", "get_action_cost",
 ]
 
+# User Task Models (Central Task Management)
+from .user_task import (
+    UserTask, UserTaskStatus, UserTaskPriority, UserTaskType, UserTaskScope, UserTaskSource,
+    UserTaskComment, UserTaskWatcher, UserTaskSequence,
+)
+
+__all__ += [
+    "UserTask", "UserTaskStatus", "UserTaskPriority", "UserTaskType", "UserTaskScope", "UserTaskSource",
+    "UserTaskComment", "UserTaskWatcher", "UserTaskSequence",
+]
+
 # Personal Workspace Models
 from .worker import (
     Worker, WorkerStatus,

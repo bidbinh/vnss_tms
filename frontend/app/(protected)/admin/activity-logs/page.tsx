@@ -793,7 +793,7 @@ export default function ActivityLogsPage() {
           </h3>
           <div className="space-y-3">
             {summary.by_user.map((user, index) => (
-              <div key={user.user_id} className="flex items-center gap-4">
+              <div key={`${user.user_id}-${index}`} className="flex items-center gap-4">
                 <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-sm font-medium">
                   {index + 1}
                 </div>

@@ -9,7 +9,6 @@ Endpoints:
 
 Permission: ADMIN, TENANT_ADMIN, or activity_logs:view permission
 """
-print("[ActivityLogs Router] Loading activity_logs.py...")
 import json
 from datetime import datetime, timedelta
 from typing import Optional, List
@@ -24,7 +23,6 @@ from app.core.security import get_current_user
 
 
 router = APIRouter(prefix="/activity-logs", tags=["activity-logs"])
-print("[ActivityLogs Router] Router created with prefix=/activity-logs")
 
 
 # ==================== PERMISSION CHECK ====================

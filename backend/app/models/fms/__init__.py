@@ -64,6 +64,32 @@ from app.models.fms.consolidation import (
     ConsolidationType,
     ConsolidationStatus,
 )
+from app.models.fms.master_data import (
+    Country,
+    Port,
+    PortType,
+    CustomsOffice,
+    HSCodeCatalog,
+    Currency,
+    UnitOfMeasure,
+    DeclarationTypeCode,
+    ExemptionCode,
+)
+from app.models.fms.customs_partners import (
+    CustomsExporter,
+    CustomsImporter,
+    CustomsLocation,
+)
+from app.models.fms.ai_training import (
+    AIParsingSession,
+    AIParsingOutput,
+    AICorrection,
+    AICustomerRule,
+    AIPartnerMatch,
+)
+from app.models.fms.parsing_instructions import (
+    ParsingInstruction,
+)
 
 __all__ = [
     # Shipment
@@ -116,4 +142,26 @@ __all__ = [
     "ConsolidationItem",
     "ConsolidationType",
     "ConsolidationStatus",
+    # Master Data
+    "Country",
+    "Port",
+    "PortType",
+    "CustomsOffice",
+    "HSCodeCatalog",
+    "Currency",
+    "UnitOfMeasure",
+    "DeclarationTypeCode",
+    "ExemptionCode",
+    # Customs Partners
+    "CustomsExporter",
+    "CustomsImporter",
+    "CustomsLocation",
+    # AI Training
+    "AIParsingSession",
+    "AIParsingOutput",
+    "AICorrection",
+    "AICustomerRule",
+    "AIPartnerMatch",
+    # Parsing Instructions
+    "ParsingInstruction",
 ]

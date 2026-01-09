@@ -1,4 +1,13 @@
-from fastapi import FastAPI
+import logging
+
+# Configure logging to show INFO level
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from app.api.v1.routes.orders import router as orders_router
 from app.api.v1.routes.shipments import router as shipments_router
 from app.api.v1.routes.containers import router as containers_router
@@ -18,9 +27,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.v1.routes import api_router
 from app.core.tenant_middleware import TenantMiddleware
 from app.core.activity_log_middleware import ActivityLogMiddleware
-
-print("[Main] Starting FastAPI app...")
-print("[Main] ActivityLogMiddleware imported successfully")
 
 app = FastAPI(title="TMS Container v1")
 
@@ -49,11 +55,9 @@ app.add_middleware(
 
 # Add Activity Log middleware
 app.add_middleware(ActivityLogMiddleware)
-print("[Main] ActivityLogMiddleware added to app")
 
 # Add Tenant detection middleware (runs first, sets tenant_id in request.state)
 app.add_middleware(TenantMiddleware)
-print("[Main] TenantMiddleware added to app")
 
 #app.include_router(orders_router)
 #app.include_router(shipments_router)
@@ -78,4 +82,79 @@ app.include_router(api_router, prefix="/api/v1")
 @app.get("/health")
 def health():
     return {"ok": True}
+
+
+@app.get("/fix-hs-schema")
+def fix_hs_schema():
+    """Add missing columns to fms_hs_codes table - run once"""
+    from sqlalchemy import text, inspect
+    from app.db.session import engine
+
+    with engine.connect() as connection:
+        inspector = inspect(connection)
+        existing_cols = [c['name'] for c in inspector.get_columns('fms_hs_codes')]
+
+        columns_to_add = [
+            ('shipment_id', 'VARCHAR(50)'),
+            ('product_specification', 'TEXT'),
+            ('origin_criteria', 'VARCHAR(20)'),
+            ('unit_code', 'VARCHAR(10)'),
+            ('unit_2_code', 'VARCHAR(10)'),
+            ('currency_code', 'VARCHAR(5)'),
+            ('preferential_rate', 'DOUBLE PRECISION'),
+            ('special_preferential_rate', 'DOUBLE PRECISION'),
+            ('applied_rate', 'DOUBLE PRECISION'),
+            ('environmental_rate', 'DOUBLE PRECISION'),
+            ('environmental_amount', 'DOUBLE PRECISION'),
+            ('legal_document', 'VARCHAR(200)'),
+            ('preferential_code', 'VARCHAR(20)'),
+            ('co_form', 'VARCHAR(20)'),
+            ('co_no_line', 'VARCHAR(50)'),
+            ('license_no', 'VARCHAR(50)'),
+            ('license_date', 'DATE'),
+            ('license_issuer', 'VARCHAR(200)'),
+            ('license_expiry', 'DATE'),
+            ('created_by', 'VARCHAR(50)'),
+            ('notes', 'TEXT'),
+            ('created_at', 'TIMESTAMP'),
+            ('updated_at', 'TIMESTAMP'),
+        ]
+
+        added = []
+        skipped = []
+        errors = []
+
+        for col_name, col_type in columns_to_add:
+            if col_name not in existing_cols:
+                try:
+                    sql = text(f'ALTER TABLE fms_hs_codes ADD COLUMN {col_name} {col_type}')
+                    connection.execute(sql)
+                    connection.commit()
+                    added.append(col_name)
+                except Exception as e:
+                    errors.append(f"{col_name}: {str(e)}")
+            else:
+                skipped.append(col_name)
+
+    return {
+        "success": True,
+        "added": added,
+        "skipped": skipped,
+        "errors": errors,
+        "existing_columns": existing_cols
+    }
+
+
+# Global exception handler to prevent empty 500 responses
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    import logging
+    import traceback
+    logger = logging.getLogger(__name__)
+    logger.error(f"Unhandled exception: {exc}")
+    logger.error(traceback.format_exc())
+    return JSONResponse(
+        status_code=500,
+        content={"detail": f"Internal server error: {str(exc)}"}
+    )
 

@@ -3,6 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { TenantProvider } from "@/contexts/TenantContext";
 import { Toaster } from "sonner";
+import IntlProvider from "@/components/providers/IntlProvider";
+import { getLocale, getMessages } from "@/lib/getLocale";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -19,20 +21,25 @@ export const metadata: Metadata = {
   description: "Multi-tenant Logistics ERP Platform for Transportation, Warehousing, and Forwarding",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const locale = await getLocale();
+  const messages = await getMessages(locale);
+
   return (
-    <html lang="en">
+    <html lang={locale}>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <TenantProvider>
-          {children}
-          <Toaster richColors position="top-right" />
-        </TenantProvider>
+        <IntlProvider locale={locale} messages={messages}>
+          <TenantProvider>
+            {children}
+            <Toaster richColors position="top-right" />
+          </TenantProvider>
+        </IntlProvider>
       </body>
     </html>
   );

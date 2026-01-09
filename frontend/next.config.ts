@@ -1,4 +1,7 @@
 import type { NextConfig } from "next";
+import createNextIntlPlugin from 'next-intl/plugin';
+
+const withNextIntl = createNextIntlPlugin('./i18n.ts');
 
 const nextConfig: NextConfig = {
   output: "standalone",
@@ -7,7 +10,7 @@ const nextConfig: NextConfig = {
   // In development, use localhost
   async rewrites() {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL ||
-      (process.env.NODE_ENV === "production" ? "http://backend:8000" : "http://localhost:8001");
+      (process.env.NODE_ENV === "production" ? "http://backend:8000" : "http://localhost:8000");
     return [
       {
         source: "/api/v1/:path*",
@@ -17,4 +20,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withNextIntl(nextConfig);

@@ -59,9 +59,14 @@ def login(
     The 'username' parameter accepts any of these formats.
     Accepts form data (application/x-www-form-urlencoded).
     """
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info(f"[LOGIN] Request received for username: {username}")
+
     from sqlalchemy import or_
 
     # Find user by username OR email OR phone
+    logger.info("[LOGIN] Querying database...")
     user = session.exec(
         select(User).where(
             or_(
@@ -71,8 +76,10 @@ def login(
             )
         )
     ).first()
+    logger.info(f"[LOGIN] User found: {user is not None}")
 
     if not user or not verify_password(password, user.password_hash):
+        logger.warning(f"[LOGIN] Invalid credentials for: {username}")
         raise HTTPException(401, "Invalid credentials")
 
     # Check if user is active
@@ -120,6 +127,7 @@ def login(
     role_enum = UserRole(user.role) if user.role in [r.value for r in UserRole] else None
     permissions = ROLE_PERMISSIONS.get(role_enum, {})
 
+    logger.info(f"[LOGIN] Login successful for: {username}")
     return {
         "access_token": token,
         "token_type": "bearer",

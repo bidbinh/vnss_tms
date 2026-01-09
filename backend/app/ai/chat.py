@@ -8,20 +8,62 @@ from typing import Optional, Dict, Any, List
 from datetime import datetime
 import anthropic
 from sqlmodel import Session
+from sqlalchemy import text
 
 from .config import ai_settings
 from .knowledge import KnowledgeBase
 from .tools import TOOL_DEFINITIONS, ToolExecutor
 
 
+def get_claude_api_key_from_db(session: Optional[Session]) -> Optional[str]:
+    """Get Claude API key from database (ai_providers table)"""
+    if not session:
+        return None
+    try:
+        result = session.execute(
+            text("SELECT api_key FROM ai_providers WHERE provider_code = 'claude' AND is_configured = true")
+        )
+        row = result.fetchone()
+        if row and row[0]:
+            return row[0]
+    except Exception:
+        pass
+    return None
+
+
+def get_claude_model_from_db(session: Optional[Session]) -> Optional[str]:
+    """Get Claude model from database"""
+    if not session:
+        return None
+    try:
+        result = session.execute(
+            text("SELECT default_model FROM ai_providers WHERE provider_code = 'claude' AND is_configured = true")
+        )
+        row = result.fetchone()
+        if row and row[0]:
+            return row[0]
+    except Exception:
+        pass
+    return None
+
+
 class AIChat:
     """AI Chat Engine with RAG and Tool Calling"""
 
     def __init__(self, session: Optional[Session] = None):
-        self.client = anthropic.Anthropic(api_key=ai_settings.ANTHROPIC_API_KEY)
+        self.session = session
+
+        # Try to get API key from database first, fallback to env
+        self.api_key = get_claude_api_key_from_db(session) or ai_settings.ANTHROPIC_API_KEY
+        self.model = get_claude_model_from_db(session) or ai_settings.CLAUDE_MODEL
+
+        # Initialize client only if we have API key
+        self.client = None
+        if self.api_key:
+            self.client = anthropic.Anthropic(api_key=self.api_key)
+
         self.knowledge_base = KnowledgeBase(ai_settings.KNOWLEDGE_DIR)
         self.tool_executor = ToolExecutor(session)
-        self.session = session
 
     async def chat(
         self,
@@ -40,7 +82,7 @@ class AIChat:
         Returns:
             Dict with response, tool_calls, and metadata
         """
-        if not ai_settings.ANTHROPIC_API_KEY:
+        if not self.api_key or not self.client:
             return {
                 "response": "Xin lỗi, hệ thống AI chưa được cấu hình. Vui lòng liên hệ support@9log.tech.",
                 "error": "API key not configured"
@@ -63,7 +105,7 @@ class AIChat:
         try:
             # Call Claude
             response = self.client.messages.create(
-                model=ai_settings.CLAUDE_MODEL,
+                model=self.model,
                 max_tokens=ai_settings.AI_MAX_TOKENS,
                 temperature=ai_settings.AI_TEMPERATURE,
                 system=system_prompt,
@@ -131,7 +173,7 @@ class AIChat:
 
             # Get final response after tool execution
             final_response = self.client.messages.create(
-                model=ai_settings.CLAUDE_MODEL,
+                model=self.model,
                 max_tokens=ai_settings.AI_MAX_TOKENS,
                 temperature=ai_settings.AI_TEMPERATURE,
                 system=ai_settings.AI_SYSTEM_PROMPT,

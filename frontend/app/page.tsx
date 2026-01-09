@@ -33,7 +33,10 @@ import {
   Globe2,
   Clock,
   PhoneCall,
+  MessageCircle,
+  Bot,
 } from "lucide-react";
+import AIChatWidget from "@/components/AIChatWidget";
 
 // ============================================================================
 // DATA
@@ -673,12 +676,10 @@ export default function LandingPage() {
         <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 lg:h-20">
             {/* Logo */}
-            <Link href="/" className="flex items-center gap-2">
-              <div className="w-9 h-9 bg-gradient-to-br from-red-500 to-red-600 rounded-lg flex items-center justify-center shadow-lg shadow-red-500/30">
-                <span className="text-white font-bold text-xl">9</span>
-              </div>
+            <Link href="/" className="flex items-center">
+              <span className="bg-gradient-to-br from-red-500 to-red-600 rounded px-1.5 py-0.5 text-white font-bold text-xl shadow-lg shadow-red-500/30">9</span>
               <span className={`text-xl font-bold ${scrolled ? "text-slate-900" : "text-white"}`}>
-                9log<span className="text-red-500">.tech</span>
+                log<span className="text-red-500">.tech</span>
               </span>
             </Link>
 
@@ -786,7 +787,7 @@ export default function LandingPage() {
 
             {/* Headline */}
             <h1 className="hero-title text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold text-white leading-tight opacity-0">
-              Nền tảng <span className="text-red-400">Logistics</span>
+              ERP <span className="text-red-400">Logistics</span>
               <br />
               <span className="bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400 bg-clip-text text-transparent">
                 Made in Vietnam
@@ -1003,10 +1004,10 @@ export default function LandingPage() {
           {/* Header */}
           <div className="text-center max-w-3xl mx-auto mb-16">
             <h2 className="text-3xl lg:text-4xl font-bold text-slate-900">
-              Minh bạch. Không phí ẩn.
+              Tối ưu chi phí
             </h2>
             <p className="mt-4 text-lg text-slate-600">
-              Bắt đầu miễn phí, nâng cấp khi doanh nghiệp phát triển
+              Dùng thử miễn phí, Nâng cấp nhiều tính năng cho Doanh nghiệp
             </p>
           </div>
 
@@ -1101,13 +1102,17 @@ export default function LandingPage() {
               Bắt đầu miễn phí ngay
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Link>
-            <a
-              href="tel:1900xxxx"
+            <button
+              onClick={() => {
+                // Trigger AI Chat Widget to open
+                const event = new CustomEvent('openAIChat');
+                window.dispatchEvent(event);
+              }}
               className="inline-flex items-center gap-2 px-8 py-4 text-white border border-white/30 hover:bg-white/10 font-semibold rounded-xl transition-all"
             >
-              <PhoneCall className="w-5 h-5" />
-              Hotline: 1900 xxxx
-            </a>
+              <MessageCircle className="w-5 h-5" />
+              Chat với AI
+            </button>
           </div>
 
           <div className="mt-12 flex flex-wrap items-center justify-center gap-8 text-slate-400">
@@ -1120,8 +1125,8 @@ export default function LandingPage() {
               Bảo mật dữ liệu
             </span>
             <span className="flex items-center gap-2">
-              <PhoneCall className="w-5 h-5" />
-              Hỗ trợ 24/7
+              <Bot className="w-5 h-5" />
+              Hỗ trợ AI 24/7
             </span>
           </div>
         </div>
@@ -1135,12 +1140,10 @@ export default function LandingPage() {
           <div className="grid grid-cols-2 lg:grid-cols-5 gap-8">
             {/* Brand */}
             <div className="col-span-2">
-              <Link href="/" className="flex items-center gap-2">
-                <div className="w-9 h-9 bg-gradient-to-br from-red-500 to-red-600 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-xl">9</span>
-                </div>
+              <Link href="/" className="flex items-center">
+                <span className="bg-gradient-to-br from-red-500 to-red-600 rounded px-1.5 py-0.5 text-white font-bold text-xl">9</span>
                 <span className="text-xl font-bold text-white">
-                  9log<span className="text-red-500">.tech</span>
+                  log<span className="text-red-500">.tech</span>
                 </span>
               </Link>
               <p className="mt-4 text-sm text-slate-400 max-w-xs">
@@ -1182,7 +1185,7 @@ export default function LandingPage() {
             <div>
               <h4 className="text-sm font-semibold text-white mb-4">Hỗ trợ</h4>
               <ul className="space-y-3">
-                {["Tài liệu", "Help Center", "Status", "Hotline"].map((item) => (
+                {["Tài liệu", "Help Center", "Status", "AI Chat"].map((item) => (
                   <li key={item}>
                     <a href="#" className="text-sm text-slate-400 hover:text-white transition-colors">
                       {item}
@@ -1208,6 +1211,9 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
+
+      {/* AI Chat Widget for visitors */}
+      <AIChatWidget primaryColor="#ef4444" />
     </div>
   );
 }

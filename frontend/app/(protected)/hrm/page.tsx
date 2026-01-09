@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import {
   Users,
   Building,
@@ -56,6 +57,7 @@ interface AdvanceStats {
 
 export default function HRMDashboardPage() {
   const router = useRouter();
+  const t = useTranslations("hrm.dashboard");
   const [loading, setLoading] = useState(true);
   const [employeeStats, setEmployeeStats] = useState<EmployeeStats | null>(null);
   const [contractStats, setContractStats] = useState<ContractStats | null>(null);
@@ -105,15 +107,15 @@ export default function HRMDashboardPage() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">HRM Dashboard</h1>
-          <p className="text-gray-600 mt-1">Quản lý nhân sự</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t("title")}</h1>
+          <p className="text-gray-600 mt-1">{t("subtitle")}</p>
         </div>
         <Link
           href="/hrm/employees/new"
           className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
         >
           <UserPlus className="w-4 h-4" />
-          Thêm nhân viên
+          {t("addEmployee")}
         </Link>
       </div>
 
@@ -126,15 +128,15 @@ export default function HRMDashboardPage() {
               <Users className="w-6 h-6 text-blue-600" />
             </div>
             <div>
-              <div className="text-sm text-gray-600">Nhân viên đang làm</div>
+              <div className="text-sm text-gray-600">{t("activeEmployees")}</div>
               <div className="text-2xl font-bold text-gray-900">
                 {employeeStats?.total_active || 0}
               </div>
             </div>
           </div>
           <div className="mt-3 flex gap-4 text-xs text-gray-500">
-            <span>Chính thức: {employeeStats?.by_status.active || 0}</span>
-            <span>Thử việc: {employeeStats?.by_status.probation || 0}</span>
+            <span>{t("official")}: {employeeStats?.by_status.active || 0}</span>
+            <span>{t("probation")}: {employeeStats?.by_status.probation || 0}</span>
           </div>
         </div>
 
@@ -145,7 +147,7 @@ export default function HRMDashboardPage() {
               <FileText className="w-6 h-6 text-green-600" />
             </div>
             <div>
-              <div className="text-sm text-gray-600">Hợp đồng hiệu lực</div>
+              <div className="text-sm text-gray-600">{t("activeContracts")}</div>
               <div className="text-2xl font-bold text-gray-900">
                 {contractStats?.total_active || 0}
               </div>
@@ -154,7 +156,7 @@ export default function HRMDashboardPage() {
           {(contractStats?.expiring_within_30_days ?? 0) > 0 && (
             <div className="mt-3 flex items-center gap-1 text-xs text-orange-600">
               <AlertCircle className="w-3 h-3" />
-              <span>{contractStats?.expiring_within_30_days} sắp hết hạn (30 ngày)</span>
+              <span>{contractStats?.expiring_within_30_days} {t("expiringContracts")}</span>
             </div>
           )}
         </div>
@@ -166,7 +168,7 @@ export default function HRMDashboardPage() {
               <Calendar className="w-6 h-6 text-yellow-600" />
             </div>
             <div>
-              <div className="text-sm text-gray-600">Đơn nghỉ chờ duyệt</div>
+              <div className="text-sm text-gray-600">{t("pendingLeaves")}</div>
               <div className="text-2xl font-bold text-gray-900">{pendingLeaves}</div>
             </div>
           </div>
@@ -174,7 +176,7 @@ export default function HRMDashboardPage() {
             href="/hrm/leaves?status=pending"
             className="mt-3 text-xs text-blue-600 hover:underline"
           >
-            Xem tất cả →
+            {t("viewAll")} →
           </Link>
         </div>
 
@@ -185,14 +187,14 @@ export default function HRMDashboardPage() {
               <DollarSign className="w-6 h-6 text-purple-600" />
             </div>
             <div>
-              <div className="text-sm text-gray-600">Tạm ứng chưa thu hồi</div>
+              <div className="text-sm text-gray-600">{t("outstandingAdvances")}</div>
               <div className="text-2xl font-bold text-gray-900">
                 {formatCurrency(advanceStats?.total_outstanding || 0)}
               </div>
             </div>
           </div>
           <div className="mt-3 text-xs text-gray-500">
-            {advanceStats?.employees_with_advance || 0} nhân viên đang tạm ứng
+            {advanceStats?.employees_with_advance || 0} {t("employeesWithAdvance")}
           </div>
         </div>
       </div>
@@ -201,42 +203,42 @@ export default function HRMDashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Employee by Type */}
         <div className="bg-white p-5 rounded-lg shadow border border-gray-200">
-          <h2 className="text-lg font-semibold mb-4">Nhân viên theo loại</h2>
+          <h2 className="text-lg font-semibold mb-4">{t("employeesByType")}</h2>
           <div className="space-y-3">
             {employeeStats && (
               <>
                 <DistributionBar
-                  label="Toàn thời gian"
+                  label={t("fullTime")}
                   value={employeeStats.by_type.full_time}
                   total={employeeStats.total_active}
                   color="bg-blue-500"
                 />
                 <DistributionBar
-                  label="Tài xế"
+                  label={t("driver")}
                   value={employeeStats.by_type.driver}
                   total={employeeStats.total_active}
                   color="bg-green-500"
                 />
                 <DistributionBar
-                  label="Bán thời gian"
+                  label={t("partTime")}
                   value={employeeStats.by_type.part_time}
                   total={employeeStats.total_active}
                   color="bg-yellow-500"
                 />
                 <DistributionBar
-                  label="Hợp đồng"
+                  label={t("contract")}
                   value={employeeStats.by_type.contract}
                   total={employeeStats.total_active}
                   color="bg-purple-500"
                 />
                 <DistributionBar
-                  label="Thực tập"
+                  label={t("intern")}
                   value={employeeStats.by_type.intern}
                   total={employeeStats.total_active}
                   color="bg-pink-500"
                 />
                 <DistributionBar
-                  label="Cộng tác viên"
+                  label={t("freelancer")}
                   value={employeeStats.by_type.freelancer}
                   total={employeeStats.total_active}
                   color="bg-gray-500"
@@ -248,42 +250,42 @@ export default function HRMDashboardPage() {
 
         {/* Quick Actions */}
         <div className="bg-white p-5 rounded-lg shadow border border-gray-200">
-          <h2 className="text-lg font-semibold mb-4">Thao tác nhanh</h2>
+          <h2 className="text-lg font-semibold mb-4">{t("quickActions")}</h2>
           <div className="grid grid-cols-2 gap-3">
             <QuickActionButton
               href="/hrm/employees"
               icon={Users}
-              label="Danh sách nhân viên"
+              label={t("employeeList")}
               color="bg-blue-50 text-blue-600 hover:bg-blue-100"
             />
             <QuickActionButton
               href="/hrm/departments"
               icon={Building}
-              label="Phòng ban"
+              label={t("departments")}
               color="bg-green-50 text-green-600 hover:bg-green-100"
             />
             <QuickActionButton
               href="/hrm/attendance"
               icon={Clock}
-              label="Chấm công"
+              label={t("attendance")}
               color="bg-yellow-50 text-yellow-600 hover:bg-yellow-100"
             />
             <QuickActionButton
               href="/hrm/leaves"
               icon={Calendar}
-              label="Nghỉ phép"
+              label={t("leaves")}
               color="bg-purple-50 text-purple-600 hover:bg-purple-100"
             />
             <QuickActionButton
               href="/hrm/payroll"
               icon={DollarSign}
-              label="Bảng lương"
+              label={t("payroll")}
               color="bg-pink-50 text-pink-600 hover:bg-pink-100"
             />
             <QuickActionButton
               href="/hrm/jobs"
               icon={Briefcase}
-              label="Tuyển dụng"
+              label={t("recruitment")}
               color="bg-orange-50 text-orange-600 hover:bg-orange-100"
             />
           </div>
@@ -294,11 +296,11 @@ export default function HRMDashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Pending Approvals */}
         <div className="bg-white p-5 rounded-lg shadow border border-gray-200">
-          <h2 className="text-lg font-semibold mb-4">Chờ phê duyệt</h2>
+          <h2 className="text-lg font-semibold mb-4">{t("pendingApprovals")}</h2>
           <div className="space-y-3">
             {(advanceStats?.pending_requests ?? 0) > 0 && (
               <PendingItem
-                label="Đề nghị tạm ứng"
+                label={t("advanceRequests")}
                 count={advanceStats?.pending_requests || 0}
                 href="/hrm/advances?status=pending"
                 color="text-purple-600"
@@ -306,7 +308,7 @@ export default function HRMDashboardPage() {
             )}
             {pendingLeaves > 0 && (
               <PendingItem
-                label="Đơn xin nghỉ phép"
+                label={t("leaveRequests")}
                 count={pendingLeaves}
                 href="/hrm/leaves?status=pending"
                 color="text-yellow-600"
@@ -315,7 +317,7 @@ export default function HRMDashboardPage() {
             {(advanceStats?.pending_requests ?? 0) === 0 && pendingLeaves === 0 && (
               <div className="flex items-center gap-2 text-gray-500 text-sm">
                 <CheckCircle className="w-4 h-4 text-green-500" />
-                Không có yêu cầu chờ duyệt
+                {t("noPendingRequests")}
               </div>
             )}
           </div>
@@ -323,11 +325,11 @@ export default function HRMDashboardPage() {
 
         {/* Alerts */}
         <div className="bg-white p-5 rounded-lg shadow border border-gray-200">
-          <h2 className="text-lg font-semibold mb-4">Cảnh báo</h2>
+          <h2 className="text-lg font-semibold mb-4">{t("alerts")}</h2>
           <div className="space-y-3">
             {(contractStats?.expiring_within_30_days ?? 0) > 0 && (
               <AlertItem
-                label="Hợp đồng sắp hết hạn"
+                label={t("expiringContractsAlert")}
                 count={contractStats?.expiring_within_30_days || 0}
                 href="/hrm/contracts?expiring=30"
                 type="warning"
@@ -335,7 +337,7 @@ export default function HRMDashboardPage() {
             )}
             {(employeeStats?.by_status.suspended ?? 0) > 0 && (
               <AlertItem
-                label="Nhân viên tạm đình chỉ"
+                label={t("suspendedEmployees")}
                 count={employeeStats?.by_status.suspended || 0}
                 href="/hrm/employees?status=suspended"
                 type="danger"
@@ -345,7 +347,7 @@ export default function HRMDashboardPage() {
               (employeeStats?.by_status.suspended ?? 0) === 0 && (
                 <div className="flex items-center gap-2 text-gray-500 text-sm">
                   <CheckCircle className="w-4 h-4 text-green-500" />
-                  Không có cảnh báo
+                  {t("noAlerts")}
                 </div>
               )}
           </div>
@@ -354,28 +356,28 @@ export default function HRMDashboardPage() {
 
       {/* Employee Movement (if we have data) */}
       <div className="bg-white p-5 rounded-lg shadow border border-gray-200">
-        <h2 className="text-lg font-semibold mb-4">Biến động nhân sự (tháng này)</h2>
+        <h2 className="text-lg font-semibold mb-4">{t("employeeMovement")}</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="text-center">
             <div className="inline-flex items-center justify-center w-12 h-12 bg-green-100 rounded-full mb-2">
               <UserPlus className="w-6 h-6 text-green-600" />
             </div>
             <div className="text-2xl font-bold text-green-600">-</div>
-            <div className="text-sm text-gray-600">Nhân viên mới</div>
+            <div className="text-sm text-gray-600">{t("newEmployees")}</div>
           </div>
           <div className="text-center">
             <div className="inline-flex items-center justify-center w-12 h-12 bg-red-100 rounded-full mb-2">
               <UserMinus className="w-6 h-6 text-red-600" />
             </div>
             <div className="text-2xl font-bold text-red-600">-</div>
-            <div className="text-sm text-gray-600">Nghỉ việc</div>
+            <div className="text-sm text-gray-600">{t("resigned")}</div>
           </div>
           <div className="text-center">
             <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-100 rounded-full mb-2">
               <TrendingUp className="w-6 h-6 text-blue-600" />
             </div>
             <div className="text-2xl font-bold text-blue-600">-</div>
-            <div className="text-sm text-gray-600">Tỷ lệ nghỉ việc</div>
+            <div className="text-sm text-gray-600">{t("turnoverRate")}</div>
           </div>
         </div>
       </div>

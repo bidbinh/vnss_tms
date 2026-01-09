@@ -82,6 +82,11 @@ export function getTenantCode(): string | null {
 export async function fetchTenantPublicInfo(
   tenantCode: string
 ): Promise<TenantPublicInfo | null> {
+  // Skip fetch if no tenant code
+  if (!tenantCode) {
+    return null;
+  }
+
   try {
     // Use relative path to leverage Next.js rewrites
     const response = await fetch(
@@ -90,7 +95,10 @@ export async function fetchTenantPublicInfo(
     );
 
     if (!response.ok) {
-      console.error("Failed to fetch tenant info:", response.status);
+      // Don't log error for 404 - tenant not found is expected in some cases
+      if (response.status !== 404) {
+        console.error("Failed to fetch tenant info:", response.status);
+      }
       return null;
     }
 

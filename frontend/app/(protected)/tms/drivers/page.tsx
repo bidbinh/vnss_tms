@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { apiFetch } from "@/lib/api";
 import { TablePagination } from "@/components/DataTable";
 import Link from "next/link";
@@ -98,6 +99,8 @@ function isExpired(dateStr?: string | null): boolean {
 
 // ============ Main Component ============
 export default function DriversPage() {
+  const t = useTranslations("tms.driversPage");
+  const tCommon = useTranslations("common");
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState<Driver[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -277,8 +280,8 @@ export default function DriversPage() {
     setSaving(true);
     setError(null);
     try {
-      await apiFetch(`/api/v1/drivers/${selectedDriver.id}`, {
-        method: "PUT",
+      await apiFetch<Driver>(`/api/v1/drivers/${selectedDriver.id}`, {
+        method: "PATCH",
         body: JSON.stringify({
           short_name: editForm.short_name || null,
           license_no: editForm.license_no || null,
@@ -291,11 +294,9 @@ export default function DriversPage() {
           status: editForm.status,
         }),
       });
-      await load();
-      setIsEditing(false);
-      // Update selectedDriver with new data
-      const updatedDriver = rows.find((r) => r.id === selectedDriver.id);
-      if (updatedDriver) setSelectedDriver(updatedDriver);
+      // Close modal and reload list
+      closeModal();
+      load();
     } catch (e: any) {
       setError(e?.message || "Save failed");
     } finally {
@@ -326,14 +327,14 @@ export default function DriversPage() {
 
   // ============ Table Columns ============
   const columns = [
-    { key: "employee_code", header: "Mã NV", width: 90, sortable: true },
-    { key: "name", header: "Họ và Tên", width: 160, sortable: true },
-    { key: "short_name", header: "Tên tắt", width: 80, sortable: true },
-    { key: "phone", header: "SĐT", width: 110, sortable: true },
-    { key: "license", header: "Bằng lái", width: 130, sortable: false },
-    { key: "tractor", header: "Đầu kéo", width: 100, sortable: true },
-    { key: "trailer", header: "Rơ mooc", width: 100, sortable: true },
-    { key: "status", header: "Trạng thái", width: 90, sortable: true },
+    { key: "employee_code", header: t("columns.employeeCode"), width: 90, sortable: true },
+    { key: "name", header: t("columns.fullName"), width: 160, sortable: true },
+    { key: "short_name", header: t("columns.shortName"), width: 80, sortable: true },
+    { key: "phone", header: t("columns.phone"), width: 110, sortable: true },
+    { key: "license", header: t("columns.license"), width: 130, sortable: false },
+    { key: "tractor", header: t("columns.tractor"), width: 100, sortable: true },
+    { key: "trailer", header: t("columns.trailer"), width: 100, sortable: true },
+    { key: "status", header: t("columns.status"), width: 90, sortable: true },
     { key: "actions", header: "", width: 80, sortable: false },
   ];
 
@@ -356,15 +357,15 @@ export default function DriversPage() {
       case "phone":
         return row.phone || <span className="text-gray-400">-</span>;
       case "license":
-        if (!row.license_no) return <span className="text-gray-400 text-xs">Chưa có</span>;
+        if (!row.license_no) return <span className="text-gray-400 text-xs">{t("license.notSet")}</span>;
         const expired = isExpired(row.license_expiry);
         const expiring = isExpiringSoon(row.license_expiry);
         return (
           <div className="text-xs">
             <div className="font-medium">{row.license_no}</div>
-            {row.license_class && <span className="text-gray-500">Hạng {row.license_class}</span>}
-            {expired && <span className="ml-1 text-red-600">(Hết hạn)</span>}
-            {expiring && <span className="ml-1 text-orange-600">(Sắp hết)</span>}
+            {row.license_class && <span className="text-gray-500">{t("license.class")} {row.license_class}</span>}
+            {expired && <span className="ml-1 text-red-600">({t("license.expired")})</span>}
+            {expiring && <span className="ml-1 text-orange-600">({t("license.expiringSoon")})</span>}
           </div>
         );
       case "tractor":
@@ -386,7 +387,7 @@ export default function DriversPage() {
               row.status === "ACTIVE" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
             }`}
           >
-            {row.status === "ACTIVE" ? "Hoạt động" : "Ngừng"}
+            {row.status === "ACTIVE" ? t("status.active") : t("status.inactive")}
           </span>
         );
       case "actions":
@@ -397,7 +398,7 @@ export default function DriversPage() {
               openDetail(row);
             }}
             className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-blue-600"
-            title="Xem chi tiết"
+            title={t("viewDetails")}
           >
             <Eye className="w-4 h-4" />
           </button>
@@ -414,8 +415,8 @@ export default function DriversPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Quản lý Tài xế</h1>
-            <p className="text-sm text-gray-500 mt-1">Quản lý thông tin tài xế và phân công xe</p>
+            <h1 className="text-2xl font-bold text-gray-900">{t("title")}</h1>
+            <p className="text-sm text-gray-500 mt-1">{t("subtitle")}</p>
           </div>
 
           <div className="flex items-center gap-2">
@@ -425,33 +426,33 @@ export default function DriversPage() {
               className="rounded-xl border border-gray-300 text-gray-600 px-4 py-2 text-sm font-medium hover:bg-gray-50 disabled:opacity-60 flex items-center gap-2"
             >
               <RefreshCw className={`w-4 h-4 ${syncing ? "animate-spin" : ""}`} />
-              {syncing ? "Đang đồng bộ..." : "Sync HRM"}
+              {syncing ? t("syncing") : t("syncHRM")}
             </button>
             <Link
               href="/hrm/employees?type=DRIVER"
               className="rounded-xl bg-blue-600 text-white px-4 py-2 text-sm font-medium hover:bg-blue-700 flex items-center gap-2"
             >
               <Plus className="w-4 h-4" />
-              Thêm tài xế
+              {t("addDriver")}
             </Link>
           </div>
         </div>
 
         {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <StatCard icon={Users} label="Tổng tài xế" value={stats.total} color="blue" />
-          <StatCard icon={UserCheck} label="Đang hoạt động" value={stats.active} color="green" />
-          <StatCard icon={Truck} label="Đã phân đầu kéo" value={stats.withTractor} color="purple" />
-          <StatCard icon={UserX} label="Ngừng hoạt động" value={stats.inactive} color="gray" />
+          <StatCard icon={Users} label={t("stats.totalDrivers")} value={stats.total} color="blue" />
+          <StatCard icon={UserCheck} label={t("stats.active")} value={stats.active} color="green" />
+          <StatCard icon={Truck} label={t("stats.withTractor")} value={stats.withTractor} color="purple" />
+          <StatCard icon={UserX} label={t("stats.inactive")} value={stats.inactive} color="gray" />
         </div>
 
         {/* Info Banner */}
         <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
-          <strong>Lưu ý:</strong> Thông tin cá nhân (Họ tên, SĐT, CCCD, Ngân hàng...) được quản lý từ{" "}
+          <strong>{t("infoBanner.note")}</strong> {t("infoBanner.text")}{" "}
           <Link href="/hrm/employees" className="underline font-medium">
-            HRM &rarr; Nhân viên
+            {t("infoBanner.hrmLink")}
           </Link>
-          . Tại đây chỉ quản lý thông tin nghiệp vụ vận tải: Tên viết tắt, Bằng lái, Chứng chỉ, Phân xe.
+          {t("infoBanner.description")}
         </div>
       </div>
 
@@ -465,12 +466,12 @@ export default function DriversPage() {
               <input
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Tìm theo tên, mã NV, SĐT, CCCD..."
+                placeholder={t("search.placeholder")}
                 className="w-full pl-10 pr-4 py-2 rounded-xl border border-gray-300 outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 text-sm"
               />
             </div>
             <div className="text-sm text-gray-500">
-              {loading ? "Đang tải..." : `${filteredRows.length} tài xế`}
+              {loading ? tCommon("loading") : `${filteredRows.length} ${t("search.drivers")}`}
             </div>
           </div>
 
@@ -516,14 +517,14 @@ export default function DriversPage() {
                   <td colSpan={columns.length} className="px-4 py-8 text-center text-gray-500">
                     <div className="flex items-center justify-center gap-2">
                       <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                      Đang tải...
+                      {tCommon("loading")}
                     </div>
                   </td>
                 </tr>
               ) : paginatedRows.length === 0 ? (
                 <tr>
                   <td colSpan={columns.length} className="px-4 py-8 text-center text-gray-500">
-                    Chưa có tài xế nào
+                    {t("noData")}
                   </td>
                 </tr>
               ) : (
@@ -555,7 +556,7 @@ export default function DriversPage() {
           totalItems={filteredRows.length}
           onPageChange={setCurrentPage}
           onPageSizeChange={setPageSize}
-          itemName="tài xế"
+          itemName={t("search.drivers")}
         />
       </div>
 
@@ -568,7 +569,7 @@ export default function DriversPage() {
               <div>
                 <div className="font-bold text-lg text-gray-900">{selectedDriver.name}</div>
                 <div className="text-sm text-gray-500">
-                  {selectedDriver.employee?.employee_code || "Chưa liên kết HRM"}
+                  {selectedDriver.employee?.employee_code || t("notLinkedHRM")}
                   {selectedDriver.short_name && <span className="ml-2 px-2 py-0.5 bg-gray-200 rounded text-xs">{selectedDriver.short_name}</span>}
                 </div>
               </div>
@@ -579,7 +580,7 @@ export default function DriversPage() {
                     className="rounded-lg bg-blue-600 text-white px-4 py-2 text-sm font-medium hover:bg-blue-700 flex items-center gap-2"
                   >
                     <Edit2 className="w-4 h-4" />
-                    Chỉnh sửa
+                    {t("modal.edit")}
                   </button>
                 ) : (
                   <>
@@ -587,7 +588,7 @@ export default function DriversPage() {
                       onClick={() => setIsEditing(false)}
                       className="rounded-lg border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50"
                     >
-                      Hủy
+                      {t("modal.cancel")}
                     </button>
                     <button
                       onClick={handleSave}
@@ -595,7 +596,7 @@ export default function DriversPage() {
                       className="rounded-lg bg-blue-600 text-white px-4 py-2 text-sm font-medium hover:bg-blue-700 flex items-center gap-2 disabled:opacity-60"
                     >
                       <Save className="w-4 h-4" />
-                      {saving ? "Đang lưu..." : "Lưu"}
+                      {saving ? t("modal.saving") : t("modal.save")}
                     </button>
                   </>
                 )}
@@ -616,56 +617,56 @@ export default function DriversPage() {
               <div className="border rounded-xl p-4 bg-gray-50">
                 <div className="flex items-center gap-2 mb-4">
                   <User className="w-5 h-5 text-gray-600" />
-                  <h3 className="font-semibold text-gray-800">Thông tin nhân viên</h3>
-                  <span className="text-xs text-gray-500 ml-auto">Từ HRM - Chỉ xem</span>
+                  <h3 className="font-semibold text-gray-800">{t("modal.employeeInfo")}</h3>
+                  <span className="text-xs text-gray-500 ml-auto">{t("modal.fromHRM")}</span>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <label className="text-gray-500 text-xs">Mã nhân viên</label>
+                    <label className="text-gray-500 text-xs">{t("modal.employeeCode")}</label>
                     <div className="font-medium">{selectedDriver.employee?.employee_code || "-"}</div>
                   </div>
                   <div>
-                    <label className="text-gray-500 text-xs">Họ và tên</label>
+                    <label className="text-gray-500 text-xs">{t("modal.fullName")}</label>
                     <div className="font-medium">{selectedDriver.name}</div>
                   </div>
                   <div className="flex items-center gap-2">
                     <Phone className="w-4 h-4 text-gray-400" />
                     <div>
-                      <label className="text-gray-500 text-xs">Số điện thoại</label>
+                      <label className="text-gray-500 text-xs">{t("modal.phone")}</label>
                       <div className="font-medium">{selectedDriver.phone || selectedDriver.employee?.phone || "-"}</div>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <Mail className="w-4 h-4 text-gray-400" />
                     <div>
-                      <label className="text-gray-500 text-xs">Email</label>
+                      <label className="text-gray-500 text-xs">{t("modal.email")}</label>
                       <div className="font-medium">{selectedDriver.employee?.email || "-"}</div>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <CreditCard className="w-4 h-4 text-gray-400" />
                     <div>
-                      <label className="text-gray-500 text-xs">CCCD/CMND</label>
+                      <label className="text-gray-500 text-xs">{t("modal.idNumber")}</label>
                       <div className="font-medium">{selectedDriver.citizen_id || selectedDriver.employee?.id_number || "-"}</div>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4 text-gray-400" />
                     <div>
-                      <label className="text-gray-500 text-xs">Ngày sinh</label>
+                      <label className="text-gray-500 text-xs">{t("modal.dateOfBirth")}</label>
                       <div className="font-medium">{formatDate(selectedDriver.employee?.date_of_birth)}</div>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <Building2 className="w-4 h-4 text-gray-400" />
                     <div>
-                      <label className="text-gray-500 text-xs">Ngân hàng</label>
+                      <label className="text-gray-500 text-xs">{t("modal.bank")}</label>
                       <div className="font-medium">{selectedDriver.employee?.bank_name || "-"}</div>
                     </div>
                   </div>
                   <div>
-                    <label className="text-gray-500 text-xs">Số tài khoản</label>
+                    <label className="text-gray-500 text-xs">{t("modal.accountNumber")}</label>
                     <div className="font-medium font-mono">{selectedDriver.employee?.bank_account || "-"}</div>
                   </div>
                 </div>
@@ -675,7 +676,7 @@ export default function DriversPage() {
                     href={`/hrm/employees?id=${selectedDriver.employee_id}`}
                     className="text-sm text-blue-600 hover:underline"
                   >
-                    Xem chi tiết trong HRM &rarr;
+                    {t("modal.viewInHRM")}
                   </Link>
                 </div>
               </div>
@@ -684,38 +685,38 @@ export default function DriversPage() {
               <div className="border rounded-xl p-4">
                 <div className="flex items-center gap-2 mb-4">
                   <Truck className="w-5 h-5 text-blue-600" />
-                  <h3 className="font-semibold text-gray-800">Thông tin vận tải</h3>
-                  <span className="text-xs text-blue-600 ml-auto">TMS - Có thể chỉnh sửa</span>
+                  <h3 className="font-semibold text-gray-800">{t("modal.transportInfo")}</h3>
+                  <span className="text-xs text-blue-600 ml-auto">{t("modal.tmsEditable")}</span>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   {/* Tên viết tắt */}
                   <div>
-                    <label className="text-gray-600 text-xs font-medium mb-1 block">Tên viết tắt</label>
+                    <label className="text-gray-600 text-xs font-medium mb-1 block">{t("modal.shortName")}</label>
                     {isEditing ? (
                       <input
                         type="text"
                         value={editForm.short_name}
                         onChange={(e) => setEditForm({ ...editForm, short_name: e.target.value })}
-                        placeholder="VD: Đ. Vụ"
+                        placeholder={t("modal.shortNamePlaceholder")}
                         className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-200"
                       />
                     ) : (
-                      <div className="font-medium py-2">{selectedDriver.short_name || <span className="text-gray-400">Chưa có</span>}</div>
+                      <div className="font-medium py-2">{selectedDriver.short_name || <span className="text-gray-400">{t("license.notSet")}</span>}</div>
                     )}
                   </div>
 
                   {/* Trạng thái */}
                   <div>
-                    <label className="text-gray-600 text-xs font-medium mb-1 block">Trạng thái</label>
+                    <label className="text-gray-600 text-xs font-medium mb-1 block">{t("modal.status")}</label>
                     {isEditing ? (
                       <select
                         value={editForm.status}
                         onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
                         className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-200"
                       >
-                        <option value="ACTIVE">Hoạt động</option>
-                        <option value="INACTIVE">Ngừng hoạt động</option>
+                        <option value="ACTIVE">{t("modal.statusActive")}</option>
+                        <option value="INACTIVE">{t("modal.statusInactive")}</option>
                       </select>
                     ) : (
                       <div className="py-2">
@@ -724,7 +725,7 @@ export default function DriversPage() {
                             selectedDriver.status === "ACTIVE" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
                           }`}
                         >
-                          {selectedDriver.status === "ACTIVE" ? "Hoạt động" : "Ngừng"}
+                          {selectedDriver.status === "ACTIVE" ? t("status.active") : t("status.inactive")}
                         </span>
                       </div>
                     )}
@@ -735,11 +736,11 @@ export default function DriversPage() {
                 <div className="mt-4 pt-4 border-t">
                   <div className="flex items-center gap-2 mb-3">
                     <Award className="w-4 h-4 text-gray-500" />
-                    <span className="text-sm font-medium text-gray-700">Bằng lái xe</span>
+                    <span className="text-sm font-medium text-gray-700">{t("modal.driverLicense")}</span>
                   </div>
                   <div className="grid grid-cols-3 gap-4 text-sm">
                     <div>
-                      <label className="text-gray-600 text-xs font-medium mb-1 block">Số bằng lái</label>
+                      <label className="text-gray-600 text-xs font-medium mb-1 block">{t("modal.licenseNo")}</label>
                       {isEditing ? (
                         <input
                           type="text"
@@ -752,14 +753,14 @@ export default function DriversPage() {
                       )}
                     </div>
                     <div>
-                      <label className="text-gray-600 text-xs font-medium mb-1 block">Hạng</label>
+                      <label className="text-gray-600 text-xs font-medium mb-1 block">{t("modal.licenseClass")}</label>
                       {isEditing ? (
                         <select
                           value={editForm.license_class}
                           onChange={(e) => setEditForm({ ...editForm, license_class: e.target.value })}
                           className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-200"
                         >
-                          <option value="">-- Chọn --</option>
+                          <option value="">{t("modal.selectClass")}</option>
                           <option value="B2">B2</option>
                           <option value="C">C</option>
                           <option value="D">D</option>
@@ -773,7 +774,7 @@ export default function DriversPage() {
                       )}
                     </div>
                     <div>
-                      <label className="text-gray-600 text-xs font-medium mb-1 block">Ngày hết hạn</label>
+                      <label className="text-gray-600 text-xs font-medium mb-1 block">{t("modal.expiryDate")}</label>
                       {isEditing ? (
                         <input
                           type="date"
@@ -784,8 +785,8 @@ export default function DriversPage() {
                       ) : (
                         <div className={`font-medium py-2 ${isExpired(selectedDriver.license_expiry) ? "text-red-600" : isExpiringSoon(selectedDriver.license_expiry) ? "text-orange-600" : ""}`}>
                           {formatDate(selectedDriver.license_expiry)}
-                          {isExpired(selectedDriver.license_expiry) && <span className="ml-1 text-xs">(Hết hạn)</span>}
-                          {isExpiringSoon(selectedDriver.license_expiry) && <span className="ml-1 text-xs">(Sắp hết)</span>}
+                          {isExpired(selectedDriver.license_expiry) && <span className="ml-1 text-xs">({t("license.expired")})</span>}
+                          {isExpiringSoon(selectedDriver.license_expiry) && <span className="ml-1 text-xs">({t("license.expiringSoon")})</span>}
                         </div>
                       )}
                     </div>
@@ -796,11 +797,11 @@ export default function DriversPage() {
                 <div className="mt-4 pt-4 border-t">
                   <div className="flex items-center gap-2 mb-3">
                     <Award className="w-4 h-4 text-gray-500" />
-                    <span className="text-sm font-medium text-gray-700">Chứng chỉ nghề</span>
+                    <span className="text-sm font-medium text-gray-700">{t("modal.certificate")}</span>
                   </div>
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
-                      <label className="text-gray-600 text-xs font-medium mb-1 block">Số chứng chỉ</label>
+                      <label className="text-gray-600 text-xs font-medium mb-1 block">{t("modal.certificateNo")}</label>
                       {isEditing ? (
                         <input
                           type="text"
@@ -813,7 +814,7 @@ export default function DriversPage() {
                       )}
                     </div>
                     <div>
-                      <label className="text-gray-600 text-xs font-medium mb-1 block">Ngày hết hạn</label>
+                      <label className="text-gray-600 text-xs font-medium mb-1 block">{t("modal.expiryDate")}</label>
                       {isEditing ? (
                         <input
                           type="date"
@@ -834,20 +835,20 @@ export default function DriversPage() {
                 <div className="mt-4 pt-4 border-t">
                   <div className="flex items-center gap-2 mb-3">
                     <Truck className="w-4 h-4 text-gray-500" />
-                    <span className="text-sm font-medium text-gray-700">Phân công xe</span>
+                    <span className="text-sm font-medium text-gray-700">{t("modal.vehicleAssignment")}</span>
                   </div>
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
-                      <label className="text-gray-600 text-xs font-medium mb-1 block">Xe đầu kéo</label>
+                      <label className="text-gray-600 text-xs font-medium mb-1 block">{t("modal.tractor")}</label>
                       {isEditing ? (
                         <select
                           value={editForm.tractor_id}
                           onChange={(e) => setEditForm({ ...editForm, tractor_id: e.target.value })}
                           className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-200"
                         >
-                          <option value="">-- Không phân xe --</option>
+                          <option value="">{t("modal.noTractor")}</option>
                           {selectedDriver.tractor && (
-                            <option value={selectedDriver.tractor.id}>{selectedDriver.tractor.plate_no} (đang dùng)</option>
+                            <option value={selectedDriver.tractor.id}>{selectedDriver.tractor.plate_no} ({t("modal.currentlyUsing")})</option>
                           )}
                           {availableTractors.map((v) => (
                             <option key={v.id} value={v.id}>
@@ -862,22 +863,22 @@ export default function DriversPage() {
                               {selectedDriver.tractor.plate_no}
                             </span>
                           ) : (
-                            <span className="text-gray-400">Chưa phân</span>
+                            <span className="text-gray-400">{t("modal.notAssigned")}</span>
                           )}
                         </div>
                       )}
                     </div>
                     <div>
-                      <label className="text-gray-600 text-xs font-medium mb-1 block">Rơ mooc</label>
+                      <label className="text-gray-600 text-xs font-medium mb-1 block">{t("modal.trailer")}</label>
                       {isEditing ? (
                         <select
                           value={editForm.trailer_id}
                           onChange={(e) => setEditForm({ ...editForm, trailer_id: e.target.value })}
                           className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-200"
                         >
-                          <option value="">-- Không phân rơ mooc --</option>
+                          <option value="">{t("modal.noTrailer")}</option>
                           {selectedDriver.trailer && (
-                            <option value={selectedDriver.trailer.id}>{selectedDriver.trailer.plate_no} (đang dùng)</option>
+                            <option value={selectedDriver.trailer.id}>{selectedDriver.trailer.plate_no} ({t("modal.currentlyUsing")})</option>
                           )}
                           {availableTrailers.map((v) => (
                             <option key={v.id} value={v.id}>
@@ -892,7 +893,7 @@ export default function DriversPage() {
                               {selectedDriver.trailer.plate_no}
                             </span>
                           ) : (
-                            <span className="text-gray-400">Chưa phân</span>
+                            <span className="text-gray-400">{t("modal.notAssigned")}</span>
                           )}
                         </div>
                       )}

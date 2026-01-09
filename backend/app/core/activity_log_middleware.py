@@ -304,12 +304,9 @@ def save_activity_log(
             )
             session.add(log)
             session.commit()
-            print(f"[ActivityLog] ✓ Saved: {action} {resource_type} by {user_name} (status={response_status})")
             return True
     except Exception as e:
-        print(f"[ActivityLog] ✗ Error saving: {e}")
-        import traceback
-        traceback.print_exc()
+        # Silently fail - don't disrupt the request
         return False
 
 
@@ -318,7 +315,6 @@ class ActivityLogMiddleware:
 
     def __init__(self, app: ASGIApp):
         self.app = app
-        print("[ActivityLogMiddleware] Initialized (Pure ASGI)")
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] != "http":
@@ -328,8 +324,6 @@ class ActivityLogMiddleware:
         method = scope.get("method", "GET")
         path = scope.get("path", "")
 
-        print(f"[ActivityLog] Incoming: {method} {path}")
-
         # Skip non-mutation methods
         if method not in MUTATION_METHODS:
             await self.app(scope, receive, send)
@@ -337,13 +331,11 @@ class ActivityLogMiddleware:
 
         # Skip certain endpoints
         if path in SKIP_ENDPOINTS:
-            print(f"[ActivityLog] Skip (endpoint): {path}")
             await self.app(scope, receive, send)
             return
 
         for prefix in SKIP_PREFIXES:
             if path.startswith(prefix):
-                print(f"[ActivityLog] Skip (prefix): {path}")
                 await self.app(scope, receive, send)
                 return
 
@@ -372,7 +364,6 @@ class ActivityLogMiddleware:
 
         # Skip if no token
         if not token:
-            print(f"[ActivityLog] Skip {method} {path}: No token found")
             await self.app(scope, receive, send)
             return
 
@@ -388,18 +379,14 @@ class ActivityLogMiddleware:
                 "email": payload.get("email")
             }
             tenant_id = payload.get("tenant_id")
-        except Exception as e:
-            print(f"[ActivityLog] Skip {method} {path}: Token decode failed - {e}")
+        except Exception:
             await self.app(scope, receive, send)
             return
 
         # Skip if no user or tenant
         if not user_info or not tenant_id:
-            print(f"[ActivityLog] Skip {method} {path}: No user_info or tenant_id")
             await self.app(scope, receive, send)
             return
-
-        print(f"[ActivityLog] → Processing {method} {path} by {user_info['name']} (tenant={tenant_id[:8]}...)")
 
         # Collect request body
         body_chunks = []
@@ -424,8 +411,7 @@ class ActivityLogMiddleware:
         # Call the actual app
         try:
             await self.app(scope, receive_wrapper, send_wrapper)
-        except Exception as e:
-            print(f"[ActivityLog] App error: {e}")
+        except Exception:
             raise
 
         # Parse request body
@@ -446,7 +432,6 @@ class ActivityLogMiddleware:
             # Optional: Skip UPDATE in middleware if routes handle it with proper change tracking
             # Currently set to False - middleware logs all operations as fallback
             if SKIP_UPDATE_IN_MIDDLEWARE and action == ActionType.UPDATE.value:
-                print(f"[ActivityLog] Skip UPDATE (route should log with change tracking): {path}")
                 return
 
             cost_tokens = get_action_cost(module, resource_type, action)
@@ -507,7 +492,6 @@ class ActivityLogMiddleware:
                 user_agent=headers_dict.get("user-agent", ""),
                 cost_tokens=cost_tokens,
             )
-        except Exception as e:
-            print(f"[ActivityLog] Error logging: {e}")
-            import traceback
-            traceback.print_exc()
+        except Exception:
+            # Silently fail - don't disrupt the request
+            pass

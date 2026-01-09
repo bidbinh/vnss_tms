@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef } from "react";
+import { useTranslations } from "next-intl";
 import DataTable, { Column, TablePagination } from "@/components/DataTable";
 import { Eye, Download, FileText } from "lucide-react";
 
@@ -107,12 +108,12 @@ interface Stats {
 }
 
 // ============ Status Config ============
-const STATUS_CONFIG: Record<string, { label: string; bg: string; text: string }> = {
-  PENDING: { label: "Chờ xử lý", bg: "bg-yellow-100", text: "text-yellow-800" },
-  SUBMITTED: { label: "Đã gửi", bg: "bg-blue-100", text: "text-blue-800" },
-  CONFIRMED: { label: "Đã xác nhận", bg: "bg-indigo-100", text: "text-indigo-800" },
-  COMPLETED: { label: "Hoàn thành", bg: "bg-green-100", text: "text-green-800" },
-  CANCELLED: { label: "Đã hủy", bg: "bg-red-100", text: "text-red-800" },
+const STATUS_STYLES: Record<string, { bg: string; text: string }> = {
+  PENDING: { bg: "bg-yellow-100", text: "text-yellow-800" },
+  SUBMITTED: { bg: "bg-blue-100", text: "text-blue-800" },
+  CONFIRMED: { bg: "bg-indigo-100", text: "text-indigo-800" },
+  COMPLETED: { bg: "bg-green-100", text: "text-green-800" },
+  CANCELLED: { bg: "bg-red-100", text: "text-red-800" },
 };
 
 
@@ -127,15 +128,8 @@ function normalizeFileUrl(url: string): string {
   // Extract the path after /uploads/file/
   const match = url.match(/\/uploads\/file\/(.+)/);
   if (match) {
-    // Use API base URL but replace hostname with current window hostname to avoid CORS
-    // e.g., if window is 127.0.0.1:3000 and API is localhost:8000, use 127.0.0.1:8000
-    let apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || "";
-    if (typeof window !== "undefined") {
-      const currentHost = window.location.hostname;
-      // Replace localhost with 127.0.0.1 or vice versa to match current origin
-      apiBase = apiBase.replace(/localhost|127\.0\.0\.1/, currentHost);
-    }
-    return `${apiBase}/uploads/file/${match[1]}`;
+    // Use relative path for Next.js rewrites
+    return `/api/v1/uploads/file/${match[1]}`;
   }
   return url;
 }
@@ -200,6 +194,8 @@ function formatShortDate(dateStr?: string): string {
 
 // ============ Main Component ============
 export default function EmptyReturnsPage() {
+  const t = useTranslations("tms.emptyReturnsPage");
+
   // Data states
   const [emptyReturns, setEmptyReturns] = useState<EmptyReturn[]>([]);
   const [portOrders, setPortOrders] = useState<PortOrder[]>([]);
@@ -268,11 +264,11 @@ export default function EmptyReturnsPage() {
       const token = localStorage.getItem("access_token");
       const headers = { Authorization: `Bearer ${token}` };
 
-      // Fetch in parallel
+      // Fetch in parallel - use relative path for Next.js rewrites
       const [returnsRes, ordersRes, sitesRes] = await Promise.all([
-        fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/empty-returns`, { headers }),
-        fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/empty-returns/port-orders`, { headers }),
-        fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/empty-returns/port-sites/list`, { headers }),
+        fetch(`/api/v1/empty-returns`, { headers }),
+        fetch(`/api/v1/empty-returns/port-orders`, { headers }),
+        fetch(`/api/v1/empty-returns/port-sites/list`, { headers }),
       ]);
 
       if (!returnsRes.ok || !ordersRes.ok || !sitesRes.ok) {
@@ -436,40 +432,40 @@ export default function EmptyReturnsPage() {
     },
     {
       key: "order_code",
-      header: "Mã đơn",
+      header: t("columns.orderCode"),
       width: 100,
       sortable: true,
       render: (row) => <span className="font-medium text-blue-600">{row.order_code}</span>,
     },
     {
       key: "container_code",
-      header: "Số cont",
+      header: t("columns.containerCode"),
       width: 120,
       sortable: true,
       render: (row) => <span className="font-mono text-xs">{row.container_code || "-"}</span>,
     },
     {
       key: "driver_name",
-      header: "Tài xế",
+      header: t("columns.driver"),
       width: 120,
       sortable: true,
     },
     {
       key: "return_date",
-      header: "Ngày hạ",
+      header: t("columns.returnDate"),
       width: 90,
       sortable: true,
       render: (row) => formatShortDate(row.return_date),
     },
     {
       key: "port_site_name",
-      header: "Cảng hạ",
+      header: t("columns.portSite"),
       width: 150,
       sortable: true,
     },
     {
       key: "total_amount",
-      header: "Tổng phí",
+      header: t("columns.totalFees"),
       width: 100,
       align: "right",
       sortable: true,
@@ -481,7 +477,7 @@ export default function EmptyReturnsPage() {
     },
     {
       key: "total_paid",
-      header: "Đã trả",
+      header: t("columns.paid"),
       width: 100,
       align: "right",
       sortable: true,
@@ -493,7 +489,7 @@ export default function EmptyReturnsPage() {
     },
     {
       key: "documents",
-      header: "Chứng từ",
+      header: t("columns.documents"),
       width: 100,
       align: "center",
       sortable: false,
@@ -504,9 +500,9 @@ export default function EmptyReturnsPage() {
         const count = [hasSlip, hasFee, hasRepair].filter(Boolean).length;
         return (
           <div className="flex items-center justify-center gap-1">
-            <span className={`w-2 h-2 rounded-full ${hasSlip ? "bg-green-500" : "bg-gray-300"}`} title="Phiếu hạ rỗng" />
-            <span className={`w-2 h-2 rounded-full ${hasFee ? "bg-green-500" : "bg-gray-300"}`} title="Phiếu thu phí" />
-            <span className={`w-2 h-2 rounded-full ${hasRepair ? "bg-green-500" : "bg-gray-300"}`} title="Phiếu cược SC" />
+            <span className={`w-2 h-2 rounded-full ${hasSlip ? "bg-green-500" : "bg-gray-300"}`} title={t("documents.tooltips.returnSlip")} />
+            <span className={`w-2 h-2 rounded-full ${hasFee ? "bg-green-500" : "bg-gray-300"}`} title={t("documents.tooltips.feeReceipt")} />
+            <span className={`w-2 h-2 rounded-full ${hasRepair ? "bg-green-500" : "bg-gray-300"}`} title={t("documents.tooltips.repairDeposit")} />
             <span className="text-xs text-gray-500 ml-1">{count}/3</span>
           </div>
         );
@@ -514,25 +510,26 @@ export default function EmptyReturnsPage() {
     },
     {
       key: "status",
-      header: "Trạng thái",
+      header: t("columns.status"),
       width: 110,
       align: "center",
       sortable: true,
       render: (row) => {
-        const config = STATUS_CONFIG[row.status] || { label: row.status, bg: "bg-gray-100", text: "text-gray-800" };
+        const styles = STATUS_STYLES[row.status] || { bg: "bg-gray-100", text: "text-gray-800" };
+        const statusKey = row.status.toLowerCase() as "pending" | "submitted" | "confirmed" | "completed" | "cancelled";
         if (row.status === "NOT_RETURNED") {
-          return <span className="px-2 py-1 rounded text-xs font-medium bg-orange-100 text-orange-800">Chưa hạ</span>;
+          return <span className="px-2 py-1 rounded text-xs font-medium bg-orange-100 text-orange-800">{t("status.notReturned")}</span>;
         }
         return (
-          <span className={`px-2 py-1 rounded text-xs font-medium ${config.bg} ${config.text}`}>
-            {config.label}
+          <span className={`px-2 py-1 rounded text-xs font-medium ${styles.bg} ${styles.text}`}>
+            {t(`status.${statusKey}`)}
           </span>
         );
       },
     },
     {
       key: "actions",
-      header: "Thao tác",
+      header: t("columns.actions"),
       width: 150,
       align: "center",
       sortable: false,
@@ -548,7 +545,7 @@ export default function EmptyReturnsPage() {
               }}
               className="text-blue-600 hover:text-blue-800 text-xs font-medium px-1"
             >
-              {row.status === "NOT_RETURNED" ? "Hạ rỗng" : "Sửa"}
+              {row.status === "NOT_RETURNED" ? t("actions.createReturn") : t("actions.edit")}
             </button>
             {canPay && (
               <button
@@ -558,12 +555,12 @@ export default function EmptyReturnsPage() {
                 }}
                 disabled={paymentLoading}
                 className="text-green-600 hover:text-green-800 text-xs font-medium px-1 flex items-center gap-0.5"
-                title="Tạo QR thanh toán"
+                title={t("actions.generateQR")}
               >
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
                 </svg>
-                QR
+                {t("actions.generateQR")}
               </button>
             )}
             {row.status !== "NOT_RETURNED" && (
@@ -574,7 +571,7 @@ export default function EmptyReturnsPage() {
                 }}
                 className="text-red-600 hover:text-red-800 text-xs font-medium px-1"
               >
-                Xóa
+                {t("actions.delete")}
               </button>
             )}
           </div>
@@ -663,7 +660,7 @@ export default function EmptyReturnsPage() {
 
     try {
       const token = localStorage.getItem("access_token");
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/empty-returns/${id}`, {
+      const res = await fetch(`/api/v1/empty-returns/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -717,8 +714,8 @@ export default function EmptyReturnsPage() {
       const token = localStorage.getItem("access_token");
       const url =
         modalMode === "create"
-          ? `${process.env.NEXT_PUBLIC_API_BASE_URL}/empty-returns`
-          : `${process.env.NEXT_PUBLIC_API_BASE_URL}/empty-returns/${selectedReturn?.id}`;
+          ? `/api/v1/empty-returns`
+          : `/api/v1/empty-returns/${selectedReturn?.id}`;
 
       const res = await fetch(url, {
         method: modalMode === "create" ? "POST" : "PUT",
@@ -746,7 +743,7 @@ export default function EmptyReturnsPage() {
     setPaymentLoading(true);
     try {
       const token = localStorage.getItem("access_token");
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/payment-qr/generate`, {
+      const res = await fetch(`/api/v1/payment-qr/generate`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -780,7 +777,7 @@ export default function EmptyReturnsPage() {
     setPaymentLoading(true);
     try {
       const token = localStorage.getItem("access_token");
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/payment-qr/generate-batch`, {
+      const res = await fetch(`/api/v1/payment-qr/generate-batch`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -809,7 +806,7 @@ export default function EmptyReturnsPage() {
     setConfirmingPayment(true);
     try {
       const token = localStorage.getItem("access_token");
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/payment-qr/confirm`, {
+      const res = await fetch(`/api/v1/payment-qr/confirm`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -842,7 +839,7 @@ export default function EmptyReturnsPage() {
     setConfirmingPayment(true);
     try {
       const token = localStorage.getItem("access_token");
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/payment-qr/confirm-batch`, {
+      const res = await fetch(`/api/v1/payment-qr/confirm-batch`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -905,7 +902,7 @@ export default function EmptyReturnsPage() {
         uploadFormData.append("file", file);
         uploadFormData.append("folder", "empty-returns");
 
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/uploads/document?folder=empty-returns`, {
+        const res = await fetch(`/api/v1/uploads/document?folder=empty-returns`, {
           method: "POST",
           headers: { Authorization: `Bearer ${token}` },
           body: uploadFormData,
@@ -917,9 +914,8 @@ export default function EmptyReturnsPage() {
         }
 
         const data = await res.json();
-        // Construct URL using frontend's API base URL instead of backend's returned URL
-        // This ensures the URL works regardless of backend's API_BASE_URL config
-        const fileUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/uploads/file/${data.file_path}`;
+        // Use relative path for Next.js rewrites
+        const fileUrl = `/api/v1/uploads/file/${data.file_path}`;
         uploadedFiles.push({ url: fileUrl, name: file.name });
       }
 
@@ -939,8 +935,8 @@ export default function EmptyReturnsPage() {
         {/* Header */}
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-2xl font-bold text-gray-800">Quản lý Hạ rỗng</h1>
-            <p className="text-sm text-gray-500 mt-1">Quản lý việc hạ container rỗng về cảng</p>
+            <h1 className="text-2xl font-bold text-gray-800">{t("title")}</h1>
+            <p className="text-sm text-gray-500 mt-1">{t("subtitle")}</p>
           </div>
           <div className="flex items-center gap-3">
             {/* Batch Payment Button */}
@@ -957,7 +953,7 @@ export default function EmptyReturnsPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
                   </svg>
                 )}
-                Thanh toán ({selectedIds.size})
+                {t("payButton")} ({selectedIds.size})
               </button>
             )}
             <button
@@ -972,7 +968,7 @@ export default function EmptyReturnsPage() {
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
-              Tạo hạ rỗng
+              {t("createButton")}
             </button>
           </div>
         </div>
@@ -980,31 +976,31 @@ export default function EmptyReturnsPage() {
         {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
           <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <div className="text-sm text-gray-500">Tổng đơn cảng</div>
+            <div className="text-sm text-gray-500">{t("stats.totalPortOrders")}</div>
             <div className="text-2xl font-bold text-gray-800">{stats.total}</div>
           </div>
           <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <div className="text-sm text-gray-500">Chưa hạ</div>
+            <div className="text-sm text-gray-500">{t("stats.notReturned")}</div>
             <div className="text-2xl font-bold text-orange-600">{stats.notReturned}</div>
           </div>
           <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <div className="text-sm text-gray-500">Chờ xử lý</div>
+            <div className="text-sm text-gray-500">{t("stats.pending")}</div>
             <div className="text-2xl font-bold text-yellow-600">{stats.pending}</div>
           </div>
           <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <div className="text-sm text-gray-500">Đã gửi</div>
+            <div className="text-sm text-gray-500">{t("stats.submitted")}</div>
             <div className="text-2xl font-bold text-blue-600">{stats.submitted}</div>
           </div>
           <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <div className="text-sm text-gray-500">Hoàn thành</div>
+            <div className="text-sm text-gray-500">{t("stats.completed")}</div>
             <div className="text-2xl font-bold text-green-600">{stats.completed}</div>
           </div>
           <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <div className="text-sm text-gray-500">Tổng phí</div>
+            <div className="text-sm text-gray-500">{t("stats.totalFees")}</div>
             <div className="text-xl font-bold text-red-600">{formatCurrency(stats.totalAmount)}</div>
           </div>
           <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <div className="text-sm text-gray-500">Đã thanh toán</div>
+            <div className="text-sm text-gray-500">{t("stats.totalPaid")}</div>
             <div className="text-xl font-bold text-green-600">{formatCurrency(stats.totalPaid)}</div>
           </div>
         </div>
@@ -1018,11 +1014,11 @@ export default function EmptyReturnsPage() {
             {/* Tabs */}
             <div className="flex">
               {[
-                { key: "ALL", label: "Tất cả" },
-                { key: "NOT_RETURNED", label: "Chưa hạ" },
-                { key: "PENDING", label: "Chờ xử lý" },
-                { key: "SUBMITTED", label: "Đã gửi" },
-                { key: "COMPLETED", label: "Hoàn thành" },
+                { key: "ALL", label: t("tabs.all") },
+                { key: "NOT_RETURNED", label: t("tabs.notReturned") },
+                { key: "PENDING", label: t("tabs.pending") },
+                { key: "SUBMITTED", label: t("tabs.submitted") },
+                { key: "COMPLETED", label: t("tabs.completed") },
               ].map((tab) => (
                 <button
                   key={tab.key}
@@ -1046,7 +1042,7 @@ export default function EmptyReturnsPage() {
               <div className="relative">
                 <input
                   type="text"
-                  placeholder="Tìm mã đơn, cont, tài xế..."
+                  placeholder={t("search.placeholder")}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-9 pr-4 py-2 text-sm border rounded-lg w-64 focus:ring-2 focus:ring-blue-200 outline-none"
@@ -1066,7 +1062,7 @@ export default function EmptyReturnsPage() {
           {/* Date Filters */}
           <div className="flex items-center gap-4 px-6 py-3 bg-gray-50">
             <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-500">Từ ngày:</span>
+              <span className="text-sm text-gray-500">{t("search.fromDate")}:</span>
               <input
                 type="date"
                 value={filterStartDate}
@@ -1075,7 +1071,7 @@ export default function EmptyReturnsPage() {
               />
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-500">Đến ngày:</span>
+              <span className="text-sm text-gray-500">{t("search.toDate")}:</span>
               <input
                 type="date"
                 value={filterEndDate}
@@ -1092,11 +1088,11 @@ export default function EmptyReturnsPage() {
                 }}
                 className="text-sm text-red-600 hover:text-red-800"
               >
-                Xóa bộ lọc
+                {t("search.clearFilters")}
               </button>
             )}
             <div className="ml-auto text-sm text-gray-500">
-              Hiển thị {filteredData.length} kết quả
+              {t("search.showingResults", { count: filteredData.length })}
             </div>
           </div>
         </div>
@@ -1133,14 +1129,14 @@ export default function EmptyReturnsPage() {
                   <td colSpan={columns.length} className="px-4 py-8 text-center text-gray-500">
                     <div className="flex items-center justify-center gap-2">
                       <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                      Đang tải...
+                      {t("loading")}
                     </div>
                   </td>
                 </tr>
               ) : paginatedData.length === 0 ? (
                 <tr>
                   <td colSpan={columns.length} className="px-4 py-8 text-center text-gray-500">
-                    Không có dữ liệu hạ rỗng
+                    {t("noData")}
                   </td>
                 </tr>
               ) : (
@@ -1544,15 +1540,15 @@ export default function EmptyReturnsPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Trạng thái</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{t("statusLabel")}</label>
                     <select
                       value={formData.status}
                       onChange={(e) => setFormData({ ...formData, status: e.target.value })}
                       className="w-full border rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-200 outline-none"
                     >
-                      {Object.entries(STATUS_CONFIG).map(([key, config]) => (
+                      {Object.keys(STATUS_STYLES).map((key) => (
                         <option key={key} value={key}>
-                          {config.label}
+                          {t(`status.${key.toLowerCase()}`)}
                         </option>
                       ))}
                     </select>

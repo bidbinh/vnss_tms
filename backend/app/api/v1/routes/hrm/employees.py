@@ -118,6 +118,8 @@ class EmployeeUpdate(BaseModel):
     user_id: Optional[str] = None
     avatar_url: Optional[str] = None
     notes: Optional[str] = None
+    # User account creation options (for employees without account)
+    user_account: Optional[UserAccountCreate] = None
 
 
 class DependentCreate(BaseModel):
@@ -601,8 +603,8 @@ def update_employee(
     if str(employee.tenant_id) != tenant_id:
         raise HTTPException(403, "Access denied")
 
-    # Update only provided fields
-    update_data = payload.model_dump(exclude_unset=True)
+    # Update only provided fields (exclude user_account from employee data)
+    update_data = payload.model_dump(exclude_unset=True, exclude={"user_account"})
 
     for key, value in update_data.items():
         setattr(employee, key, value)
@@ -629,7 +631,40 @@ def update_employee(
             session.add(namecard)
             session.commit()
 
-    return employee
+    # Create User account if requested (for employees without account)
+    user_info = None
+    if payload.user_account and payload.user_account.create_account:
+        # Check if employee already has user account
+        if employee.user_id:
+            raise HTTPException(400, "Nhân viên này đã có tài khoản đăng nhập")
+
+        user, generated_password = create_user_for_employee(
+            session=session,
+            employee=employee,
+            tenant_id=tenant_id,
+            username=payload.user_account.username,
+            password=payload.user_account.password,
+            role_ids=payload.user_account.role_ids,
+            created_by_id=str(current_user.id),
+        )
+
+        # Link user to employee
+        employee.user_id = str(user.id)
+        session.add(employee)
+        session.commit()
+        session.refresh(employee)
+
+        user_info = {
+            "user_id": str(user.id),
+            "username": user.username,
+            "generated_password": generated_password if not payload.user_account.password else None,
+        }
+
+    result = employee.model_dump()
+    if user_info:
+        result["user_account"] = user_info
+
+    return result
 
 
 @router.delete("/{employee_id}")

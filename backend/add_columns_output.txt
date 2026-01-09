@@ -1,0 +1,22 @@
+Imports successful
+Added column: shipment_id
+Added column: product_specification
+Added column: origin_criteria
+Column already exists: unit_code
+Column already exists: unit_2_code
+Added column: currency_code
+Added column: preferential_rate
+Added column: special_preferential_rate
+Column already exists: applied_rate
+Added column: environmental_rate
+Added column: environmental_amount
+Column already exists: legal_document
+Added column: preferential_code
+Added column: co_form
+Column already exists: co_no_line
+Added column: license_no
+Added column: license_date
+Added column: license_issuer
+Added column: created_by
+
+Done!

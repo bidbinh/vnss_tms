@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   Plus,
   Search,
@@ -11,7 +13,12 @@ import {
   Clock,
   AlertTriangle,
   Upload,
+  FileUp,
+  Download,
+  ChevronUp,
+  ChevronDown,
 } from "lucide-react";
+import { usePageTranslations } from "@/hooks/usePageTranslations";
 
 interface CustomsDeclaration {
   id: string;
@@ -34,41 +41,53 @@ interface CustomsDeclaration {
   created_at: string;
 }
 
-const STATUSES = [
-  { value: "", label: "Tất cả trạng thái" },
-  { value: "DRAFT", label: "Nháp" },
-  { value: "SUBMITTED", label: "Đã nộp" },
-  { value: "REGISTERED", label: "Đã đăng ký" },
-  { value: "INSPECTION", label: "Kiểm tra" },
-  { value: "RELEASED", label: "Đã thông quan" },
-  { value: "CANCELLED", label: "Đã hủy" },
-];
+// Default column widths
+const DEFAULT_COLUMN_WIDTHS = {
+  declarationNo: 140,
+  type: 80,
+  trader: 180,
+  customsOffice: 120,
+  value: 100,
+  taxes: 100,
+  status: 110,
+  actions: 100,
+};
 
-const TYPES = [
-  { value: "", label: "Tất cả loại" },
-  { value: "IMPORT", label: "Nhập khẩu" },
-  { value: "EXPORT", label: "Xuất khẩu" },
-  { value: "TRANSIT", label: "Quá cảnh" },
-];
+type SortField = "declaration_no" | "declaration_type" | "trader_name" | "total_value" | "status";
+type SortOrder = "asc" | "desc";
 
 export default function CustomsPage() {
+  const { t } = usePageTranslations("fms.customsPage");
+  const router = useRouter();
   const [declarations, setDeclarations] = useState<CustomsDeclaration[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
-  const [pageSize] = useState(20);
+  const [pageSize, setPageSize] = useState(20);
   const [filterType, setFilterType] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [submitting, setSubmitting] = useState<string | null>(null);
+
+  // Sorting
+  const [sortField, setSortField] = useState<SortField | null>(null);
+  const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
+
+  // Column resize
+  const [columnWidths, setColumnWidths] = useState(DEFAULT_COLUMN_WIDTHS);
+  const [resizing, setResizing] = useState<string | null>(null);
+  const startX = useRef(0);
+  const startWidth = useRef(0);
 
   useEffect(() => {
     fetchDeclarations();
-  }, [page, filterType, filterStatus]);
+  }, [page, pageSize, filterType, filterStatus]);
 
   const fetchDeclarations = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem("access_token");
+      const token = localStorage.getItem("token");
       const params = new URLSearchParams({
         page: page.toString(),
         page_size: pageSize.toString(),
@@ -78,7 +97,7 @@ export default function CustomsPage() {
       if (filterStatus) params.append("status", filterStatus);
 
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/fms/customs?${params}`,
+        `/api/v1/fms/customs?${params}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -90,11 +109,78 @@ export default function CustomsPage() {
         setTotal(data.total || 0);
       }
     } catch (error) {
-      console.error("Lỗi khi tải danh sách tờ khai:", error);
+      console.error("Error loading declarations:", error);
     } finally {
       setLoading(false);
     }
   };
+
+  // Handle sort
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortOrder("asc");
+    }
+  };
+
+  // Sort icon component
+  const SortIcon = ({ field }: { field: SortField }) => {
+    if (sortField !== field) return null;
+    return sortOrder === "asc" ? (
+      <ChevronUp className="w-3 h-3 inline ml-1" />
+    ) : (
+      <ChevronDown className="w-3 h-3 inline ml-1" />
+    );
+  };
+
+  // Sorted declarations
+  const sortedDeclarations = [...declarations].sort((a, b) => {
+    if (!sortField) return 0;
+    const aVal = a[sortField] ?? "";
+    const bVal = b[sortField] ?? "";
+    if (aVal < bVal) return sortOrder === "asc" ? -1 : 1;
+    if (aVal > bVal) return sortOrder === "asc" ? 1 : -1;
+    return 0;
+  });
+
+  // Filtered declarations
+  const filteredDeclarations = sortedDeclarations.filter((d) => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      d.declaration_no?.toLowerCase().includes(q) ||
+      d.trader_name?.toLowerCase().includes(q) ||
+      d.invoice_no?.toLowerCase().includes(q)
+    );
+  });
+
+  // Column resize handlers
+  const handleMouseDown = (col: string, e: React.MouseEvent) => {
+    setResizing(col);
+    startX.current = e.clientX;
+    startWidth.current = columnWidths[col as keyof typeof columnWidths];
+    e.preventDefault();
+  };
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!resizing) return;
+      const diff = e.clientX - startX.current;
+      const newWidth = Math.max(50, startWidth.current + diff);
+      setColumnWidths((prev) => ({ ...prev, [resizing]: newWidth }));
+    };
+    const handleMouseUp = () => setResizing(null);
+    if (resizing) {
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
+    }
+    return () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [resizing]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -109,31 +195,31 @@ export default function CustomsPage() {
   };
 
   const getStatusLabel = (status: string) => {
-    switch (status) {
-      case "DRAFT": return "Nháp";
-      case "SUBMITTED": return "Đã nộp";
-      case "REGISTERED": return "Đã đăng ký";
-      case "INSPECTION": return "Kiểm tra";
-      case "RELEASED": return "Đã thông quan";
-      case "CANCELLED": return "Đã hủy";
-      default: return status;
-    }
+    const statusMap: Record<string, string> = {
+      DRAFT: t("filters.draft"),
+      SUBMITTED: t("filters.submitted"),
+      REGISTERED: t("filters.registered"),
+      INSPECTION: t("filters.inspection"),
+      RELEASED: t("filters.released"),
+      CANCELLED: t("filters.cancelled"),
+    };
+    return statusMap[status] || status;
   };
 
   const getTypeLabel = (type: string) => {
-    switch (type) {
-      case "IMPORT": return "Nhập khẩu";
-      case "EXPORT": return "Xuất khẩu";
-      case "TRANSIT": return "Quá cảnh";
-      default: return type;
-    }
+    const typeMap: Record<string, string> = {
+      IMPORT: t("filters.import"),
+      EXPORT: t("filters.export"),
+      TRANSIT: t("filters.transit"),
+    };
+    return typeMap[type] || type;
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case "RELEASED": return <CheckCircle className="w-4 h-4 text-green-600" />;
-      case "INSPECTION": return <AlertTriangle className="w-4 h-4 text-orange-600" />;
-      default: return <Clock className="w-4 h-4 text-gray-600" />;
+      case "RELEASED": return <CheckCircle className="w-3 h-3 text-green-600" />;
+      case "INSPECTION": return <AlertTriangle className="w-3 h-3 text-orange-600" />;
+      default: return <Clock className="w-3 h-3 text-gray-600" />;
     }
   };
 
@@ -146,231 +232,393 @@ export default function CustomsPage() {
     }).format(amount);
   };
 
+  const handleViewDeclaration = (id: string) => {
+    router.push(`/fms/customs/${id}`);
+  };
+
+  const handleEditDeclaration = (id: string) => {
+    router.push(`/fms/customs/${id}/edit`);
+  };
+
+  const handleSubmitDeclaration = async (id: string) => {
+    if (!confirm(t("confirmSubmit"))) return;
+
+    setSubmitting(id);
+    try {
+      const token = localStorage.getItem("access_token");
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/fms/customs/${id}/submit`,
+        {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (res.ok) {
+        alert(t("submitSuccess"));
+        fetchDeclarations();
+      } else {
+        const data = await res.json();
+        alert(`${t("submitError")}: ${data.detail || ""}`);
+      }
+    } catch (error) {
+      alert(t("errors.generalError"));
+    } finally {
+      setSubmitting(null);
+    }
+  };
+
+  const handleExportXML = async (id: string, declarationNo?: string) => {
+    try {
+      const token = localStorage.getItem("access_token");
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/fms/customs/${id}/export/xml`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (res.ok) {
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `customs_${declarationNo || id}.xml`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      } else {
+        const data = await res.json();
+        alert(`${t("exportError")}: ${data.detail || ""}`);
+      }
+    } catch (error) {
+      alert(t("errors.generalError"));
+    }
+  };
+
   const totalPages = Math.ceil(total / pageSize);
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Tờ khai Hải quan</h1>
-          <p className="text-gray-600">Quản lý tờ khai xuất nhập khẩu</p>
-        </div>
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-        >
-          <Plus className="w-5 h-5" />
-          Tạo tờ khai mới
-        </button>
-      </div>
+    <div className="h-[calc(100vh-64px)] overflow-auto">
+      <style jsx>{`
+        .resize-handle {
+          position: absolute;
+          right: 0;
+          top: 0;
+          bottom: 0;
+          width: 4px;
+          cursor: col-resize;
+          background: transparent;
+        }
+        .resize-handle:hover,
+        .resize-handle.active {
+          background: #3b82f6;
+        }
+        th {
+          position: relative;
+        }
+      `}</style>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-lg shadow-sm border p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Chờ nộp</p>
-              <p className="text-2xl font-bold text-gray-800">
-                {declarations.filter(d => d.status === "DRAFT").length}
-              </p>
-            </div>
-            <FileText className="w-8 h-8 text-gray-500" />
+      {/* Sticky Header Section */}
+      <div className="sticky top-0 z-20 bg-white shadow-sm">
+        {/* Title and Actions */}
+        <div className="px-3 py-2 border-b flex items-center justify-between">
+          <div>
+            <h1 className="text-base font-bold">{t("title")}</h1>
+            <p className="text-xs text-gray-500">{t("subtitle")}</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/fms/customs/import"
+              className="flex items-center gap-1 px-2 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700"
+            >
+              <FileUp className="w-3 h-3" />
+              {t("importFromDocs")}
+            </Link>
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="flex items-center gap-1 px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700"
+            >
+              <Plus className="w-3 h-3" />
+              {t("createNew")}
+            </button>
           </div>
         </div>
-        <div className="bg-white rounded-lg shadow-sm border p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Đang kiểm tra</p>
-              <p className="text-2xl font-bold text-orange-600">
-                {declarations.filter(d => d.status === "INSPECTION").length}
-              </p>
-            </div>
-            <AlertTriangle className="w-8 h-8 text-orange-500" />
-          </div>
-        </div>
-        <div className="bg-white rounded-lg shadow-sm border p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Chờ thông quan</p>
-              <p className="text-2xl font-bold text-blue-600">
-                {declarations.filter(d => d.status === "REGISTERED").length}
-              </p>
-            </div>
-            <Clock className="w-8 h-8 text-blue-500" />
-          </div>
-        </div>
-        <div className="bg-white rounded-lg shadow-sm border p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Đã thông quan</p>
-              <p className="text-2xl font-bold text-green-600">
-                {declarations.filter(d => d.status === "RELEASED").length}
-              </p>
-            </div>
-            <CheckCircle className="w-8 h-8 text-green-500" />
-          </div>
-        </div>
-      </div>
 
-      {/* Filters */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-        <div className="flex flex-col md:flex-row gap-4">
+        {/* Filters */}
+        <div className="px-3 py-2 border-b flex items-center gap-2">
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400" />
             <input
               type="text"
-              placeholder="Tìm kiếm số tờ khai, doanh nghiệp..."
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder={t("searchPlaceholder")}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-7 pr-2 py-1 border border-gray-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
           </div>
           <select
             value={filterType}
-            onChange={(e) => setFilterType(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            onChange={(e) => { setFilterType(e.target.value); setPage(1); }}
+            className="px-2 py-1 border border-gray-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
           >
-            {TYPES.map((type) => (
-              <option key={type.value} value={type.value}>
-                {type.label}
-              </option>
-            ))}
+            <option value="">{t("filters.allTypes")}</option>
+            <option value="IMPORT">{t("filters.import")}</option>
+            <option value="EXPORT">{t("filters.export")}</option>
+            <option value="TRANSIT">{t("filters.transit")}</option>
           </select>
           <select
             value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            onChange={(e) => { setFilterStatus(e.target.value); setPage(1); }}
+            className="px-2 py-1 border border-gray-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
           >
-            {STATUSES.map((status) => (
-              <option key={status.value} value={status.value}>
-                {status.label}
-              </option>
-            ))}
+            <option value="">{t("filters.allStatus")}</option>
+            <option value="DRAFT">{t("filters.draft")}</option>
+            <option value="SUBMITTED">{t("filters.submitted")}</option>
+            <option value="REGISTERED">{t("filters.registered")}</option>
+            <option value="INSPECTION">{t("filters.inspection")}</option>
+            <option value="RELEASED">{t("filters.released")}</option>
+            <option value="CANCELLED">{t("filters.cancelled")}</option>
           </select>
+          <div className="flex items-center gap-1 text-xs">
+            <span className="text-gray-500">{t("pagination.rowsPerPage")}:</span>
+            <select
+              value={pageSize}
+              onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}
+              className="px-1 py-1 border border-gray-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+            >
+              <option value={20}>20</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+            </select>
+          </div>
         </div>
+
+        {/* Table Header */}
+        <table className="w-full text-xs" style={{ tableLayout: "fixed" }}>
+          <thead className="bg-gray-50 border-b">
+            <tr>
+              <th
+                style={{ width: columnWidths.declarationNo }}
+                className="text-left px-2 py-2 font-bold text-gray-700 cursor-pointer hover:bg-gray-100"
+                onClick={() => handleSort("declaration_no")}
+              >
+                {t("columns.declarationNo")}
+                <SortIcon field="declaration_no" />
+                <div
+                  className={`resize-handle ${resizing === "declarationNo" ? "active" : ""}`}
+                  onMouseDown={(e) => handleMouseDown("declarationNo", e)}
+                />
+              </th>
+              <th
+                style={{ width: columnWidths.type }}
+                className="text-left px-2 py-2 font-bold text-gray-700 cursor-pointer hover:bg-gray-100"
+                onClick={() => handleSort("declaration_type")}
+              >
+                {t("columns.type")}
+                <SortIcon field="declaration_type" />
+                <div
+                  className={`resize-handle ${resizing === "type" ? "active" : ""}`}
+                  onMouseDown={(e) => handleMouseDown("type", e)}
+                />
+              </th>
+              <th
+                style={{ width: columnWidths.trader }}
+                className="text-left px-2 py-2 font-bold text-gray-700 cursor-pointer hover:bg-gray-100"
+                onClick={() => handleSort("trader_name")}
+              >
+                {t("columns.trader")}
+                <SortIcon field="trader_name" />
+                <div
+                  className={`resize-handle ${resizing === "trader" ? "active" : ""}`}
+                  onMouseDown={(e) => handleMouseDown("trader", e)}
+                />
+              </th>
+              <th
+                style={{ width: columnWidths.customsOffice }}
+                className="text-left px-2 py-2 font-bold text-gray-700"
+              >
+                {t("columns.customsOffice")}
+                <div
+                  className={`resize-handle ${resizing === "customsOffice" ? "active" : ""}`}
+                  onMouseDown={(e) => handleMouseDown("customsOffice", e)}
+                />
+              </th>
+              <th
+                style={{ width: columnWidths.value }}
+                className="text-right px-2 py-2 font-bold text-gray-700 cursor-pointer hover:bg-gray-100"
+                onClick={() => handleSort("total_value")}
+              >
+                {t("columns.value")}
+                <SortIcon field="total_value" />
+                <div
+                  className={`resize-handle ${resizing === "value" ? "active" : ""}`}
+                  onMouseDown={(e) => handleMouseDown("value", e)}
+                />
+              </th>
+              <th
+                style={{ width: columnWidths.taxes }}
+                className="text-right px-2 py-2 font-bold text-gray-700"
+              >
+                {t("columns.taxes")}
+                <div
+                  className={`resize-handle ${resizing === "taxes" ? "active" : ""}`}
+                  onMouseDown={(e) => handleMouseDown("taxes", e)}
+                />
+              </th>
+              <th
+                style={{ width: columnWidths.status }}
+                className="text-left px-2 py-2 font-bold text-gray-700 cursor-pointer hover:bg-gray-100"
+                onClick={() => handleSort("status")}
+              >
+                {t("columns.status")}
+                <SortIcon field="status" />
+                <div
+                  className={`resize-handle ${resizing === "status" ? "active" : ""}`}
+                  onMouseDown={(e) => handleMouseDown("status", e)}
+                />
+              </th>
+              <th
+                style={{ width: columnWidths.actions }}
+                className="text-right px-2 py-2 font-bold text-gray-700"
+              >
+                {t("columns.actions")}
+              </th>
+            </tr>
+          </thead>
+        </table>
       </div>
 
-      {/* Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        {loading ? (
-          <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          </div>
-        ) : declarations.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-64 text-gray-500">
-            <FileText className="w-12 h-12 mb-4" />
-            <p className="text-lg font-medium">Chưa có tờ khai nào</p>
-            <p className="text-sm">Tạo tờ khai hải quan để bắt đầu</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b">
-                <tr>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Số tờ khai</th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Loại</th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Doanh nghiệp</th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Chi cục HQ</th>
-                  <th className="text-right px-4 py-3 text-sm font-medium text-gray-600">Trị giá</th>
-                  <th className="text-right px-4 py-3 text-sm font-medium text-gray-600">Thuế</th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Trạng thái</th>
-                  <th className="text-right px-4 py-3 text-sm font-medium text-gray-600">Thao tác</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {declarations.map((declaration) => (
-                  <tr key={declaration.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3">
-                      <p className="font-medium text-blue-600">
-                        {declaration.declaration_no || "Nháp"}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        Hóa đơn: {declaration.invoice_no || "-"}
-                      </p>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`px-2 py-1 rounded text-xs font-medium ${
-                        declaration.declaration_type === "IMPORT"
-                          ? "bg-blue-100 text-blue-800"
-                          : declaration.declaration_type === "EXPORT"
-                          ? "bg-green-100 text-green-800"
-                          : "bg-purple-100 text-purple-800"
-                      }`}>
-                        {getTypeLabel(declaration.declaration_type)}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <p className="text-sm">{declaration.trader_name || "-"}</p>
-                      <p className="text-xs text-gray-500">{declaration.trader_tax_code}</p>
-                    </td>
-                    <td className="px-4 py-3 text-sm">
-                      {declaration.customs_office || "-"}
-                    </td>
-                    <td className="px-4 py-3 text-right text-sm">
-                      {formatCurrency(declaration.total_value, declaration.currency_code)}
-                    </td>
-                    <td className="px-4 py-3 text-right text-sm font-medium text-red-600">
-                      {formatCurrency(declaration.total_taxes, "VND")}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        {getStatusIcon(declaration.status)}
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(declaration.status)}`}>
-                          {getStatusLabel(declaration.status)}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <button className="p-1 hover:bg-gray-100 rounded" title="Xem">
-                          <Eye className="w-4 h-4 text-gray-600" />
-                        </button>
-                        <button className="p-1 hover:bg-gray-100 rounded" title="Sửa">
-                          <Edit className="w-4 h-4 text-gray-600" />
-                        </button>
-                        {declaration.status === "DRAFT" && (
-                          <button className="p-1 hover:bg-gray-100 rounded" title="Nộp tờ khai">
-                            <Upload className="w-4 h-4 text-blue-600" />
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+      {/* Table Body */}
+      {loading ? (
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+        </div>
+      ) : filteredDeclarations.length === 0 ? (
+        <div className="flex flex-col items-center justify-center h-64 text-gray-500">
+          <FileText className="w-10 h-10 mb-3" />
+          <p className="text-sm font-medium">{t("noData")}</p>
+          <p className="text-xs">{t("noDataHint")}</p>
+        </div>
+      ) : (
+        <table className="w-full text-xs" style={{ tableLayout: "fixed" }}>
+          <tbody className="divide-y divide-gray-100">
+            {filteredDeclarations.map((declaration) => (
+              <tr key={declaration.id} className="hover:bg-gray-50">
+                <td style={{ width: columnWidths.declarationNo }} className="px-2 py-1.5">
+                  <p className="font-medium text-blue-600 truncate">
+                    {declaration.declaration_no || t("filters.draft")}
+                  </p>
+                  <p className="text-[10px] text-gray-500 truncate">
+                    {t("columns.invoiceNo")}: {declaration.invoice_no || "-"}
+                  </p>
+                </td>
+                <td style={{ width: columnWidths.type }} className="px-2 py-1.5">
+                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                    declaration.declaration_type === "IMPORT"
+                      ? "bg-blue-100 text-blue-800"
+                      : declaration.declaration_type === "EXPORT"
+                      ? "bg-green-100 text-green-800"
+                      : "bg-purple-100 text-purple-800"
+                  }`}>
+                    {getTypeLabel(declaration.declaration_type)}
+                  </span>
+                </td>
+                <td style={{ width: columnWidths.trader }} className="px-2 py-1.5">
+                  <p className="truncate">{declaration.trader_name || "-"}</p>
+                  <p className="text-[10px] text-gray-500">{declaration.trader_tax_code}</p>
+                </td>
+                <td style={{ width: columnWidths.customsOffice }} className="px-2 py-1.5 truncate">
+                  {declaration.customs_office || "-"}
+                </td>
+                <td style={{ width: columnWidths.value }} className="px-2 py-1.5 text-right">
+                  {formatCurrency(declaration.total_value, declaration.currency_code)}
+                </td>
+                <td style={{ width: columnWidths.taxes }} className="px-2 py-1.5 text-right font-medium text-red-600">
+                  {formatCurrency(declaration.total_taxes, "VND")}
+                </td>
+                <td style={{ width: columnWidths.status }} className="px-2 py-1.5">
+                  <div className="flex items-center gap-1">
+                    {getStatusIcon(declaration.status)}
+                    <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${getStatusColor(declaration.status)}`}>
+                      {getStatusLabel(declaration.status)}
+                    </span>
+                  </div>
+                </td>
+                <td style={{ width: columnWidths.actions }} className="px-2 py-1.5 text-right">
+                  <div className="flex items-center justify-end gap-1">
+                    <button
+                      onClick={() => handleViewDeclaration(declaration.id)}
+                      className="p-1 hover:bg-gray-100 rounded"
+                      title={t("actions.view")}
+                    >
+                      <Eye className="w-3 h-3 text-gray-600" />
+                    </button>
+                    <button
+                      onClick={() => handleEditDeclaration(declaration.id)}
+                      className="p-1 hover:bg-gray-100 rounded"
+                      title={t("actions.edit")}
+                    >
+                      <Edit className="w-3 h-3 text-gray-600" />
+                    </button>
+                    {declaration.status === "DRAFT" && (
+                      <button
+                        onClick={() => handleSubmitDeclaration(declaration.id)}
+                        disabled={submitting === declaration.id}
+                        className="p-1 hover:bg-gray-100 rounded disabled:opacity-50"
+                        title={t("actions.submit")}
+                      >
+                        <Upload className={`w-3 h-3 ${submitting === declaration.id ? "animate-spin text-gray-400" : "text-blue-600"}`} />
+                      </button>
+                    )}
+                    {declaration.status !== "DRAFT" && (
+                      <button
+                        onClick={() => handleExportXML(declaration.id, declaration.declaration_no)}
+                        className="p-1 hover:bg-gray-100 rounded"
+                        title={t("actions.exportXml")}
+                      >
+                        <Download className="w-3 h-3 text-green-600" />
+                      </button>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
 
-        {/* Pagination */}
-        {total > pageSize && (
-          <div className="flex items-center justify-between px-4 py-3 border-t">
-            <p className="text-sm text-gray-600">
-              Hiển thị {(page - 1) * pageSize + 1} đến {Math.min(page * pageSize, total)} trong tổng số {total}
-            </p>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setPage(page - 1)}
-                disabled={page === 1}
-                className="px-3 py-1 border rounded disabled:opacity-50 hover:bg-gray-50"
-              >
-                Trước
-              </button>
-              <span className="px-3 py-1">Trang {page} / {totalPages}</span>
-              <button
-                onClick={() => setPage(page + 1)}
-                disabled={page >= totalPages}
-                className="px-3 py-1 border rounded disabled:opacity-50 hover:bg-gray-50"
-              >
-                Sau
-              </button>
-            </div>
+      {/* Pagination */}
+      {total > 0 && (
+        <div className="sticky bottom-0 bg-white border-t px-3 py-2 flex items-center justify-between text-xs">
+          <p className="text-gray-600">
+            {t("pagination.showing")} {(page - 1) * pageSize + 1} {t("pagination.to")} {Math.min(page * pageSize, total)} {t("pagination.of")} {total} {t("pagination.items")}
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setPage(page - 1)}
+              disabled={page === 1}
+              className="px-2 py-1 border rounded disabled:opacity-50 hover:bg-gray-50"
+            >
+              {t("pagination.previous")}
+            </button>
+            <span className="px-2 py-1">{t("pagination.page")} {page} / {totalPages}</span>
+            <button
+              onClick={() => setPage(page + 1)}
+              disabled={page >= totalPages}
+              className="px-2 py-1 border rounded disabled:opacity-50 hover:bg-gray-50"
+            >
+              {t("pagination.next")}
+            </button>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Create Modal */}
       {showCreateModal && (
         <CreateDeclarationModal
+          t={t}
           onClose={() => setShowCreateModal(false)}
           onCreated={() => {
             setShowCreateModal(false);
@@ -383,9 +631,11 @@ export default function CustomsPage() {
 }
 
 function CreateDeclarationModal({
+  t,
   onClose,
   onCreated,
 }: {
+  t: (key: string) => string;
   onClose: () => void;
   onCreated: () => void;
 }) {
@@ -434,10 +684,10 @@ function CreateDeclarationModal({
         onCreated();
       } else {
         const data = await res.json();
-        setError(data.detail || "Không thể tạo tờ khai");
+        setError(data.detail || t("errors.createError"));
       }
     } catch (err) {
-      setError("Đã xảy ra lỗi");
+      setError(t("errors.generalError"));
     } finally {
       setLoading(false);
     }
@@ -445,101 +695,101 @@ function CreateDeclarationModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div className="p-6 border-b">
-          <h2 className="text-xl font-bold">Tạo tờ khai Hải quan mới</h2>
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="p-4 border-b">
+          <h2 className="text-sm font-bold">{t("modal.createTitle")}</h2>
         </div>
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="p-4 space-y-3 text-xs">
           {error && (
-            <div className="p-3 bg-red-50 text-red-600 rounded-lg text-sm">
+            <div className="p-2 bg-red-50 text-red-600 rounded text-xs">
               {error}
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium mb-1">Loại tờ khai *</label>
+              <label className="block font-medium mb-1">{t("modal.declarationType")} *</label>
               <select
                 value={formData.declaration_type}
                 onChange={(e) => setFormData({ ...formData, declaration_type: e.target.value })}
-                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-2 py-1.5 border rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
                 required
               >
-                <option value="IMPORT">Nhập khẩu</option>
-                <option value="EXPORT">Xuất khẩu</option>
-                <option value="TRANSIT">Quá cảnh</option>
+                <option value="IMPORT">{t("filters.import")}</option>
+                <option value="EXPORT">{t("filters.export")}</option>
+                <option value="TRANSIT">{t("filters.transit")}</option>
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Chi cục Hải quan</label>
+              <label className="block font-medium mb-1">{t("modal.customsOffice")}</label>
               <input
                 type="text"
                 value={formData.customs_office}
                 onChange={(e) => setFormData({ ...formData, customs_office: e.target.value })}
-                placeholder="VD: Chi cục HQ Cát Lái"
-                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder={t("modal.customsOfficePlaceholder")}
+                className="w-full px-2 py-1.5 border rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium mb-1">Doanh nghiệp XNK *</label>
+              <label className="block font-medium mb-1">{t("modal.traderName")} *</label>
               <input
                 type="text"
                 value={formData.trader_name}
                 onChange={(e) => setFormData({ ...formData, trader_name: e.target.value })}
-                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-2 py-1.5 border rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Mã số thuế *</label>
+              <label className="block font-medium mb-1">{t("modal.taxCode")} *</label>
               <input
                 type="text"
                 value={formData.trader_tax_code}
                 onChange={(e) => setFormData({ ...formData, trader_tax_code: e.target.value })}
-                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-2 py-1.5 border rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
                 required
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Địa chỉ</label>
+            <label className="block font-medium mb-1">{t("modal.address")}</label>
             <input
               type="text"
               value={formData.trader_address}
               onChange={(e) => setFormData({ ...formData, trader_address: e.target.value })}
-              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-2 py-1.5 border rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="block text-sm font-medium mb-1">Số hóa đơn</label>
+              <label className="block font-medium mb-1">{t("modal.invoiceNo")}</label>
               <input
                 type="text"
                 value={formData.invoice_no}
                 onChange={(e) => setFormData({ ...formData, invoice_no: e.target.value })}
-                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-2 py-1.5 border rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Ngày hóa đơn</label>
+              <label className="block font-medium mb-1">{t("modal.invoiceDate")}</label>
               <input
                 type="date"
                 value={formData.invoice_date}
                 onChange={(e) => setFormData({ ...formData, invoice_date: e.target.value })}
-                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-2 py-1.5 border rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Điều kiện giao hàng</label>
+              <label className="block font-medium mb-1">{t("modal.incoterm")}</label>
               <select
                 value={formData.incoterm}
                 onChange={(e) => setFormData({ ...formData, incoterm: e.target.value })}
-                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-2 py-1.5 border rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
               >
                 <option value="EXW">EXW</option>
                 <option value="FOB">FOB</option>
@@ -551,13 +801,13 @@ function CreateDeclarationModal({
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="block text-sm font-medium mb-1">Tiền tệ</label>
+              <label className="block font-medium mb-1">{t("modal.currency")}</label>
               <select
                 value={formData.currency_code}
                 onChange={(e) => setFormData({ ...formData, currency_code: e.target.value })}
-                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-2 py-1.5 border rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
               >
                 <option value="USD">USD</option>
                 <option value="EUR">EUR</option>
@@ -566,96 +816,96 @@ function CreateDeclarationModal({
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Trị giá</label>
+              <label className="block font-medium mb-1">{t("modal.value")}</label>
               <input
                 type="number"
                 step="0.01"
                 value={formData.total_value}
                 onChange={(e) => setFormData({ ...formData, total_value: parseFloat(e.target.value) || 0 })}
-                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-2 py-1.5 border rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Nước xuất xứ</label>
+              <label className="block font-medium mb-1">{t("modal.originCountry")}</label>
               <input
                 type="text"
                 value={formData.origin_country}
                 onChange={(e) => setFormData({ ...formData, origin_country: e.target.value })}
-                placeholder="VD: CN, US, JP"
-                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder={t("modal.originCountryPlaceholder")}
+                className="w-full px-2 py-1.5 border rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium mb-1">Mã HS</label>
+              <label className="block font-medium mb-1">{t("modal.hsCode")}</label>
               <input
                 type="text"
                 value={formData.hs_code}
                 onChange={(e) => setFormData({ ...formData, hs_code: e.target.value })}
-                placeholder="VD: 8471300000"
-                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder={t("modal.hsCodePlaceholder")}
+                className="w-full px-2 py-1.5 border rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Số kiện</label>
+              <label className="block font-medium mb-1">{t("modal.packageQty")}</label>
               <input
                 type="number"
                 value={formData.package_qty}
                 onChange={(e) => setFormData({ ...formData, package_qty: parseInt(e.target.value) || 0 })}
-                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-2 py-1.5 border rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Mô tả hàng hóa</label>
+            <label className="block font-medium mb-1">{t("modal.commodity")}</label>
             <textarea
               value={formData.commodity}
               onChange={(e) => setFormData({ ...formData, commodity: e.target.value })}
               rows={2}
-              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-2 py-1.5 border rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium mb-1">Trọng lượng thực (kg)</label>
+              <label className="block font-medium mb-1">{t("modal.grossWeight")}</label>
               <input
                 type="number"
                 step="0.01"
                 value={formData.gross_weight}
                 onChange={(e) => setFormData({ ...formData, gross_weight: parseFloat(e.target.value) || 0 })}
-                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-2 py-1.5 border rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Trọng lượng tịnh (kg)</label>
+              <label className="block font-medium mb-1">{t("modal.netWeight")}</label>
               <input
                 type="number"
                 step="0.01"
                 value={formData.net_weight}
                 onChange={(e) => setFormData({ ...formData, net_weight: parseFloat(e.target.value) || 0 })}
-                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-2 py-1.5 border rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 pt-4 border-t">
+          <div className="flex justify-end gap-2 pt-3 border-t">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+              className="px-3 py-1.5 border border-gray-300 rounded hover:bg-gray-50"
             >
-              Hủy
+              {t("modal.cancel")}
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+              className="px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
             >
-              {loading ? "Đang tạo..." : "Tạo tờ khai"}
+              {loading ? t("modal.creating") : t("modal.create")}
             </button>
           </div>
         </form>

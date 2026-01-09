@@ -13,6 +13,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { apiFetch } from "@/lib/api";
+import { useTranslations } from "next-intl";
 
 interface ProjectStats {
   total_projects: number;
@@ -42,6 +43,7 @@ interface ApiResponse<T> {
 }
 
 export default function ProjectDashboard() {
+  const t = useTranslations("project.dashboard");
   const [stats, setStats] = useState<ProjectStats>({
     total_projects: 0,
     active_projects: 0,
@@ -102,15 +104,15 @@ export default function ProjectDashboard() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Project Dashboard</h1>
-          <p className="text-gray-500">Quản lý dự án và công việc</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t("title")}</h1>
+          <p className="text-gray-500">{t("subtitle")}</p>
         </div>
         <a
           href="/project/projects"
           className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
         >
           <FolderKanban className="w-4 h-4" />
-          Tạo dự án mới
+          {t("createProject")}
         </a>
       </div>
 
@@ -122,7 +124,7 @@ export default function ProjectDashboard() {
               <FolderKanban className="w-5 h-5 text-blue-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Tổng dự án</p>
+              <p className="text-sm text-gray-500">{t("totalProjects")}</p>
               <p className="text-xl font-bold">{stats.total_projects}</p>
             </div>
           </div>
@@ -133,7 +135,7 @@ export default function ProjectDashboard() {
               <TrendingUp className="w-5 h-5 text-green-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Đang thực hiện</p>
+              <p className="text-sm text-gray-500">{t("inProgress")}</p>
               <p className="text-xl font-bold">{stats.active_projects}</p>
             </div>
           </div>
@@ -144,7 +146,7 @@ export default function ProjectDashboard() {
               <ListChecks className="w-5 h-5 text-purple-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Tổng tasks</p>
+              <p className="text-sm text-gray-500">{t("totalTasks")}</p>
               <p className="text-xl font-bold">{stats.total_tasks}</p>
             </div>
           </div>
@@ -155,7 +157,7 @@ export default function ProjectDashboard() {
               <CheckCircle2 className="w-5 h-5 text-teal-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Hoàn thành</p>
+              <p className="text-sm text-gray-500">{t("completed")}</p>
               <p className="text-xl font-bold">{stats.completed_tasks}</p>
             </div>
           </div>
@@ -166,7 +168,7 @@ export default function ProjectDashboard() {
               <AlertCircle className="w-5 h-5 text-red-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Quá hạn</p>
+              <p className="text-sm text-gray-500">{t("overdue")}</p>
               <p className="text-xl font-bold text-red-600">{stats.overdue_tasks}</p>
             </div>
           </div>
@@ -177,7 +179,7 @@ export default function ProjectDashboard() {
               <Users className="w-5 h-5 text-orange-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Thành viên</p>
+              <p className="text-sm text-gray-500">{t("members")}</p>
               <p className="text-xl font-bold">{stats.team_members}</p>
             </div>
           </div>
@@ -186,7 +188,7 @@ export default function ProjectDashboard() {
 
       {/* Recent Projects */}
       <div className="bg-white rounded-xl shadow-sm border p-6">
-        <h2 className="text-lg font-semibold mb-4">Dự án gần đây</h2>
+        <h2 className="text-lg font-semibold mb-4">{t("recentProjects")}</h2>
         <div className="space-y-4">
           {recentProjects.map((project) => (
             <div key={project.id} className="flex items-center gap-4 p-4 border rounded-lg hover:bg-gray-50">
@@ -235,28 +237,28 @@ export default function ProjectDashboard() {
           className="flex items-center gap-3 p-4 bg-white rounded-xl shadow-sm border hover:bg-gray-50"
         >
           <FolderKanban className="w-5 h-5 text-blue-500" />
-          <span>Dự án</span>
+          <span>{t("quickActions.projects")}</span>
         </a>
         <a
           href="/project/tasks"
           className="flex items-center gap-3 p-4 bg-white rounded-xl shadow-sm border hover:bg-gray-50"
         >
           <ListChecks className="w-5 h-5 text-purple-500" />
-          <span>Tasks</span>
+          <span>{t("quickActions.tasks")}</span>
         </a>
         <a
           href="/project/milestones"
           className="flex items-center gap-3 p-4 bg-white rounded-xl shadow-sm border hover:bg-gray-50"
         >
           <Milestone className="w-5 h-5 text-green-500" />
-          <span>Milestones</span>
+          <span>{t("quickActions.milestones")}</span>
         </a>
         <a
           href="/project/resources"
           className="flex items-center gap-3 p-4 bg-white rounded-xl shadow-sm border hover:bg-gray-50"
         >
           <Users className="w-5 h-5 text-orange-500" />
-          <span>Resources</span>
+          <span>{t("quickActions.resources")}</span>
         </a>
       </div>
     </div>

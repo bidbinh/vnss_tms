@@ -1,77 +1,102 @@
 [
   {
     "question": "9log là gì?",
-    "answer": "9log.tech là nền tảng SaaS ERP dành cho ngành logistics Việt Nam. Chúng tôi cung cấp các module: TMS (quản lý vận tải container), WMS (quản lý kho), HRM (nhân sự), CRM (khách hàng), Accounting (kế toán). Phù hợp cho công ty vận tải, forwarder, cảng, ICD, depot, kho 3PL.",
-    "keywords": ["9log", "là gì", "giới thiệu", "about"]
+    "answer": "9log.tech là nền tảng SaaS ERP cho ngành logistics Việt Nam. Các module chính: TMS (quản lý vận tải container), WMS (kho bãi), FMS (forwarding/customs), HRM (nhân sự), CRM (khách hàng), Accounting (kế toán), Project Management. Phù hợp cho: công ty vận tải, forwarder, chủ hàng (shipper), kho bãi 3PL, chuyển phát nhanh.",
+    "keywords": ["9log", "là gì", "giới thiệu", "about", "module"]
+  },
+  {
+    "question": "Làm sao để đăng ký 9log?",
+    "answer": "Quy trình đăng ký rất đơn giản, KHÔNG cần xác nhận email:\n\n1. Truy cập 9log.tech/register\n2. Điền thông tin công ty: Tên công ty, Subdomain (VD: abc.9log.tech)\n3. Chọn loại hình: Vận tải, Giao nhận, Chủ hàng, Kho bãi, Chuyển phát, Khác\n4. Tạo tài khoản admin: Họ tên, Email, SĐT, Mật khẩu (tối thiểu 6 ký tự)\n5. Click 'Tạo workspace miễn phí'\n6. Đăng nhập ngay và sử dụng!\n\nKhông có bước xác nhận email. Workspace được tạo tức thì.",
+    "keywords": ["đăng ký", "dùng thử", "trial", "tạo tài khoản", "signup", "register", "workspace"]
   },
   {
     "question": "Giá của 9log như thế nào?",
-    "answer": "9log có 4 gói: FREE (dùng thử miễn phí với giới hạn), STARTER (cho công ty nhỏ), PRO (công ty vừa, đầy đủ tính năng), ENTERPRISE (công ty lớn, custom). Giá tính theo số lượng đơn hàng/tháng và số user. Liên hệ sales@9log.tech để được báo giá chi tiết.",
-    "keywords": ["giá", "bao nhiêu", "pricing", "chi phí", "gói", "plan"]
+    "answer": "9log có các gói:\n- FREE: Miễn phí, dùng thử không giới hạn thời gian\n- STARTER: Cho công ty nhỏ\n- PRO: Đầy đủ tính năng cho công ty vừa\n- ENTERPRISE: Custom cho công ty lớn\n\nGiá tính theo số lượng đơn hàng/tháng và số user. Liên hệ để được báo giá chi tiết.",
+    "keywords": ["giá", "bao nhiêu", "pricing", "chi phí", "gói", "plan", "free", "starter", "pro"]
   },
   {
-    "question": "Làm sao để đăng ký dùng thử?",
-    "answer": "Truy cập 9log.tech → Click 'Đăng ký dùng thử' → Điền thông tin công ty → Nhận email xác nhận → Đăng nhập và bắt đầu sử dụng. Gói FREE cho phép dùng thử 14 ngày với đầy đủ tính năng.",
-    "keywords": ["đăng ký", "dùng thử", "trial", "tạo tài khoản", "signup"]
+    "question": "Subdomain là gì?",
+    "answer": "Subdomain là địa chỉ riêng của workspace công ty bạn trên 9log. Ví dụ: abc-logistics.9log.tech\n\nQuy tắc:\n- Chỉ dùng chữ thường a-z, số 0-9, dấu gạch ngang\n- Tối thiểu 3 ký tự\n- Phải unique (không trùng với công ty khác)\n\nHệ thống tự động kiểm tra và gợi ý subdomain từ tên công ty.",
+    "keywords": ["subdomain", "domain", "địa chỉ", "url", "workspace"]
   },
   {
     "question": "Tôi quên mật khẩu, làm sao lấy lại?",
-    "answer": "Vào trang đăng nhập → Click 'Quên mật khẩu' → Nhập email đăng ký → Kiểm tra email và làm theo hướng dẫn reset password. Nếu không nhận được email, kiểm tra thư mục spam hoặc liên hệ support.",
-    "keywords": ["quên", "mật khẩu", "password", "reset", "lấy lại"]
+    "answer": "Vào trang đăng nhập → Click 'Quên mật khẩu' → Nhập email đăng ký → Làm theo hướng dẫn trong email để reset password.\n\nNếu không nhận được email:\n1. Kiểm tra thư mục Spam/Junk\n2. Đợi 5-10 phút\n3. Liên hệ support qua chat widget hoặc email",
+    "keywords": ["quên", "mật khẩu", "password", "reset", "lấy lại", "forgot"]
   },
   {
-    "question": "Làm sao để tạo đơn hàng mới?",
-    "answer": "Vào menu TMS → Đơn hàng → Click 'Tạo mới' → Điền thông tin: khách hàng, điểm lấy/giao, container, ngày yêu cầu → Click 'Lưu'. Đơn hàng sẽ ở trạng thái 'Mới' và chờ điều phối.",
-    "keywords": ["tạo đơn", "đơn hàng", "order", "tạo mới"]
+    "question": "Làm sao để tạo đơn hàng vận tải?",
+    "answer": "Trong module TMS:\n1. Menu TMS → Đơn hàng → Click 'Tạo mới'\n2. Chọn khách hàng (hoặc tạo mới)\n3. Nhập thông tin: điểm lấy hàng, điểm giao hàng, loại container, ngày yêu cầu\n4. Thêm ghi chú nếu cần\n5. Click 'Lưu'\n\nĐơn hàng sẽ ở trạng thái 'Mới', chờ điều phối tài xế.",
+    "keywords": ["tạo đơn", "đơn hàng", "order", "tạo mới", "vận tải", "tms"]
   },
   {
-    "question": "Làm sao để giao đơn cho tài xế?",
-    "answer": "Vào chi tiết đơn hàng → Click 'Phân tài xế' → Chọn tài xế từ danh sách → Chọn xe đầu kéo và rơ-moóc (nếu có) → Click 'Xác nhận'. Tài xế sẽ nhận được thông báo trên app.",
-    "keywords": ["giao đơn", "phân tài xế", "assign", "điều phối"]
+    "question": "Làm sao phân tài xế cho đơn hàng?",
+    "answer": "Có 2 cách:\n\n**Cách 1 - Thủ công:**\nVào chi tiết đơn hàng → Click 'Phân tài xế' → Chọn tài xế, xe đầu kéo, rơ-moóc → Xác nhận\n\n**Cách 2 - AI Dispatch (tự động):**\nVào TMS → AI Dispatch → Hệ thống tự động gợi ý tài xế phù hợp dựa trên: vị trí hiện tại, tuyến đường quen, tải trọng xe, lịch làm việc\n\nTài xế sẽ nhận thông báo trên app mobile.",
+    "keywords": ["giao đơn", "phân tài xế", "assign", "điều phối", "dispatch", "driver"]
   },
   {
-    "question": "Tôi có thể theo dõi xe ở đâu?",
-    "answer": "9log tích hợp GPS tracking. Vào menu TMS → Bản đồ để xem vị trí xe realtime. Hoặc vào chi tiết đơn hàng để xem lịch sử di chuyển của chuyến xe đó.",
-    "keywords": ["theo dõi", "GPS", "vị trí", "tracking", "bản đồ"]
+    "question": "9log có theo dõi GPS không?",
+    "answer": "Có! 9log tích hợp GPS tracking:\n\n- Xem vị trí xe realtime trên bản đồ (TMS → GPS Settings)\n- Lịch sử di chuyển của từng chuyến xe\n- Cảnh báo khi xe ra khỏi tuyến đường\n- Tích hợp nhiều nhà cung cấp GPS: Vietmap, Binh Anh, VNPT...\n\nCấu hình tại: TMS → GPS Settings",
+    "keywords": ["theo dõi", "GPS", "vị trí", "tracking", "bản đồ", "realtime"]
   },
   {
-    "question": "Làm sao để xem báo cáo doanh thu?",
-    "answer": "Vào menu Báo cáo → Doanh thu → Chọn khoảng thời gian → Xem báo cáo theo khách hàng, theo tài xế, hoặc theo tuyến đường. Có thể xuất Excel để phân tích thêm.",
-    "keywords": ["báo cáo", "doanh thu", "revenue", "thống kê", "report"]
+    "question": "Làm sao thêm tài xế mới?",
+    "answer": "Vào TMS → Tài xế → Click 'Thêm mới'\n\nThông tin cần điền:\n- Họ tên, Số điện thoại\n- CCCD/CMND, Ngày sinh\n- Bằng lái (số, hạng, ngày hết hạn)\n- Thông tin ngân hàng (để trả lương)\n- Upload ảnh CCCD, bằng lái\n\nSau khi tạo, tài xế có thể tải app 9log Driver để nhận đơn.",
+    "keywords": ["thêm tài xế", "tạo tài xế", "driver", "lái xe", "nhân viên"]
   },
   {
-    "question": "Làm sao để thêm tài xế mới?",
-    "answer": "Vào menu TMS → Tài xế → Click 'Thêm mới' → Điền thông tin: họ tên, SĐT, CCCD, bằng lái, ngân hàng → Upload ảnh CCCD và bằng lái → Click 'Lưu'.",
-    "keywords": ["thêm tài xế", "tạo tài xế", "driver", "lái xe"]
+    "question": "Làm sao xem báo cáo doanh thu?",
+    "answer": "Vào TMS → Báo cáo doanh thu (Revenue Reports)\n\nCác loại báo cáo:\n- Doanh thu theo khách hàng\n- Doanh thu theo tài xế\n- Doanh thu theo tuyến đường\n- Lãi/lỗ theo chuyến xe (P&L Reports)\n\nCó thể lọc theo khoảng thời gian và xuất Excel.",
+    "keywords": ["báo cáo", "doanh thu", "revenue", "thống kê", "report", "excel"]
   },
   {
-    "question": "Làm sao để thanh toán hóa đơn?",
-    "answer": "Vào menu Tài khoản → Hóa đơn → Chọn hóa đơn cần thanh toán → Click 'Thanh toán' → Chọn phương thức (VNPay, chuyển khoản) → Hoàn tất thanh toán. Hóa đơn sẽ cập nhật trạng thái tự động.",
-    "keywords": ["thanh toán", "hóa đơn", "payment", "invoice", "trả tiền"]
-  },
-  {
-    "question": "Tôi cần hỗ trợ kỹ thuật",
-    "answer": "Bạn có thể: 1) Chat với AI support 24/7, 2) Gửi email support@9log.tech, 3) Gọi hotline 1900-xxxx (giờ hành chính). Với vấn đề khẩn cấp, chúng tôi cam kết phản hồi trong 2 giờ.",
-    "keywords": ["hỗ trợ", "support", "kỹ thuật", "liên hệ", "hotline"]
+    "question": "Làm sao mời thêm nhân viên vào hệ thống?",
+    "answer": "Vào Settings → Users Management → Click 'Thêm user'\n\n1. Nhập email nhân viên\n2. Chọn Role (quyền): Admin, Dispatcher, Accountant, Driver, Viewer...\n3. Gửi lời mời\n\nNhân viên sẽ nhận email với link để tạo mật khẩu và đăng nhập.",
+    "keywords": ["thêm user", "mời nhân viên", "invite", "người dùng", "quyền", "role"]
   },
   {
     "question": "9log có app mobile không?",
-    "answer": "Có! 9log Driver App dành cho tài xế, có thể tải trên App Store và Google Play. Tài xế có thể nhận đơn, cập nhật trạng thái, chụp ảnh giao hàng trực tiếp từ app.",
-    "keywords": ["app", "mobile", "điện thoại", "ios", "android"]
+    "answer": "Có! 9log Driver App dành cho tài xế:\n\n- Tải trên App Store (iOS) và Google Play (Android)\n- Tính năng: Nhận đơn, xem chi tiết chuyến, navigate đến điểm giao, cập nhật trạng thái, chụp ảnh POD, ghi nhận chi phí phát sinh\n\nApp web responsive cũng hoạt động tốt trên mobile cho các role khác.",
+    "keywords": ["app", "mobile", "điện thoại", "ios", "android", "driver app"]
   },
   {
-    "question": "Dữ liệu của tôi có an toàn không?",
-    "answer": "9log cam kết bảo mật: 1) Dữ liệu được mã hóa SSL/TLS, 2) Backup tự động hàng ngày, 3) Hosting tại datacenter Việt Nam, 4) Tuân thủ các quy định bảo mật. Mỗi công ty có dữ liệu riêng biệt hoàn toàn.",
-    "keywords": ["bảo mật", "an toàn", "security", "dữ liệu", "data"]
+    "question": "Dữ liệu có an toàn không?",
+    "answer": "9log cam kết bảo mật:\n\n- Mã hóa SSL/TLS cho mọi kết nối\n- Database backup tự động hàng ngày\n- Multi-tenant: mỗi công ty có dữ liệu riêng biệt hoàn toàn\n- Hosting tại datacenter Việt Nam\n- Phân quyền chi tiết theo role\n\nKhông chia sẻ dữ liệu với bên thứ 3.",
+    "keywords": ["bảo mật", "an toàn", "security", "dữ liệu", "data", "privacy"]
   },
   {
-    "question": "Tôi có thể export dữ liệu không?",
-    "answer": "Có! Bạn có thể export: danh sách đơn hàng, báo cáo doanh thu, danh sách khách hàng, tài xế... ra file Excel. Vào trang danh sách → Click nút 'Xuất Excel'.",
+    "question": "Có thể xuất dữ liệu ra Excel không?",
+    "answer": "Có! Hầu hết các danh sách đều có nút 'Xuất Excel':\n\n- Danh sách đơn hàng\n- Danh sách khách hàng, tài xế\n- Báo cáo doanh thu, chi phí\n- Báo cáo lương tài xế\n- Và nhiều báo cáo khác\n\nFile Excel được tải về máy ngay lập tức.",
     "keywords": ["export", "xuất", "excel", "download", "tải về"]
   },
   {
-    "question": "Làm sao để mời thêm nhân viên?",
-    "answer": "Vào Cài đặt → Quản lý người dùng → Click 'Thêm user' → Nhập email và chọn quyền (Admin, Dispatcher, Accountant...) → Gửi lời mời. Nhân viên sẽ nhận email để tạo mật khẩu.",
-    "keywords": ["thêm user", "mời nhân viên", "invite", "người dùng", "quyền"]
+    "question": "Module FMS/Customs là gì?",
+    "answer": "FMS (Forwarding Management System) - Quản lý giao nhận quốc tế:\n\n- Quản lý shipment (FCL, LCL, Air)\n- Bill of Lading, Airway Bill\n- Tờ khai hải quan (VNACCS)\n- Mã HS Code tra cứu\n- Đối tác customs broker\n- Tracking shipment quốc tế\n\nPhù hợp cho: Forwarder, Customs broker, Trading company",
+    "keywords": ["fms", "customs", "hải quan", "forwarding", "xuất nhập khẩu", "hs code", "tờ khai"]
+  },
+  {
+    "question": "Cần hỗ trợ kỹ thuật thì liên hệ ở đâu?",
+    "answer": "Các kênh hỗ trợ:\n\n1. **Chat widget** (góc phải màn hình) - AI hỗ trợ 24/7\n2. **Email:** support@9log.tech\n3. **Tạo ticket:** Trong hệ thống, AI có thể tạo ticket cho vấn đề phức tạp\n\nVấn đề khẩn cấp được ưu tiên xử lý trong 2 giờ làm việc.",
+    "keywords": ["hỗ trợ", "support", "kỹ thuật", "liên hệ", "ticket", "help"]
+  },
+  {
+    "question": "Làm sao cấu hình giá cước vận tải?",
+    "answer": "Vào TMS → Rates (Giá cước)\n\nCác loại giá cước:\n- Giá theo tuyến đường (từ A đến B)\n- Giá theo loại container (20ft, 40ft, 40HC)\n- Giá theo khách hàng (giá riêng cho từng KH)\n- Phụ phí (bốc xếp, chờ đợi, overtime...)\n\nHệ thống tự động tính cước khi tạo đơn hàng.",
+    "keywords": ["giá cước", "rates", "cước phí", "tuyến đường", "phụ phí"]
+  },
+  {
+    "question": "Quản lý chi phí nhiên liệu như thế nào?",
+    "answer": "Vào TMS → Fuel Logs:\n\n- Ghi nhận đổ xăng/dầu theo từng xe\n- Chụp ảnh hóa đơn bằng app (AI tự động trích xuất thông tin)\n- Theo dõi định mức tiêu hao\n- Báo cáo chi phí nhiên liệu theo xe, theo tài xế\n- Cảnh báo khi tiêu hao bất thường",
+    "keywords": ["nhiên liệu", "xăng dầu", "fuel", "chi phí", "tiêu hao"]
+  },
+  {
+    "question": "Lương tài xế tính như thế nào?",
+    "answer": "9log hỗ trợ nhiều cách tính lương:\n\n1. **Lương cứng**: Theo tháng\n2. **Lương theo chuyến**: Tính % doanh thu hoặc số tiền cố định/chuyến\n3. **Lương khoán**: Theo km hoặc theo tấn hàng\n\nCấu hình tại: TMS → Driver Salary Settings\nXem báo cáo: TMS → Driver Salary Management",
+    "keywords": ["lương", "tài xế", "salary", "thu nhập", "chuyến", "khoán"]
+  },
+  {
+    "question": "9log có tích hợp với phần mềm khác không?",
+    "answer": "Có! 9log cung cấp API để tích hợp:\n\n- REST API đầy đủ\n- Webhook cho các sự kiện\n- Tích hợp sẵn: GPS providers, SMS gateway, Email\n- Có thể kết nối với: ERP khác, E-commerce, Accounting software\n\nTài liệu API: Liên hệ support để được cấp access.",
+    "keywords": ["api", "tích hợp", "integration", "webhook", "kết nối"]
   }
 ]

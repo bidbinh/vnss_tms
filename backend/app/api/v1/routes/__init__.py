@@ -62,6 +62,8 @@ from app.api.v1.routes.driver_availability import router as driver_availability_
 from app.api.v1.routes.worker_connections import router as worker_connections_router
 from app.api.v1.routes.dispatcher_orders import router as dispatcher_orders_router
 from app.api.v1.routes.ai_chat import router as ai_chat_router
+from app.api.v1.routes.user_tasks import router as user_tasks_router
+from app.api.v1.routes.ai_config import router as ai_config_router
 
 # Actor-Based Architecture Routes
 from app.api.v1.routes.actors import router as actors_router
@@ -131,7 +133,11 @@ api_router.include_router(driver_availability_router, tags=["Driver Availability
 api_router.include_router(worker_connections_router, tags=["Worker Connections"])
 api_router.include_router(dispatcher_orders_router, tags=["Dispatcher Orders"])
 api_router.include_router(ai_chat_router, tags=["AI Support"])
+api_router.include_router(user_tasks_router, tags=["User Tasks"])
 
 # Actor-Based Architecture
 api_router.include_router(actors_router, tags=["Actors"])
 api_router.include_router(unified_orders_router, tags=["Unified Orders"])
+
+# AI Configuration (Super Admin)
+api_router.include_router(ai_config_router, tags=["AI Configuration"])

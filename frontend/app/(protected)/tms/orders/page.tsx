@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import { apiFetch, apiUpload, API_BASE } from "@/lib/api";
 import { getDriverColor } from "@/lib/utils";
 
@@ -106,6 +107,7 @@ type SortField = "order_code" | "driver_id" | "eta_pickup_at" | "eta_delivery_at
 type SortOrder = "asc" | "desc";
 
 export default function OrdersPage() {
+  const t = useTranslations("tms.ordersPage");
   const [role, setRole] = useState<string | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -981,19 +983,10 @@ export default function OrdersPage() {
     return `${d.getDate()}/${d.getMonth() + 1}`;
   };
 
-  // Format status to Vietnamese
+  // Format status using translations
   const formatStatus = (status: string) => {
-    const statusMap: Record<string, string> = {
-      NEW: "Mới",
-      ASSIGNED: "Đã giao TX",
-      IN_TRANSIT: "Đang chạy",
-      DELIVERED: "Đã giao hàng",
-      EMPTY_RETURN: "Đã trả rỗng",
-      COMPLETED: "Hoàn thành",
-      REJECTED: "Đã huỷ",
-      CANCELLED: "Đã huỷ",
-    };
-    return statusMap[status] || status;
+    const key = `status.${status}` as const;
+    return t(key) || status;
   };
 
 
@@ -1097,7 +1090,7 @@ export default function OrdersPage() {
 
     sortedDates.forEach((dateStr) => {
       const orders = dateMap.get(dateStr)!;
-      let dateLabel = "Không có ngày";
+      let dateLabel = t("noDate");
       if (dateStr !== "no-date" && dateStr) {
         // Parse YYYY-MM-DD directly to avoid timezone issues
         const parts = dateStr.split("-");
@@ -1140,39 +1133,39 @@ export default function OrdersPage() {
   }, [activeTab, pageSize]);
 
   const tabs = [
-    { key: "ALL", label: "Tất cả" },
-    { key: "PROCESSING", label: "Đang xử lý" },
-    { key: "NEW", label: "Mới" },
-    { key: "ASSIGNED", label: "Đã giao" },
-    { key: "IN_TRANSIT", label: "Đang chạy" },
-    { key: "DELIVERED", label: "Đã giao hàng" },
-    { key: "COMPLETED", label: "Hoàn thành" },
-    { key: "REJECTED", label: "Đã huỷ" },
+    { key: "ALL", label: t("tabs.all") },
+    { key: "PROCESSING", label: t("tabs.processing") },
+    { key: "NEW", label: t("tabs.new") },
+    { key: "ASSIGNED", label: t("tabs.assigned") },
+    { key: "IN_TRANSIT", label: t("tabs.inTransit") },
+    { key: "DELIVERED", label: t("tabs.delivered") },
+    { key: "COMPLETED", label: t("tabs.completed") },
+    { key: "REJECTED", label: t("tabs.cancelled") },
   ];
 
   if (loading) return <div className="p-8 text-sm">Loading...</div>;
 
   return (
     <div className="h-[calc(100vh-64px)] overflow-auto">
-      {/* Phần 1: Header - Cuộn đi */}
+      {/* Header */}
       <div className="p-6 pb-4 space-y-4">
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-lg font-bold">Orders</h1>
-            <p className="text-xs text-gray-500">Role: {role || "loading..."}</p>
+            <h1 className="text-lg font-bold">{t("title")}</h1>
+            <p className="text-xs text-gray-500">{t("roleLabel")}: {role || "loading..."}</p>
           </div>
           <div className="flex gap-2">
             <button
               onClick={() => setShowQuickCreateModal(true)}
               className="px-3 py-1.5 text-sm bg-green-600 text-white rounded hover:bg-green-700"
             >
-              Tạo từ Text
+              {t("createFromText")}
             </button>
             <button
               onClick={() => setShowCreateModal(true)}
               className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
             >
-              + New Order
+              + {t("newOrder")}
             </button>
           </div>
         </div>
@@ -1206,15 +1199,15 @@ export default function OrdersPage() {
             </nav>
 
             <div className="flex items-center gap-2 py-2">
-              <span className="text-xs text-gray-600">Hiển thị:</span>
+              <span className="text-xs text-gray-600">{t("display")}:</span>
               <select
                 value={pageSize}
                 onChange={(e) => setPageSize(Number(e.target.value))}
                 className="text-xs border rounded px-2 py-1"
               >
-                <option value={20}>20 dòng</option>
-                <option value={50}>50 dòng</option>
-                <option value={100}>100 dòng</option>
+                <option value={20}>20 {t("rows")}</option>
+                <option value={50}>50 {t("rows")}</option>
+                <option value={100}>100 {t("rows")}</option>
               </select>
             </div>
           </div>
@@ -1252,58 +1245,58 @@ export default function OrdersPage() {
               <tr>
                 <th className="resizable-th px-2 py-2 text-left font-bold text-gray-700 cursor-pointer" style={{width: columnWidths.custDate}} onClick={() => handleSort("customer_requested_date")}>
                   <div className="flex items-center gap-1">
-                    Cust. Date <SortIcon field="customer_requested_date" />
+                    {t("columns.custDate")} <SortIcon field="customer_requested_date" />
                   </div>
                   <div className="resize-handle" onMouseDown={(e) => { e.stopPropagation(); handleMouseDown(e, 'custDate'); }} />
                 </th>
                 <th className="resizable-th px-2 py-2 text-left font-bold text-gray-700 cursor-pointer" style={{width: columnWidths.orderCode}} onClick={() => handleSort("order_code")}>
                   <div className="flex items-center gap-1">
-                    Order Code <SortIcon field="order_code" />
+                    {t("columns.orderCode")} <SortIcon field="order_code" />
                   </div>
                   <div className="resize-handle" onMouseDown={(e) => { e.stopPropagation(); handleMouseDown(e, 'orderCode'); }} />
                 </th>
                 <th className="resizable-th px-2 py-2 text-left font-bold text-gray-700 cursor-pointer" style={{width: columnWidths.driver}} onClick={() => handleSort("driver_id")}>
                   <div className="flex items-center gap-1">
-                    Driver <SortIcon field="driver_id" />
+                    {t("columns.driver")} <SortIcon field="driver_id" />
                   </div>
                   <div className="resize-handle" onMouseDown={(e) => { e.stopPropagation(); handleMouseDown(e, 'driver'); }} />
                 </th>
                 <th className="resizable-th px-2 py-2 text-left font-bold text-gray-700" style={{width: columnWidths.route}}>
-                  Pickup → Delivery
+                  {t("columns.route")}
                   <div className="resize-handle" onMouseDown={(e) => handleMouseDown(e, 'route')} />
                 </th>
                 <th className="resizable-th px-2 py-2 text-left font-bold text-gray-700" style={{width: columnWidths.container}}>
-                  Container
+                  {t("columns.container")}
                   <div className="resize-handle" onMouseDown={(e) => handleMouseDown(e, 'container')} />
                 </th>
                 <th className="resizable-th px-2 py-2 text-left font-bold text-gray-700" style={{width: columnWidths.containerCode}}>
-                  Cont. Code
+                  {t("columns.containerCode")}
                   <div className="resize-handle" onMouseDown={(e) => handleMouseDown(e, 'containerCode')} />
                 </th>
                 <th className="resizable-th px-2 py-2 text-left font-bold text-gray-700" style={{width: columnWidths.cargoNote}}>
-                  Cargo Note
+                  {t("columns.cargoNote")}
                   <div className="resize-handle" onMouseDown={(e) => handleMouseDown(e, 'cargoNote')} />
                 </th>
                 <th className="resizable-th px-2 py-2 text-left font-bold text-gray-700 cursor-pointer" style={{width: columnWidths.etaPickup}} onClick={() => handleSort("eta_pickup_at")}>
                   <div className="flex items-center gap-1">
-                    Giờ lấy <SortIcon field="eta_pickup_at" />
+                    {t("columns.etaPickup")} <SortIcon field="eta_pickup_at" />
                   </div>
                   <div className="resize-handle" onMouseDown={(e) => { e.stopPropagation(); handleMouseDown(e, 'etaPickup'); }} />
                 </th>
                 <th className="resizable-th px-2 py-2 text-left font-bold text-gray-700 cursor-pointer" style={{width: columnWidths.etaDelivery}} onClick={() => handleSort("eta_delivery_at")}>
                   <div className="flex items-center gap-1">
-                    Giờ giao <SortIcon field="eta_delivery_at" />
+                    {t("columns.etaDelivery")} <SortIcon field="eta_delivery_at" />
                   </div>
                   <div className="resize-handle" onMouseDown={(e) => { e.stopPropagation(); handleMouseDown(e, 'etaDelivery'); }} />
                 </th>
                 <th className="resizable-th px-2 py-2 text-left font-bold text-gray-700 cursor-pointer" style={{width: columnWidths.status}} onClick={() => handleSort("status")}>
                   <div className="flex items-center gap-1">
-                    Status <SortIcon field="status" />
+                    {t("columns.status")} <SortIcon field="status" />
                   </div>
                   <div className="resize-handle" onMouseDown={(e) => { e.stopPropagation(); handleMouseDown(e, 'status'); }} />
                 </th>
                 <th className="px-2 py-2 text-left font-bold text-gray-700" style={{width: columnWidths.actions}}>
-                  Actions
+                  {t("columns.actions")}
                 </th>
               </tr>
             </thead>
@@ -1312,7 +1305,7 @@ export default function OrdersPage() {
         </div>
       </div>
 
-      {/* Phần 3: Data Table Body */}
+      {/* Data Table Body */}
       <div className="px-6 pb-4">
         <div className="border border-t-0 border-gray-200 rounded-b-xl overflow-hidden bg-white">
           <table className="text-xs" style={{ tableLayout: 'fixed', minWidth: '100%' }}>
@@ -1320,7 +1313,7 @@ export default function OrdersPage() {
               {sortedOrders.length === 0 ? (
                 <tr>
                   <td colSpan={11} className="px-2 py-6 text-center text-gray-500">
-                    No orders found
+                    {t("noOrders")}
                   </td>
                 </tr>
               ) : isGroupedByDate && groupedOrders ? (
@@ -1339,7 +1332,7 @@ export default function OrdersPage() {
                             <span className="text-sm">{isCollapsed ? "▶" : "▼"}</span>
                             <span className="text-sm">📅 {group.dateLabel}</span>
                             <span className="text-xs text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full">
-                              {group.orders.length} đơn
+                              {group.orders.length} {t("orders")}
                             </span>
                           </div>
                         </td>
@@ -1404,14 +1397,14 @@ export default function OrdersPage() {
                                   onClick={() => openEditModal(order)}
                                   className="text-xs px-2 py-1 bg-gray-600 text-white rounded hover:bg-gray-700"
                                 >
-                                  Edit
+                                  {t("actions.edit")}
                                 </button>
                                 {order.status === "NEW" && (
                                   <button
                                     onClick={() => openAssignModal(order)}
                                     className="text-xs px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
                                   >
-                                    Assign
+                                    {t("actions.assign")}
                                   </button>
                                 )}
                                 {order.status === "ASSIGNED" && (
@@ -1419,7 +1412,7 @@ export default function OrdersPage() {
                                     onClick={() => handleWorkflowAction(order.id, "pickup")}
                                     className="text-xs px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700"
                                   >
-                                    Đang lấy
+                                    {t("status.PICKED_UP")}
                                   </button>
                                 )}
                                 {order.status === "IN_TRANSIT" && (
@@ -1427,7 +1420,7 @@ export default function OrdersPage() {
                                     onClick={() => handleWorkflowAction(order.id, "delivered")}
                                     className="text-xs px-2 py-1 bg-purple-600 text-white rounded hover:bg-purple-700"
                                   >
-                                    Đã giao
+                                    {t("status.DELIVERED")}
                                   </button>
                                 )}
                                 {/* Cancel button - available before DELIVERED */}
@@ -1436,7 +1429,7 @@ export default function OrdersPage() {
                                     onClick={() => handleCancelOrder(order)}
                                     className="text-xs px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700"
                                   >
-                                    Cancel
+                                    {t("actions.cancel")}
                                   </button>
                                 )}
                                 {(order.status === "DELIVERED" || order.status === "EMPTY_RETURN") && (
@@ -1444,7 +1437,7 @@ export default function OrdersPage() {
                                     onClick={() => handleWorkflowAction(order.id, "complete")}
                                     className="text-xs px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700"
                                   >
-                                    Hoàn thành
+                                    {t("actions.complete")}
                                   </button>
                                 )}
                               </div>
@@ -1514,14 +1507,14 @@ export default function OrdersPage() {
                           onClick={() => openEditModal(order)}
                           className="text-xs px-2 py-1 bg-gray-600 text-white rounded hover:bg-gray-700"
                         >
-                          Edit
+                          {t("actions.edit")}
                         </button>
                         {order.status === "NEW" && (
                           <button
                             onClick={() => openAssignModal(order)}
                             className="text-xs px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
                           >
-                            Assign
+                            {t("actions.assign")}
                           </button>
                         )}
                         {order.status === "ASSIGNED" && (
@@ -1529,7 +1522,7 @@ export default function OrdersPage() {
                             onClick={() => handleWorkflowAction(order.id, "pickup")}
                             className="text-xs px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700"
                           >
-                            Đang lấy
+                            {t("status.PICKED_UP")}
                           </button>
                         )}
                         {order.status === "IN_TRANSIT" && (
@@ -1537,7 +1530,7 @@ export default function OrdersPage() {
                             onClick={() => handleWorkflowAction(order.id, "delivered")}
                             className="text-xs px-2 py-1 bg-purple-600 text-white rounded hover:bg-purple-700"
                           >
-                            Đã giao
+                            {t("status.DELIVERED")}
                           </button>
                         )}
                         {/* Cancel button - available before DELIVERED */}
@@ -1546,7 +1539,7 @@ export default function OrdersPage() {
                             onClick={() => handleCancelOrder(order)}
                             className="text-xs px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700"
                           >
-                            Cancel
+                            {t("actions.cancel")}
                           </button>
                         )}
                         {(order.status === "DELIVERED" || order.status === "EMPTY_RETURN") && (
@@ -1554,7 +1547,7 @@ export default function OrdersPage() {
                             onClick={() => handleWorkflowAction(order.id, "complete")}
                             className="text-xs px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700"
                           >
-                            Hoàn thành
+                            {t("actions.complete")}
                           </button>
                         )}
                       </div>
@@ -1567,11 +1560,11 @@ export default function OrdersPage() {
         </div>
       </div>
 
-      {/* Phần 4: Pagination - Sticky bottom */}
+      {/* Pagination */}
       {totalPages > 1 && (
         <div className="sticky bottom-0 bg-white border-t border-gray-200 px-6 py-3 shadow-[0_-2px_4px_rgba(0,0,0,0.05)] flex items-center justify-between">
           <div className="text-xs text-gray-600">
-            Hiển thị {((currentPage - 1) * pageSize) + 1} - {Math.min(currentPage * pageSize, sortedOrders.length)} / {sortedOrders.length} đơn hàng
+            {t("showingOrders", { start: ((currentPage - 1) * pageSize) + 1, end: Math.min(currentPage * pageSize, sortedOrders.length), total: sortedOrders.length })}
           </div>
           <div className="flex gap-1">
             <button

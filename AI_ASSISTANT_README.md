@@ -45,31 +45,33 @@ AI gợi ý:
 
 ## Cài đặt
 
-### Bước 1: Lấy API Key từ Anthropic
+### Bước 1: Lấy API Key
 
+**Gemini (Khuyên dùng - Rẻ hơn ~40x):**
+1. Truy cập: https://aistudio.google.com/app/apikey
+2. Tạo API Key mới
+3. Copy API key (dạng: `AIzaSy...`)
+
+**Claude (Anthropic):**
 1. Truy cập: https://console.anthropic.com/settings/keys
-2. Đăng ký tài khoản (nếu chưa có)
-3. Tạo API Key mới
-4. Copy API key (dạng: `sk-ant-api03-...`)
+2. Tạo API Key mới
+3. Copy API key (dạng: `sk-ant-api03-...`)
 
-### Bước 2: Cấu hình Backend
+### Bước 2: Cấu hình qua Admin UI (Khuyên dùng)
 
-Thêm vào file `.env`:
+1. Đăng nhập với tài khoản Super Admin
+2. Vào **Admin > AI Settings** (`/admin/ai-settings`)
+3. Click vào provider (Gemini/Claude/OpenAI)
+4. Nhập API Key và click **Test Connection**
+5. Bật **Enabled** và **Save**
 
-```bash
-ANTHROPIC_API_KEY=sk-ant-api03-your-actual-key-here
-```
+> **Lưu ý**: API keys giờ được lưu trong database, không cần cấu hình `.env`
 
-### Bước 3: Cài đặt dependencies
+### Bước 3: Cài đặt dependencies (nếu chưa có)
 
 ```bash
 cd backend
-pip install anthropic
-```
-
-Hoặc thêm vào `requirements.txt`:
-```
-anthropic>=0.8.0
+pip install anthropic google-generativeai openai
 ```
 
 ### Bước 4: Restart backend
@@ -213,22 +215,23 @@ Upload ảnh POD
 
 ## Troubleshooting
 
-### Lỗi: "ANTHROPIC_API_KEY not found"
+### Lỗi: "API key not configured"
 
 **Nguyên nhân**: Chưa cấu hình API key
 
 **Giải pháp**:
-1. Thêm `ANTHROPIC_API_KEY` vào `.env`
-2. Restart backend
+1. Vào **Admin > AI Settings** (`/admin/ai-settings`)
+2. Cấu hình API key cho Gemini hoặc Claude
+3. Test connection và bật Enabled
 
 ### Lỗi: "Invalid token" hoặc 401
 
 **Nguyên nhân**: API key không đúng hoặc hết hạn
 
 **Giải pháp**:
-1. Kiểm tra API key trên console.anthropic.com
+1. Kiểm tra API key tại console của provider
 2. Tạo API key mới nếu cần
-3. Update `.env`
+3. Cập nhật trong **Admin > AI Settings**
 
 ### AI trả về kết quả sai
 
@@ -250,13 +253,19 @@ Upload ảnh POD
 
 ## Chi phí
 
-Claude API tính phí theo:
-- Input tokens: $3 / 1M tokens (~$0.003 / 1000 tokens)
-- Output tokens: $15 / 1M tokens (~$0.015 / 1000 tokens)
+### Gemini Flash 2.0 (Khuyên dùng)
+- Input tokens: **$0.075 / 1M tokens**
+- Output tokens: **$0.30 / 1M tokens**
 
 **Ước tính**:
-- 1 tin nhắn booking: ~500-1000 tokens = **~$0.01 - $0.02**
-- 1 ảnh POD: ~1000-2000 tokens = **~$0.02 - $0.04**
+- 1 tin nhắn booking: ~500-1000 tokens = **~$0.0001 - $0.0003** (gần như miễn phí!)
+- 1 ảnh POD: ~1000-2000 tokens = **~$0.0003 - $0.0006**
+
+### Claude Sonnet
+- Input tokens: $3 / 1M tokens
+- Output tokens: $15 / 1M tokens
+
+**So sánh**: Gemini rẻ hơn **~40x** so với Claude!
 
 → Rất rẻ so với lợi ích tiết kiệm thời gian!
 
