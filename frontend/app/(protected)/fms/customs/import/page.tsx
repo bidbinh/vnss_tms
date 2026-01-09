@@ -995,7 +995,7 @@ export default function CustomsImportPage() {
     }
     const originalItem = aiParseResult.items[itemIndex];
     if (!originalItem) return null;
-    return (originalItem as Record<string, string | number | null>)[field] ?? null;
+    return (originalItem as unknown as Record<string, string | number | null>)[field] ?? null;
   }, [aiParseResult]);
 
   const getOriginalValue = useCallback((field: string): string | number | null => {
