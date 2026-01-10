@@ -61,5 +61,10 @@ openapi_output.txt
 crm_sync_check.py
 web/
 docs/
-ops/
 tools/
+
+# Ops - track deploy scripts but ignore .env
+ops/.env
+!ops/deploy.sh
+!ops/.env.example
+!ops/docker-compose.yml
