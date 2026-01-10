@@ -23,6 +23,7 @@ PROJECT_ROOT="/home/tms"
 OPS_DIR="${PROJECT_ROOT}/ops"
 FRONTEND_DIR="${PROJECT_ROOT}/frontend"
 BACKEND_DIR="${PROJECT_ROOT}/backend"
+COMPOSE_FILE="docker-compose.prod.yml"  # Production compose file
 
 # Logging functions
 log_info() { echo -e "${BLUE}[INFO]${NC} $1"; }
@@ -122,11 +123,11 @@ deploy_backend() {
 
     # Rebuild backend container
     log_info "Rebuilding backend container..."
-    docker compose build --no-cache backend
+    docker compose -f "$COMPOSE_FILE" build --no-cache backend
 
     # Restart backend
     log_info "Restarting backend..."
-    docker compose up -d backend
+    docker compose -f "$COMPOSE_FILE" up -d backend
 
     # Chờ backend khởi động
     log_info "Waiting for backend to start..."
@@ -158,14 +159,14 @@ run_migrations() {
     cd "$OPS_DIR"
 
     # Kiểm tra backend container đang chạy
-    if ! docker compose ps backend | grep -q "Up"; then
+    if ! docker compose -f "$COMPOSE_FILE" ps backend | grep -q "Up"; then
         log_error "Backend container không chạy. Khởi động trước..."
-        docker compose up -d backend
+        docker compose -f "$COMPOSE_FILE" up -d backend
         sleep 10
     fi
 
     # Run migrations
-    docker compose exec -T backend alembic upgrade head
+    docker compose -f "$COMPOSE_FILE" exec -T backend alembic upgrade head
 
     if [ $? -eq 0 ]; then
         log_success "Migrations completed"
@@ -230,7 +231,7 @@ deploy_full() {
     echo ""
     log_info "Services status:"
     cd "$OPS_DIR"
-    docker compose ps
+    docker compose -f "$COMPOSE_FILE" ps
     echo ""
     pm2 status
 }
