@@ -751,7 +751,7 @@ export default function VehiclesPage() {
           <div className="w-full max-w-4xl rounded-2xl bg-white shadow-xl border border-gray-200 max-h-[90vh] overflow-y-auto">
             <div className="px-6 py-4 border-b flex items-center justify-between sticky top-0 bg-white z-10">
               <div className="font-semibold text-lg">
-                {mode === "create" ? t("modal.createTitle") : t("modal.editTitle", { plateNo: editing?.plate_no })}
+                {mode === "create" ? t("modal.createTitle") : t("modal.editTitle", { plateNo: editing?.plate_no || "" })}
               </div>
               <button onClick={() => setOpen(false)} className="text-gray-500 hover:text-black text-xl">
                 &times;
