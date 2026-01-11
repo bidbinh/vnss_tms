@@ -193,10 +193,14 @@ export default function AIChatWidget({
     return () => window.removeEventListener("openAIChat", handleOpenChat);
   }, []);
 
-  // Scroll to bottom when messages change
+  // Scroll to bottom when messages change and refocus input
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    // Auto focus input after new message (when not loading)
+    if (!isLoading && isOpen) {
+      inputRef.current?.focus();
+    }
+  }, [messages, isLoading, isOpen]);
 
   // Focus input when chat opens
   useEffect(() => {

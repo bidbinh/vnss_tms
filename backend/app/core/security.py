@@ -28,12 +28,18 @@ def get_token_from_request(request: Request, token_from_header: str | None = Non
     return token_from_header
 
 
+def _truncate_password(password: str) -> str:
+    """Truncate password to 72 bytes (bcrypt limit)"""
+    # bcrypt only uses first 72 bytes of password
+    return password.encode('utf-8')[:72].decode('utf-8', errors='ignore')
+
+
 def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
+    return pwd_context.hash(_truncate_password(password))
 
 
 def verify_password(password: str, hashed: str) -> bool:
-    return pwd_context.verify(password, hashed)
+    return pwd_context.verify(_truncate_password(password), hashed)
 
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None):

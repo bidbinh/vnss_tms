@@ -77,10 +77,14 @@ export default function AIChatSidebar({ isOpen, onClose }: AIChatSidebarProps) {
     }
   }, [userInfo]);
 
-  // Scroll to bottom
+  // Scroll to bottom and refocus input
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    // Auto focus input after new message (when not loading)
+    if (!isLoading && isOpen) {
+      inputRef.current?.focus();
+    }
+  }, [messages, isLoading, isOpen]);
 
   // Focus input when opened
   useEffect(() => {
