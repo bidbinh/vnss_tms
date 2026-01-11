@@ -456,7 +456,7 @@ export default function CustomersPage() {
           <div className="w-full max-w-lg rounded-2xl bg-white shadow-xl border border-gray-200">
             <div className="px-6 py-4 border-b flex items-center justify-between">
               <div className="font-semibold text-lg">
-                {mode === "create" ? t("modal.createTitle") : t("modal.editTitle", { code: editing?.code })}
+                {mode === "create" ? t("modal.createTitle") : t("modal.editTitle", { code: editing?.code || "" })}
               </div>
               <button onClick={() => setOpen(false)} className="text-gray-500 hover:text-black text-xl">
                 &times;
