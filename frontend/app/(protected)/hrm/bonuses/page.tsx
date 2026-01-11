@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   Award,
   Plus,
@@ -43,23 +44,26 @@ interface BonusListResponse {
   total_pages: number;
 }
 
-const BONUS_TYPES = [
-  { value: "PERFORMANCE", label: "Thưởng hiệu suất", color: "bg-green-100 text-green-700" },
-  { value: "PROJECT", label: "Thưởng dự án", color: "bg-blue-100 text-blue-700" },
-  { value: "HOLIDAY", label: "Thưởng lễ/tết", color: "bg-red-100 text-red-700" },
-  { value: "REFERRAL", label: "Thưởng giới thiệu", color: "bg-purple-100 text-purple-700" },
-  { value: "ATTENDANCE", label: "Thưởng chuyên cần", color: "bg-yellow-100 text-yellow-700" },
-  { value: "OTHER", label: "Khác", color: "bg-gray-100 text-gray-700" },
-];
+const BONUS_TYPE_COLORS: Record<string, string> = {
+  PERFORMANCE: "bg-green-100 text-green-700",
+  PROJECT: "bg-blue-100 text-blue-700",
+  HOLIDAY: "bg-red-100 text-red-700",
+  REFERRAL: "bg-purple-100 text-purple-700",
+  ATTENDANCE: "bg-yellow-100 text-yellow-700",
+  OTHER: "bg-gray-100 text-gray-700",
+};
 
-const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
-  PENDING: { label: "Chờ duyệt", color: "bg-yellow-100 text-yellow-700" },
-  APPROVED: { label: "Đã duyệt", color: "bg-green-100 text-green-700" },
-  REJECTED: { label: "Từ chối", color: "bg-red-100 text-red-700" },
-  PAID: { label: "Đã chi", color: "bg-blue-100 text-blue-700" },
+const STATUS_COLORS: Record<string, string> = {
+  PENDING: "bg-yellow-100 text-yellow-700",
+  APPROVED: "bg-green-100 text-green-700",
+  REJECTED: "bg-red-100 text-red-700",
+  PAID: "bg-blue-100 text-blue-700",
 };
 
 export default function BonusesPage() {
+  const t = useTranslations("hrm.bonusesPage");
+  const tCommon = useTranslations("common");
+
   const [bonuses, setBonuses] = useState<Bonus[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
@@ -115,7 +119,7 @@ export default function BonusesPage() {
 
   const handleCreate = async () => {
     if (!form.employee_id || !form.amount || !form.reason) {
-      alert("Vui lòng điền đầy đủ thông tin bắt buộc");
+      alert(t("errors.fillRequired"));
       return;
     }
 
@@ -135,37 +139,37 @@ export default function BonusesPage() {
       });
       fetchBonuses();
     } catch (error: any) {
-      alert(error?.message || "Tạo thưởng thất bại");
+      alert(error?.message || t("errors.createFailed"));
     }
   };
 
   const handleApprove = async (id: string) => {
-    if (!confirm("Xác nhận duyệt khoản thưởng này?")) return;
+    if (!confirm(t("confirmations.approve"))) return;
     try {
       await apiFetch(`/hrm/bonuses/${id}/approve`, { method: "POST" });
       fetchBonuses();
     } catch (error: any) {
-      alert(error?.message || "Duyệt thưởng thất bại");
+      alert(error?.message || t("errors.approveFailed"));
     }
   };
 
   const handleReject = async (id: string) => {
-    if (!confirm("Xác nhận từ chối khoản thưởng này?")) return;
+    if (!confirm(t("confirmations.reject"))) return;
     try {
       await apiFetch(`/hrm/bonuses/${id}/reject`, { method: "POST" });
       fetchBonuses();
     } catch (error: any) {
-      alert(error?.message || "Từ chối thưởng thất bại");
+      alert(error?.message || t("errors.rejectFailed"));
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Xác nhận xóa khoản thưởng này?")) return;
+    if (!confirm(t("confirmations.delete"))) return;
     try {
       await apiFetch(`/hrm/bonuses/${id}`, { method: "DELETE" });
       fetchBonuses();
     } catch (error: any) {
-      alert(error?.message || "Xóa thưởng thất bại");
+      alert(error?.message || t("errors.deleteFailed"));
     }
   };
 
@@ -194,15 +198,15 @@ export default function BonusesPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Quản lý thưởng</h1>
-          <p className="text-gray-600 mt-1">Thưởng hiệu suất, dự án, lễ tết và các khoản thưởng khác</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t("title")}</h1>
+          <p className="text-gray-600 mt-1">{t("subtitle")}</p>
         </div>
         <button
           onClick={() => setShowModal(true)}
           className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
         >
           <Plus className="w-4 h-4" />
-          Thêm thưởng
+          {t("addBonus")}
         </button>
       </div>
 
@@ -214,7 +218,7 @@ export default function BonusesPage() {
               <DollarSign className="w-5 h-5 text-green-600" />
             </div>
             <div>
-              <div className="text-sm text-gray-600">Tổng thưởng</div>
+              <div className="text-sm text-gray-600">{t("stats.totalBonus")}</div>
               <div className="text-xl font-bold text-green-600">{formatCurrency(totalAmount)}</div>
             </div>
           </div>
@@ -225,7 +229,7 @@ export default function BonusesPage() {
               <Award className="w-5 h-5 text-blue-600" />
             </div>
             <div>
-              <div className="text-sm text-gray-600">Số lượng</div>
+              <div className="text-sm text-gray-600">{t("stats.count")}</div>
               <div className="text-2xl font-bold text-blue-600">{total}</div>
             </div>
           </div>
@@ -236,7 +240,7 @@ export default function BonusesPage() {
               <TrendingUp className="w-5 h-5 text-yellow-600" />
             </div>
             <div>
-              <div className="text-sm text-gray-600">Chờ duyệt</div>
+              <div className="text-sm text-gray-600">{t("stats.pending")}</div>
               <div className="text-2xl font-bold text-yellow-600">{pendingCount}</div>
             </div>
           </div>
@@ -247,7 +251,7 @@ export default function BonusesPage() {
               <Users className="w-5 h-5 text-purple-600" />
             </div>
             <div>
-              <div className="text-sm text-gray-600">Nhân viên</div>
+              <div className="text-sm text-gray-600">{t("stats.employees")}</div>
               <div className="text-2xl font-bold text-purple-600">
                 {new Set(filteredBonuses.map((b) => b.employee_id)).size}
               </div>
@@ -265,7 +269,7 @@ export default function BonusesPage() {
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Tìm theo tên, mã NV, lý do..."
+              placeholder={t("searchPlaceholder")}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -277,12 +281,13 @@ export default function BonusesPage() {
             }}
             className="px-4 py-2 border border-gray-300 rounded-lg"
           >
-            <option value="">Tất cả loại</option>
-            {BONUS_TYPES.map((type) => (
-              <option key={type.value} value={type.value}>
-                {type.label}
-              </option>
-            ))}
+            <option value="">{t("filters.allTypes")}</option>
+            <option value="PERFORMANCE">{t("bonusTypes.PERFORMANCE")}</option>
+            <option value="PROJECT">{t("bonusTypes.PROJECT")}</option>
+            <option value="HOLIDAY">{t("bonusTypes.HOLIDAY")}</option>
+            <option value="REFERRAL">{t("bonusTypes.REFERRAL")}</option>
+            <option value="ATTENDANCE">{t("bonusTypes.ATTENDANCE")}</option>
+            <option value="OTHER">{t("bonusTypes.OTHER")}</option>
           </select>
           <select
             value={filterStatus}
@@ -292,12 +297,11 @@ export default function BonusesPage() {
             }}
             className="px-4 py-2 border border-gray-300 rounded-lg"
           >
-            <option value="">Tất cả trạng thái</option>
-            {Object.entries(STATUS_CONFIG).map(([value, config]) => (
-              <option key={value} value={value}>
-                {config.label}
-              </option>
-            ))}
+            <option value="">{t("filters.allStatus")}</option>
+            <option value="PENDING">{t("status.PENDING")}</option>
+            <option value="APPROVED">{t("status.APPROVED")}</option>
+            <option value="REJECTED">{t("status.REJECTED")}</option>
+            <option value="PAID">{t("status.PAID")}</option>
           </select>
         </div>
       </div>
@@ -310,39 +314,39 @@ export default function BonusesPage() {
           </div>
         ) : filteredBonuses.length === 0 ? (
           <div className="p-8 text-center text-gray-500">
-            Chưa có dữ liệu thưởng
+            {t("noData")}
           </div>
         ) : (
           <table className="w-full">
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Nhân viên
+                  {t("columns.employee")}
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Loại thưởng
+                  {t("columns.bonusType")}
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Lý do
+                  {t("columns.reason")}
                 </th>
                 <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">
-                  Số tiền
+                  {t("columns.amount")}
                 </th>
                 <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">
-                  Ngày hiệu lực
+                  {t("columns.effectiveDate")}
                 </th>
                 <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">
-                  Trạng thái
+                  {t("columns.status")}
                 </th>
                 <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">
-                  Thao tác
+                  {tCommon("actions")}
                 </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {filteredBonuses.map((bonus) => {
-                const typeConfig = BONUS_TYPES.find((t) => t.value === bonus.bonus_type);
-                const statusConfig = STATUS_CONFIG[bonus.status];
+                const typeColor = BONUS_TYPE_COLORS[bonus.bonus_type] || "bg-gray-100";
+                const statusColor = STATUS_COLORS[bonus.status] || "bg-gray-100";
 
                 return (
                   <tr key={bonus.id} className="hover:bg-gray-50">
@@ -355,8 +359,8 @@ export default function BonusesPage() {
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`px-2 py-1 text-xs rounded ${typeConfig?.color || "bg-gray-100"}`}>
-                        {typeConfig?.label || bonus.bonus_type}
+                      <span className={`px-2 py-1 text-xs rounded ${typeColor}`}>
+                        {t(`bonusTypes.${bonus.bonus_type}`)}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-700 max-w-xs truncate">
@@ -369,8 +373,8 @@ export default function BonusesPage() {
                       {bonus.effective_date ? new Date(bonus.effective_date).toLocaleDateString("vi-VN") : "-"}
                     </td>
                     <td className="px-4 py-3 text-center">
-                      <span className={`px-2 py-1 text-xs rounded ${statusConfig?.color || "bg-gray-100"}`}>
-                        {statusConfig?.label || bonus.status}
+                      <span className={`px-2 py-1 text-xs rounded ${statusColor}`}>
+                        {t(`status.${bonus.status}`)}
                       </span>
                     </td>
                     <td className="px-4 py-3">
@@ -380,14 +384,14 @@ export default function BonusesPage() {
                             <button
                               onClick={() => handleApprove(bonus.id)}
                               className="p-1.5 text-green-600 hover:bg-green-50 rounded"
-                              title="Duyệt"
+                              title={t("actions.approve")}
                             >
                               <Check className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => handleReject(bonus.id)}
                               className="p-1.5 text-red-600 hover:bg-red-50 rounded"
-                              title="Từ chối"
+                              title={t("actions.reject")}
                             >
                               <X className="w-4 h-4" />
                             </button>
@@ -397,7 +401,7 @@ export default function BonusesPage() {
                           <button
                             onClick={() => handleDelete(bonus.id)}
                             className="p-1.5 text-gray-500 hover:bg-gray-100 rounded"
-                            title="Xóa"
+                            title={tCommon("delete")}
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -417,19 +421,19 @@ export default function BonusesPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-lg mx-4">
             <div className="px-4 py-3 border-b border-gray-200">
-              <h3 className="text-lg font-semibold">Thêm thưởng</h3>
+              <h3 className="text-lg font-semibold">{t("modal.title")}</h3>
             </div>
             <div className="p-4 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Nhân viên <span className="text-red-500">*</span>
+                  {t("modal.employee")} <span className="text-red-500">*</span>
                 </label>
                 <select
                   value={form.employee_id}
                   onChange={(e) => setForm({ ...form, employee_id: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                 >
-                  <option value="">-- Chọn nhân viên --</option>
+                  <option value="">{t("modal.selectEmployee")}</option>
                   {employees.map((emp) => (
                     <option key={emp.id} value={emp.id}>
                       {emp.employee_code} - {emp.full_name}
@@ -440,23 +444,24 @@ export default function BonusesPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Loại thưởng
+                    {t("modal.bonusType")}
                   </label>
                   <select
                     value={form.bonus_type}
                     onChange={(e) => setForm({ ...form, bonus_type: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                   >
-                    {BONUS_TYPES.map((type) => (
-                      <option key={type.value} value={type.value}>
-                        {type.label}
-                      </option>
-                    ))}
+                    <option value="PERFORMANCE">{t("bonusTypes.PERFORMANCE")}</option>
+                    <option value="PROJECT">{t("bonusTypes.PROJECT")}</option>
+                    <option value="HOLIDAY">{t("bonusTypes.HOLIDAY")}</option>
+                    <option value="REFERRAL">{t("bonusTypes.REFERRAL")}</option>
+                    <option value="ATTENDANCE">{t("bonusTypes.ATTENDANCE")}</option>
+                    <option value="OTHER">{t("bonusTypes.OTHER")}</option>
                   </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Số tiền <span className="text-red-500">*</span>
+                    {t("modal.amount")} <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="number"
@@ -468,7 +473,7 @@ export default function BonusesPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Ngày hiệu lực
+                  {t("modal.effectiveDate")}
                 </label>
                 <input
                   type="date"
@@ -479,18 +484,18 @@ export default function BonusesPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Lý do <span className="text-red-500">*</span>
+                  {t("modal.reason")} <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
                   value={form.reason}
                   onChange={(e) => setForm({ ...form, reason: e.target.value })}
-                  placeholder="Lý do thưởng..."
+                  placeholder={t("modal.reasonPlaceholder")}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Ghi chú</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t("modal.notes")}</label>
                 <textarea
                   value={form.notes}
                   onChange={(e) => setForm({ ...form, notes: e.target.value })}
@@ -504,14 +509,14 @@ export default function BonusesPage() {
                 onClick={() => setShowModal(false)}
                 className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg"
               >
-                Hủy
+                {tCommon("cancel")}
               </button>
               <button
                 onClick={handleCreate}
                 disabled={!form.employee_id || !form.amount || !form.reason}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
               >
-                Tạo mới
+                {tCommon("create")}
               </button>
             </div>
           </div>

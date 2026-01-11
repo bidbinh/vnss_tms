@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
+import { useTranslations } from "next-intl";
 import { apiFetch } from "@/lib/api";
 import DataTable, { Column, TablePagination } from "@/components/DataTable";
 import { MapPin, Plus, Search, Factory, Building, Anchor, Warehouse, Trash2, RotateCcw, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
@@ -55,17 +56,37 @@ function StatCard({ icon: Icon, label, value, color }: { icon: any; label: strin
 }
 
 // ============ Type Label Config ============
-const TYPE_CONFIG: Record<string, { label: string; icon: any; color: string }> = {
-  INDUSTRIAL_ZONE: { label: "KCN", icon: Factory, color: "bg-blue-100 text-blue-800" },
-  WARD: { label: "Phường/Xã", icon: Building, color: "bg-gray-100 text-gray-800" },
-  PORT: { label: "Cảng", icon: Anchor, color: "bg-green-100 text-green-800" },
-  ICD: { label: "ICD", icon: Warehouse, color: "bg-purple-100 text-purple-800" },
-  DEPOT: { label: "Bãi", icon: Warehouse, color: "bg-orange-100 text-orange-800" },
-  WAREHOUSE: { label: "Kho", icon: Warehouse, color: "bg-yellow-100 text-yellow-800" },
+// Separated for i18n - keys map to translation keys, colors/icons are static
+const TYPE_KEYS: Record<string, string> = {
+  INDUSTRIAL_ZONE: "industrialZone",
+  WARD: "ward",
+  PORT: "port",
+  ICD: "icd",
+  DEPOT: "depot",
+  WAREHOUSE: "warehouse",
+};
+
+const TYPE_ICONS: Record<string, any> = {
+  INDUSTRIAL_ZONE: Factory,
+  WARD: Building,
+  PORT: Anchor,
+  ICD: Warehouse,
+  DEPOT: Warehouse,
+  WAREHOUSE: Warehouse,
+};
+
+const TYPE_COLORS: Record<string, string> = {
+  INDUSTRIAL_ZONE: "bg-blue-100 text-blue-800",
+  WARD: "bg-gray-100 text-gray-800",
+  PORT: "bg-green-100 text-green-800",
+  ICD: "bg-purple-100 text-purple-800",
+  DEPOT: "bg-orange-100 text-orange-800",
+  WAREHOUSE: "bg-yellow-100 text-yellow-800",
 };
 
 // ============ Main Component ============
 export default function LocationsPage() {
+  const t = useTranslations("tms.locationsPage");
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState<Location[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -204,7 +225,7 @@ export default function LocationsPage() {
     setError(null);
     try {
       if (!form.code.trim() || !form.name.trim()) {
-        throw new Error("Mã và Tên là bắt buộc.");
+        throw new Error(t("errors.codeAndNameRequired"));
       }
 
       const payload = {
@@ -240,7 +261,7 @@ export default function LocationsPage() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm("Bạn có chắc muốn xóa địa điểm này?")) return;
+    if (!confirm(t("confirmations.deleteLocation"))) return;
 
     try {
       await apiFetch(`/api/v1/locations/${id}`, { method: "DELETE" });
@@ -276,13 +297,13 @@ export default function LocationsPage() {
 
   // ============ Table Column Definitions ============
   const columnDefs = [
-    { key: "code", header: "Mã", width: 130, sortable: true },
-    { key: "name", header: "Tên", width: 200, sortable: true },
-    { key: "type", header: "Loại", width: 100, sortable: true },
-    { key: "ward", header: "Xã/Phường", width: 120, sortable: true },
-    { key: "district", header: "Quận/Huyện", width: 130, sortable: true },
-    { key: "province", header: "Tỉnh/TP", width: 130, sortable: true },
-    { key: "actions", header: "Thao tác", width: 100, sortable: false },
+    { key: "code", header: t("columns.code"), width: 130, sortable: true },
+    { key: "name", header: t("columns.name"), width: 200, sortable: true },
+    { key: "type", header: t("columns.type"), width: 100, sortable: true },
+    { key: "ward", header: t("columns.ward"), width: 120, sortable: true },
+    { key: "district", header: t("columns.district"), width: 130, sortable: true },
+    { key: "province", header: t("columns.province"), width: 130, sortable: true },
+    { key: "actions", header: t("columns.actions"), width: 100, sortable: false },
   ];
 
   function renderCell(row: Location, key: string) {
@@ -292,15 +313,16 @@ export default function LocationsPage() {
           <div className="flex items-center gap-2">
             <span className="font-semibold text-gray-900">{row.code}</span>
             {!row.is_active && (
-              <span className="px-1.5 py-0.5 text-xs bg-red-100 text-red-600 rounded">Đã xóa</span>
+              <span className="px-1.5 py-0.5 text-xs bg-red-100 text-red-600 rounded">{t("status.deleted")}</span>
             )}
           </div>
         );
       case "name":
         return <span className={`font-medium ${!row.is_active ? "text-gray-400" : ""}`}>{row.name}</span>;
       case "type": {
-        const config = TYPE_CONFIG[row.type] || { label: row.type, color: "bg-gray-100 text-gray-800" };
-        return <span className={`px-2 py-1 rounded-lg text-xs font-medium ${config.color}`}>{config.label}</span>;
+        const typeKey = TYPE_KEYS[row.type] || row.type;
+        const color = TYPE_COLORS[row.type] || "bg-gray-100 text-gray-800";
+        return <span className={`px-2 py-1 rounded-lg text-xs font-medium ${color}`}>{t(`types.${typeKey}`)}</span>;
       }
       case "ward":
         return row.ward || <span className="text-gray-400">-</span>;
@@ -318,7 +340,7 @@ export default function LocationsPage() {
               }}
               className="text-blue-600 hover:text-blue-800 text-sm font-medium"
             >
-              Sửa
+              {t("actions.edit")}
             </button>
             <button
               onClick={(e) => {
@@ -327,7 +349,7 @@ export default function LocationsPage() {
               }}
               className="text-red-600 hover:text-red-800 text-sm font-medium"
             >
-              Xóa
+              {t("actions.delete")}
             </button>
           </div>
         ) : (
@@ -339,7 +361,7 @@ export default function LocationsPage() {
             className="text-green-600 hover:text-green-800 text-sm font-medium flex items-center gap-1"
           >
             <RotateCcw className="w-3 h-3" />
-            Khôi phục
+            {t("actions.restore")}
           </button>
         );
       default:
@@ -351,53 +373,54 @@ export default function LocationsPage() {
   const columns: Column<Location>[] = [
     {
       key: "code",
-      header: "Mã",
+      header: t("columns.code"),
       width: 130,
       render: (r) => (
         <div className="flex items-center gap-2">
           <span className="font-semibold text-gray-900">{r.code}</span>
           {!r.is_active && (
-            <span className="px-1.5 py-0.5 text-xs bg-red-100 text-red-600 rounded">Đã xóa</span>
+            <span className="px-1.5 py-0.5 text-xs bg-red-100 text-red-600 rounded">{t("status.deleted")}</span>
           )}
         </div>
       ),
     },
     {
       key: "name",
-      header: "Tên",
+      header: t("columns.name"),
       width: 200,
       render: (r) => <span className={`font-medium ${!r.is_active ? "text-gray-400" : ""}`}>{r.name}</span>,
     },
     {
       key: "type",
-      header: "Loại",
+      header: t("columns.type"),
       width: 100,
       render: (r) => {
-        const config = TYPE_CONFIG[r.type] || { label: r.type, color: "bg-gray-100 text-gray-800" };
-        return <span className={`px-2 py-1 rounded-lg text-xs font-medium ${config.color}`}>{config.label}</span>;
+        const typeKey = TYPE_KEYS[r.type] || r.type;
+        const color = TYPE_COLORS[r.type] || "bg-gray-100 text-gray-800";
+        return <span className={`px-2 py-1 rounded-lg text-xs font-medium ${color}`}>{t(`types.${typeKey}`)}</span>;
       },
     },
     {
       key: "ward",
-      header: "Xã/Phường",
+      header: t("columns.ward"),
       width: 120,
       render: (r) => r.ward || <span className="text-gray-400">-</span>,
     },
     {
       key: "district",
-      header: "Quận/Huyện",
+      header: t("columns.district"),
       width: 130,
       render: (r) => r.district || <span className="text-gray-400">-</span>,
     },
     {
       key: "province",
-      header: "Tỉnh/TP",
+      header: t("columns.province"),
       width: 130,
       render: (r) => r.province || <span className="text-gray-400">-</span>,
     },
     {
       key: "actions",
-      header: "Thao tác",
+      header: t("columns.actions"),
       width: 100,
       sortable: false,
       align: "center",
@@ -411,7 +434,7 @@ export default function LocationsPage() {
               }}
               className="text-blue-600 hover:text-blue-800 text-sm font-medium"
             >
-              Sửa
+              {t("actions.edit")}
             </button>
             <button
               onClick={(e) => {
@@ -420,7 +443,7 @@ export default function LocationsPage() {
               }}
               className="text-red-600 hover:text-red-800 text-sm font-medium"
             >
-              Xóa
+              {t("actions.delete")}
             </button>
           </div>
         ) : (
@@ -432,7 +455,7 @@ export default function LocationsPage() {
             className="text-green-600 hover:text-green-800 text-sm font-medium flex items-center gap-1"
           >
             <RotateCcw className="w-3 h-3" />
-            Khôi phục
+            {t("actions.restore")}
           </button>
         ),
     },
@@ -445,8 +468,8 @@ export default function LocationsPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Quản lý Locations</h1>
-            <p className="text-sm text-gray-500 mt-1">Quản lý các vùng/khu vực vận chuyển</p>
+            <h1 className="text-2xl font-bold text-gray-900">{t("title")}</h1>
+            <p className="text-sm text-gray-500 mt-1">{t("subtitle")}</p>
           </div>
 
           <button
@@ -454,17 +477,17 @@ export default function LocationsPage() {
             className="rounded-xl bg-blue-600 text-white px-4 py-2 text-sm font-medium hover:bg-blue-700 flex items-center gap-2"
           >
             <Plus className="w-4 h-4" />
-            Thêm Location
+            {t("addLocation")}
           </button>
         </div>
 
         {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          <StatCard icon={MapPin} label="Tổng locations" value={stats.total} color="blue" />
-          <StatCard icon={MapPin} label="Đang hoạt động" value={stats.active} color="green" />
-          <StatCard icon={Factory} label="KCN" value={stats.kcn} color="purple" />
-          <StatCard icon={Anchor} label="Cảng" value={stats.port} color="orange" />
-          <StatCard icon={Warehouse} label="ICD" value={stats.icd} color="gray" />
+          <StatCard icon={MapPin} label={t("stats.totalLocations")} value={stats.total} color="blue" />
+          <StatCard icon={MapPin} label={t("stats.active")} value={stats.active} color="green" />
+          <StatCard icon={Factory} label={t("stats.industrialZone")} value={stats.kcn} color="purple" />
+          <StatCard icon={Anchor} label={t("stats.port")} value={stats.port} color="orange" />
+          <StatCard icon={Warehouse} label={t("stats.icd")} value={stats.icd} color="gray" />
         </div>
       </div>
 
@@ -477,11 +500,11 @@ export default function LocationsPage() {
               {/* Type Filter Tabs */}
               <div className="flex bg-gray-100 rounded-xl p-1">
                 {[
-                  { key: "ALL", label: "Tất cả" },
-                  { key: "INDUSTRIAL_ZONE", label: "KCN" },
-                  { key: "PORT", label: "Cảng" },
-                  { key: "ICD", label: "ICD" },
-                  { key: "DEPOT", label: "Bãi" },
+                  { key: "ALL", labelKey: "filters.all" },
+                  { key: "INDUSTRIAL_ZONE", labelKey: "filters.industrialZone" },
+                  { key: "PORT", labelKey: "filters.port" },
+                  { key: "ICD", labelKey: "filters.icd" },
+                  { key: "DEPOT", labelKey: "filters.depot" },
                 ].map((tab) => (
                   <button
                     key={tab.key}
@@ -490,7 +513,7 @@ export default function LocationsPage() {
                       filterType === tab.key ? "bg-white text-blue-600 shadow-sm" : "text-gray-600 hover:text-gray-900"
                     }`}
                   >
-                    {tab.label}
+                    {t(tab.labelKey)}
                   </button>
                 ))}
               </div>
@@ -501,7 +524,7 @@ export default function LocationsPage() {
                 <input
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Tìm mã, tên, tỉnh..."
+                  placeholder={t("search.placeholder")}
                   className="pl-10 pr-4 py-2 rounded-xl border border-gray-300 outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 text-sm w-64"
                 />
               </div>
@@ -514,11 +537,11 @@ export default function LocationsPage() {
                   onChange={(e) => setShowInactive(e.target.checked)}
                   className="rounded"
                 />
-                Hiện đã xóa
+                {t("search.showDeleted")}
               </label>
             </div>
 
-            <div className="text-sm text-gray-500">{loading ? "Đang tải..." : `${filteredRows.length} locations`}</div>
+            <div className="text-sm text-gray-500">{loading ? t("search.loading") : `${filteredRows.length} ${t("search.locations")}`}</div>
           </div>
 
           {/* Error */}
@@ -561,14 +584,14 @@ export default function LocationsPage() {
                   <td colSpan={columnDefs.length} className="px-4 py-8 text-center text-gray-500">
                     <div className="flex items-center justify-center gap-2">
                       <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                      Đang tải...
+                      {t("table.loading")}
                     </div>
                   </td>
                 </tr>
               ) : paginatedRows.length === 0 ? (
                 <tr>
                   <td colSpan={columnDefs.length} className="px-4 py-8 text-center text-gray-500">
-                    Chưa có location nào
+                    {t("table.noData")}
                   </td>
                 </tr>
               ) : (
@@ -600,7 +623,7 @@ export default function LocationsPage() {
           totalItems={filteredRows.length}
           onPageChange={setCurrentPage}
           onPageSizeChange={setPageSize}
-          itemName="locations"
+          itemName={t("pagination.locations")}
         />
       </div>
 
@@ -610,7 +633,7 @@ export default function LocationsPage() {
           <div className="w-full max-w-2xl rounded-2xl bg-white shadow-xl border border-gray-200 max-h-[90vh] overflow-y-auto">
             <div className="px-6 py-4 border-b flex items-center justify-between sticky top-0 bg-white z-10">
               <div className="font-semibold text-lg">
-                {mode === "create" ? "Thêm Location mới" : `Chỉnh sửa: ${editing?.code}`}
+                {mode === "create" ? t("modal.createTitle") : t("modal.editTitle", { code: editing?.code })}
               </div>
               <button onClick={() => setOpen(false)} className="text-gray-500 hover:text-black text-xl">
                 &times;
@@ -622,46 +645,46 @@ export default function LocationsPage() {
               <div>
                 <h3 className="text-sm font-semibold mb-3 text-gray-800 flex items-center gap-2">
                   <div className="w-1 h-4 bg-blue-600 rounded"></div>
-                  Thông tin cơ bản
+                  {t("modal.basicInfo")}
                 </h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs text-gray-600 mb-1">
-                      Mã <span className="text-red-500">*</span>
+                      {t("modal.code")} <span className="text-red-500">*</span>
                     </label>
                     <input
                       value={form.code}
                       onChange={(e) => setForm((s) => ({ ...s, code: e.target.value }))}
                       className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-200"
-                      placeholder="VD: KCN_TB, PH_12_TB"
+                      placeholder={t("modal.codePlaceholder")}
                     />
                   </div>
                   <div>
                     <label className="block text-xs text-gray-600 mb-1">
-                      Loại <span className="text-red-500">*</span>
+                      {t("modal.type")} <span className="text-red-500">*</span>
                     </label>
                     <select
                       value={form.type}
                       onChange={(e) => setForm((s) => ({ ...s, type: e.target.value }))}
                       className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-200"
                     >
-                      <option value="INDUSTRIAL_ZONE">KCN</option>
-                      <option value="WARD">Phường/Xã</option>
-                      <option value="PORT">Cảng</option>
-                      <option value="ICD">ICD</option>
-                      <option value="DEPOT">Bãi</option>
-                      <option value="WAREHOUSE">Kho</option>
+                      <option value="INDUSTRIAL_ZONE">{t("types.industrialZone")}</option>
+                      <option value="WARD">{t("types.ward")}</option>
+                      <option value="PORT">{t("types.port")}</option>
+                      <option value="ICD">{t("types.icd")}</option>
+                      <option value="DEPOT">{t("types.depot")}</option>
+                      <option value="WAREHOUSE">{t("types.warehouse")}</option>
                     </select>
                   </div>
                   <div className="col-span-2">
                     <label className="block text-xs text-gray-600 mb-1">
-                      Tên <span className="text-red-500">*</span>
+                      {t("modal.name")} <span className="text-red-500">*</span>
                     </label>
                     <input
                       value={form.name}
                       onChange={(e) => setForm((s) => ({ ...s, name: e.target.value }))}
                       className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-200"
-                      placeholder="VD: KCN Tân Bình, Phường 12"
+                      placeholder={t("modal.namePlaceholder")}
                     />
                   </div>
                 </div>
@@ -671,34 +694,34 @@ export default function LocationsPage() {
               <div>
                 <h3 className="text-sm font-semibold mb-3 text-gray-800 flex items-center gap-2">
                   <div className="w-1 h-4 bg-green-600 rounded"></div>
-                  Thông tin địa lý
+                  {t("modal.geographicInfo")}
                 </h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs text-gray-600 mb-1">Xã/Phường</label>
+                    <label className="block text-xs text-gray-600 mb-1">{t("modal.ward")}</label>
                     <input
                       value={form.ward}
                       onChange={(e) => setForm((s) => ({ ...s, ward: e.target.value }))}
                       className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-200"
-                      placeholder="VD: Phường 12"
+                      placeholder={t("modal.wardPlaceholder")}
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-gray-600 mb-1">Quận/Huyện</label>
+                    <label className="block text-xs text-gray-600 mb-1">{t("modal.district")}</label>
                     <input
                       value={form.district}
                       onChange={(e) => setForm((s) => ({ ...s, district: e.target.value }))}
                       className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-200"
-                      placeholder="VD: Quận Tân Bình"
+                      placeholder={t("modal.districtPlaceholder")}
                     />
                   </div>
                   <div className="col-span-2">
-                    <label className="block text-xs text-gray-600 mb-1">Tỉnh/Thành phố</label>
+                    <label className="block text-xs text-gray-600 mb-1">{t("modal.province")}</label>
                     <input
                       value={form.province}
                       onChange={(e) => setForm((s) => ({ ...s, province: e.target.value }))}
                       className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-200"
-                      placeholder="VD: TP. Hồ Chí Minh"
+                      placeholder={t("modal.provincePlaceholder")}
                     />
                   </div>
                 </div>
@@ -708,14 +731,14 @@ export default function LocationsPage() {
               <div>
                 <h3 className="text-sm font-semibold mb-3 text-gray-800 flex items-center gap-2">
                   <div className="w-1 h-4 bg-gray-600 rounded"></div>
-                  Ghi chú
+                  {t("modal.noteSection")}
                 </h3>
                 <textarea
                   value={form.note}
                   onChange={(e) => setForm((s) => ({ ...s, note: e.target.value }))}
                   rows={3}
                   className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-200"
-                  placeholder="Ghi chú thêm..."
+                  placeholder={t("modal.notePlaceholder")}
                 />
               </div>
 
@@ -726,14 +749,14 @@ export default function LocationsPage() {
 
             <div className="px-6 py-4 border-t flex items-center justify-end gap-2 sticky bottom-0 bg-white">
               <button onClick={() => setOpen(false)} className="rounded-xl border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50">
-                Hủy
+                {t("modal.cancel")}
               </button>
               <button
                 onClick={onSave}
                 disabled={saving}
                 className="rounded-xl bg-blue-600 text-white px-4 py-2 text-sm font-medium disabled:opacity-60 hover:bg-blue-700"
               >
-                {saving ? "Đang lưu..." : "Lưu"}
+                {saving ? t("modal.saving") : t("modal.save")}
               </button>
             </div>
           </div>

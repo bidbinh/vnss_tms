@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import { useTranslations } from "next-intl";
 import {
   Building2,
   Users,
@@ -46,6 +47,8 @@ interface OrgNode {
 }
 
 export default function OrgChartPage() {
+  const t = useTranslations("hrm.orgChartPage");
+
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [stats, setStats] = useState<Stats>({ total_employees: 0, total_departments: 0, total_branches: 0 });
   const [loading, setLoading] = useState(true);
@@ -176,11 +179,11 @@ export default function OrgChartPage() {
 
   const getSubtitle = (emp: Employee, roleType: string): string => {
     switch (roleType) {
-      case "ceo": return emp.position_name || "Giám đốc điều hành";
-      case "branch_manager": return emp.branch_name ? `Chi nhánh ${emp.branch_name}` : (emp.position_name || "Trưởng chi nhánh");
-      case "dept_head": return emp.department_name || (emp.position_name || "Trưởng phòng");
-      case "team_lead": return emp.department_name || (emp.position_name || "Team Leader");
-      default: return emp.position_name || "Nhân viên";
+      case "ceo": return emp.position_name || t("legend.ceo");
+      case "branch_manager": return emp.branch_name ? `${t("tooltip.branch")} ${emp.branch_name}` : (emp.position_name || t("legend.branchManager"));
+      case "dept_head": return emp.department_name || (emp.position_name || t("legend.deptHead"));
+      case "team_lead": return emp.department_name || (emp.position_name || t("legend.teamLead"));
+      default: return emp.position_name || t("legend.staff");
     }
   };
 
@@ -202,7 +205,7 @@ export default function OrgChartPage() {
   };
 
   const formatDate = (dateStr: string | null) => {
-    if (!dateStr) return "Chưa cập nhật";
+    if (!dateStr) return t("tooltip.notUpdated");
     return new Date(dateStr).toLocaleDateString("vi-VN");
   };
 
@@ -363,7 +366,7 @@ export default function OrgChartPage() {
           <div className="mt-4 space-y-2.5 text-sm">
             <div className="flex items-center gap-2.5 text-gray-700">
               <Briefcase className="w-4 h-4 text-gray-400 flex-shrink-0" />
-              <span>{hoveredEmployee.position_name || "Chưa có chức vụ"}</span>
+              <span>{hoveredEmployee.position_name || t("tooltip.noPosition")}</span>
             </div>
 
             {hoveredEmployee.department_name && (
@@ -376,7 +379,7 @@ export default function OrgChartPage() {
             {hoveredEmployee.branch_name && (
               <div className="flex items-center gap-2.5 text-gray-700">
                 <MapPin className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                <span>Chi nhánh {hoveredEmployee.branch_name}</span>
+                <span>{t("tooltip.branch")} {hoveredEmployee.branch_name}</span>
               </div>
             )}
 
@@ -396,7 +399,7 @@ export default function OrgChartPage() {
 
             <div className="flex items-center gap-2.5 text-gray-700">
               <Calendar className="w-4 h-4 text-gray-400 flex-shrink-0" />
-              <span>Vào làm: {formatDate(hoveredEmployee.join_date)}</span>
+              <span>{t("tooltip.joinDate")}: {formatDate(hoveredEmployee.join_date)}</span>
             </div>
           </div>
         </div>
@@ -405,8 +408,8 @@ export default function OrgChartPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Sơ đồ tổ chức</h1>
-          <p className="text-gray-600 mt-1">Cơ cấu tổ chức công ty</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t("title")}</h1>
+          <p className="text-gray-600 mt-1">{t("subtitle")}</p>
         </div>
       </div>
 
@@ -418,7 +421,7 @@ export default function OrgChartPage() {
               <Building2 className="w-5 h-5 text-indigo-600" />
             </div>
             <div>
-              <div className="text-sm text-gray-500">Chi nhánh</div>
+              <div className="text-sm text-gray-500">{t("stats.branches")}</div>
               <div className="text-xl font-bold text-gray-900">{stats.total_branches}</div>
             </div>
           </div>
@@ -429,7 +432,7 @@ export default function OrgChartPage() {
               <Building2 className="w-5 h-5 text-teal-600" />
             </div>
             <div>
-              <div className="text-sm text-gray-500">Phòng ban</div>
+              <div className="text-sm text-gray-500">{t("stats.departments")}</div>
               <div className="text-xl font-bold text-gray-900">{stats.total_departments}</div>
             </div>
           </div>
@@ -440,7 +443,7 @@ export default function OrgChartPage() {
               <Users className="w-5 h-5 text-amber-600" />
             </div>
             <div>
-              <div className="text-sm text-gray-500">Tổng nhân viên</div>
+              <div className="text-sm text-gray-500">{t("stats.totalEmployees")}</div>
               <div className="text-xl font-bold text-gray-900">{stats.total_employees}</div>
             </div>
           </div>
@@ -452,8 +455,8 @@ export default function OrgChartPage() {
         {orgTree.length === 0 ? (
           <div className="text-center py-16 text-gray-500">
             <User className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-            <p className="font-medium">Chưa có nhân viên nào.</p>
-            <p className="text-sm mt-2">Hãy thêm nhân viên và thiết lập quan hệ quản lý để hiển thị sơ đồ.</p>
+            <p className="font-medium">{t("noEmployees")}</p>
+            <p className="text-sm mt-2">{t("noEmployeesDesc")}</p>
           </div>
         ) : (
           <div className="flex flex-col items-center gap-8 min-w-max">
@@ -468,31 +471,31 @@ export default function OrgChartPage() {
 
       {/* Legend */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-        <h3 className="font-medium text-gray-900 mb-3">Chú thích</h3>
+        <h3 className="font-medium text-gray-900 mb-3">{t("legend.title")}</h3>
         <div className="flex flex-wrap gap-4 text-sm">
           <div className="flex items-center gap-2">
             <div className="w-5 h-5 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600" />
-            <span className="text-gray-600">Giám đốc điều hành</span>
+            <span className="text-gray-600">{t("legend.ceo")}</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-5 h-5 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600" />
-            <span className="text-gray-600">Trưởng chi nhánh</span>
+            <span className="text-gray-600">{t("legend.branchManager")}</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-5 h-5 rounded-lg bg-gradient-to-br from-teal-500 to-emerald-600" />
-            <span className="text-gray-600">Trưởng phòng</span>
+            <span className="text-gray-600">{t("legend.deptHead")}</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-5 h-5 rounded-lg bg-gradient-to-br from-sky-500 to-blue-600" />
-            <span className="text-gray-600">Team Leader</span>
+            <span className="text-gray-600">{t("legend.teamLead")}</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-5 h-5 rounded-lg bg-white border border-gray-200" />
-            <span className="text-gray-600">Nhân viên</span>
+            <span className="text-gray-600">{t("legend.staff")}</span>
           </div>
         </div>
         <p className="text-xs text-gray-400 mt-3">
-          Click vào node để mở rộng/thu gọn. Di chuột qua để xem thông tin chi tiết.
+          {t("hint")}
         </p>
       </div>
     </div>

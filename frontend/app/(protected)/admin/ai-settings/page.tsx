@@ -20,6 +20,11 @@ import {
   EyeOff,
   ChevronDown,
   ChevronUp,
+  BarChart3,
+  Clock,
+  Coins,
+  TrendingUp,
+  Hash,
 } from 'lucide-react';
 
 // ============================================================
@@ -54,6 +59,26 @@ interface AIFeature {
   timeout_seconds: number;
   fallback_enabled: boolean;
   is_enabled: boolean;
+}
+
+interface AIUsageTotals {
+  total_requests: number;
+  total_input_tokens: number;
+  total_output_tokens: number;
+  total_tokens: number;
+  total_cost_usd: number;
+  avg_latency_ms: number;
+  success_rate: number;
+}
+
+interface AIUsageStat {
+  provider_code: string;
+  feature_code: string;
+  total_requests: number;
+  total_tokens: number;
+  total_cost: number;
+  success_rate: number;
+  avg_latency_ms: number;
 }
 
 // ============================================================
@@ -98,6 +123,11 @@ export default function AISettingsPage() {
   const [providers, setProviders] = useState<AIProvider[]>([]);
   const [features, setFeatures] = useState<AIFeature[]>([]);
 
+  // Usage stats
+  const [usageTotals, setUsageTotals] = useState<AIUsageTotals | null>(null);
+  const [usageStats, setUsageStats] = useState<AIUsageStat[]>([]);
+  const [usageDays, setUsageDays] = useState(30);
+
   // Edit states
   const [editingProvider, setEditingProvider] = useState<string | null>(null);
   const [apiKeyInputs, setApiKeyInputs] = useState<Record<string, string>>({});
@@ -124,9 +154,11 @@ export default function AISettingsPage() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [providersRes, featuresRes] = await Promise.all([
+      const [providersRes, featuresRes, totalsRes, statsRes] = await Promise.all([
         fetch('/api/v1/ai-config/providers', { headers: getAuthHeaders() }),
         fetch('/api/v1/ai-config/features', { headers: getAuthHeaders() }),
+        fetch(`/api/v1/ai-config/usage/totals?days=${usageDays}`, { headers: getAuthHeaders() }),
+        fetch(`/api/v1/ai-config/usage/stats?days=${usageDays}`, { headers: getAuthHeaders() }),
       ]);
 
       if (providersRes.ok) {
@@ -137,6 +169,16 @@ export default function AISettingsPage() {
       if (featuresRes.ok) {
         const data = await featuresRes.json();
         setFeatures(data);
+      }
+
+      if (totalsRes.ok) {
+        const data = await totalsRes.json();
+        setUsageTotals(data);
+      }
+
+      if (statsRes.ok) {
+        const data = await statsRes.json();
+        setUsageStats(data);
       }
     } catch (err) {
       setError('Failed to load AI configuration');
@@ -254,6 +296,32 @@ export default function AISettingsPage() {
       setFeatures((prev) =>
         prev.map((f) => (f.feature_code === featureCode ? { ...f, is_enabled: !enabled } : f))
       );
+    }
+  };
+
+  const seedFeatures = async () => {
+    setSaving('features');
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const response = await fetch('/api/v1/ai-config/features/seed', {
+        method: 'POST',
+        headers: getAuthHeaders(),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setSuccess(data.message);
+        loadData();
+      } else {
+        const data = await response.json();
+        setError(data.detail || 'Failed to seed features');
+      }
+    } catch (err) {
+      setError('Failed to seed AI features');
+    } finally {
+      setSaving(null);
     }
   };
 
@@ -560,9 +628,24 @@ export default function AISettingsPage() {
 
       {/* AI Features Section */}
       <div className="bg-white rounded-lg shadow-sm border">
-        <div className="px-4 py-3 border-b flex items-center gap-2">
-          <Activity className="h-5 w-5 text-gray-500" />
-          <h2 className="text-base font-semibold">AI Features & Priority</h2>
+        <div className="px-4 py-3 border-b flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Activity className="h-5 w-5 text-gray-500" />
+            <h2 className="text-base font-semibold">AI Features & Priority</h2>
+            <span className="text-xs text-gray-400">({features.length} features)</span>
+          </div>
+          <button
+            onClick={seedFeatures}
+            disabled={saving === 'features'}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-md border border-blue-200 disabled:opacity-50"
+          >
+            {saving === 'features' ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Zap className="h-3.5 w-3.5" />
+            )}
+            Sync Features
+          </button>
         </div>
 
         <div className="p-4">
@@ -635,6 +718,172 @@ export default function AISettingsPage() {
               </div>
             ))}
           </div>
+        </div>
+      </div>
+
+      {/* AI Usage Section */}
+      <div className="bg-white rounded-lg shadow-sm border">
+        <div className="px-4 py-3 border-b flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <BarChart3 className="h-5 w-5 text-gray-500" />
+            <h2 className="text-base font-semibold">AI Usage</h2>
+            <span className="text-sm text-gray-400">Last {usageDays} days</span>
+          </div>
+          <select
+            value={usageDays}
+            onChange={(e) => {
+              setUsageDays(Number(e.target.value));
+              // Reload data when days change
+              setTimeout(() => loadData(), 100);
+            }}
+            className="px-2 py-1 text-sm border rounded"
+          >
+            <option value={7}>7 days</option>
+            <option value={30}>30 days</option>
+            <option value={90}>90 days</option>
+          </select>
+        </div>
+
+        <div className="p-4">
+          {/* Summary Cards */}
+          {usageTotals && (
+            <>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+              <div className="bg-purple-50 rounded-lg p-3 border border-purple-100">
+                <div className="flex items-center gap-2 text-purple-600 mb-1">
+                  <Hash className="h-4 w-4" />
+                  <span className="text-xs font-medium">Total Requests</span>
+                </div>
+                <div className="text-xl font-bold text-purple-700">
+                  {usageTotals.total_requests.toLocaleString()}
+                </div>
+              </div>
+
+              <div className="bg-blue-50 rounded-lg p-3 border border-blue-100">
+                <div className="flex items-center gap-2 text-blue-600 mb-1">
+                  <Activity className="h-4 w-4" />
+                  <span className="text-xs font-medium">Total Tokens</span>
+                </div>
+                <div className="text-xl font-bold text-blue-700">
+                  {(usageTotals.total_tokens / 1000).toFixed(1)}K
+                </div>
+                <div className="text-xs text-blue-500">
+                  In: {(usageTotals.total_input_tokens / 1000).toFixed(1)}K / Out: {(usageTotals.total_output_tokens / 1000).toFixed(1)}K
+                </div>
+              </div>
+
+              <div className="bg-red-50 rounded-lg p-3 border border-red-100">
+                <div className="flex items-center gap-2 text-red-600 mb-1">
+                  <Coins className="h-4 w-4" />
+                  <span className="text-xs font-medium">AI Cost</span>
+                </div>
+                <div className="text-xl font-bold text-red-700">
+                  ${usageTotals.total_cost_usd.toFixed(2)}
+                </div>
+                <div className="text-xs text-red-500">
+                  ≈ {(usageTotals.total_cost_usd * 25500).toLocaleString('vi-VN')} VND
+                </div>
+              </div>
+
+              <div className="bg-green-50 rounded-lg p-3 border border-green-100">
+                <div className="flex items-center gap-2 text-green-600 mb-1">
+                  <DollarSign className="h-4 w-4" />
+                  <span className="text-xs font-medium">Revenue (10x)</span>
+                </div>
+                <div className="text-xl font-bold text-green-700">
+                  ${(usageTotals.total_cost_usd * 10).toFixed(2)}
+                </div>
+                <div className="text-xs text-green-500">
+                  ≈ {(usageTotals.total_cost_usd * 10 * 25500).toLocaleString('vi-VN')} VND
+                </div>
+              </div>
+            </div>
+
+            {/* Second row - Performance metrics */}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
+              <div className="bg-amber-50 rounded-lg p-3 border border-amber-100">
+                <div className="flex items-center gap-2 text-amber-600 mb-1">
+                  <TrendingUp className="h-4 w-4" />
+                  <span className="text-xs font-medium">Success Rate</span>
+                </div>
+                <div className="text-xl font-bold text-amber-700">
+                  {usageTotals.success_rate.toFixed(1)}%
+                </div>
+              </div>
+
+              <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                <div className="flex items-center gap-2 text-gray-600 mb-1">
+                  <Clock className="h-4 w-4" />
+                  <span className="text-xs font-medium">Avg Latency</span>
+                </div>
+                <div className="text-xl font-bold text-gray-700">
+                  {usageTotals.avg_latency_ms.toFixed(0)}ms
+                </div>
+              </div>
+
+              <div className="bg-emerald-50 rounded-lg p-3 border border-emerald-100">
+                <div className="flex items-center gap-2 text-emerald-600 mb-1">
+                  <TrendingUp className="h-4 w-4" />
+                  <span className="text-xs font-medium">Profit Margin</span>
+                </div>
+                <div className="text-xl font-bold text-emerald-700">
+                  ${(usageTotals.total_cost_usd * 9).toFixed(2)}
+                </div>
+                <div className="text-xs text-emerald-500">
+                  90% margin (Revenue - Cost)
+                </div>
+              </div>
+            </div>
+            </>
+          )}
+
+          {/* Usage by Feature */}
+          {usageStats.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="text-left px-3 py-2 font-medium text-gray-600">Feature</th>
+                    <th className="text-left px-3 py-2 font-medium text-gray-600">Provider</th>
+                    <th className="text-right px-3 py-2 font-medium text-gray-600">Requests</th>
+                    <th className="text-right px-3 py-2 font-medium text-gray-600">Tokens</th>
+                    <th className="text-right px-3 py-2 font-medium text-gray-600 text-red-600">Cost</th>
+                    <th className="text-right px-3 py-2 font-medium text-green-600">Revenue</th>
+                    <th className="text-right px-3 py-2 font-medium text-gray-600">Success</th>
+                    <th className="text-right px-3 py-2 font-medium text-gray-600">Latency</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {usageStats.map((stat, idx) => (
+                    <tr key={idx} className="border-t hover:bg-gray-50">
+                      <td className="px-3 py-2 font-medium">{stat.feature_code}</td>
+                      <td className="px-3 py-2">
+                        <span className={`px-2 py-0.5 rounded text-xs ${PROVIDER_COLORS[stat.provider_code] || 'bg-gray-100'}`}>
+                          {stat.provider_code}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2 text-right">{stat.total_requests.toLocaleString()}</td>
+                      <td className="px-3 py-2 text-right">{(stat.total_tokens / 1000).toFixed(1)}K</td>
+                      <td className="px-3 py-2 text-right text-red-600">${stat.total_cost.toFixed(3)}</td>
+                      <td className="px-3 py-2 text-right text-green-600 font-medium">${(stat.total_cost * 10).toFixed(2)}</td>
+                      <td className="px-3 py-2 text-right">
+                        <span className={stat.success_rate >= 95 ? 'text-green-600' : stat.success_rate >= 80 ? 'text-amber-600' : 'text-red-600'}>
+                          {stat.success_rate.toFixed(1)}%
+                        </span>
+                      </td>
+                      <td className="px-3 py-2 text-right text-gray-500">{stat.avg_latency_ms.toFixed(0)}ms</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="text-center py-8 text-gray-400">
+              <BarChart3 className="h-12 w-12 mx-auto mb-2 opacity-50" />
+              <p>No AI usage data yet</p>
+              <p className="text-xs">Usage will appear here once AI features are used</p>
+            </div>
+          )}
         </div>
       </div>
 

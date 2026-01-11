@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   Plus,
   Search,
@@ -33,6 +34,9 @@ interface Branch {
 }
 
 export default function BranchesPage() {
+  const t = useTranslations("hrm.branchesPage");
+  const tCommon = useTranslations("common");
+
   const [branches, setBranches] = useState<Branch[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -138,7 +142,7 @@ export default function BranchesPage() {
       fetchBranches();
     } catch (error: any) {
       console.error("Failed to save branch:", error);
-      alert(error.message || "Không thể lưu chi nhánh");
+      alert(error.message || t("saveError"));
     } finally {
       setSaving(false);
     }
@@ -146,18 +150,18 @@ export default function BranchesPage() {
 
   const handleDelete = async (id: string, name: string, empCount: number) => {
     if (empCount > 0) {
-      alert(`Không thể xóa chi nhánh "${name}" vì đang có ${empCount} nhân viên`);
+      alert(t("cannotDelete", { name, count: empCount }));
       return;
     }
 
-    if (!confirm(`Bạn có chắc muốn xóa chi nhánh "${name}"?`)) return;
+    if (!confirm(t("confirmDelete", { name }))) return;
 
     try {
       await apiFetch(`/hrm/branches/${id}`, { method: "DELETE" });
       fetchBranches();
     } catch (error: any) {
       console.error("Failed to delete branch:", error);
-      alert(error.message || "Không thể xóa chi nhánh");
+      alert(error.message || t("deleteError"));
     }
   };
 
@@ -172,15 +176,15 @@ export default function BranchesPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Chi nhánh</h1>
-          <p className="text-gray-600 mt-1">Quản lý các chi nhánh, văn phòng công ty</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t("title")}</h1>
+          <p className="text-gray-600 mt-1">{t("subtitle")}</p>
         </div>
         <button
           onClick={() => handleOpenModal()}
           className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
         >
           <Plus className="w-4 h-4" />
-          Thêm chi nhánh
+          {t("addBranch")}
         </button>
       </div>
 
@@ -190,7 +194,7 @@ export default function BranchesPage() {
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
             type="text"
-            placeholder="Tìm theo tên hoặc mã chi nhánh..."
+            placeholder={t("searchPlaceholder")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -205,7 +209,7 @@ export default function BranchesPage() {
         </div>
       ) : filteredBranches.length === 0 ? (
         <div className="text-center p-8 text-gray-500 bg-white rounded-lg shadow border">
-          Không tìm thấy chi nhánh nào
+          {t("noData")}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -246,7 +250,7 @@ export default function BranchesPage() {
                 <div className="flex items-center gap-2">
                   {branch.is_headquarters && (
                     <span className="inline-flex px-2 py-0.5 text-xs font-medium rounded-full bg-yellow-100 text-yellow-700">
-                      Trụ sở chính
+                      {t("headquarters")}
                     </span>
                   )}
                   <span
@@ -254,7 +258,7 @@ export default function BranchesPage() {
                       branch.is_active ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"
                     }`}
                   >
-                    {branch.is_active ? "Hoạt động" : "Ngưng"}
+                    {branch.is_active ? tCommon("active") : tCommon("inactive")}
                   </span>
                 </div>
 
@@ -281,7 +285,7 @@ export default function BranchesPage() {
 
                 <div className="flex items-center gap-2 text-gray-600 pt-2 border-t">
                   <Users className="w-4 h-4" />
-                  <span>{branch.employee_count} nhân viên</span>
+                  <span>{branch.employee_count} {t("employees")}</span>
                 </div>
               </div>
             </div>
@@ -295,7 +299,7 @@ export default function BranchesPage() {
           <div className="bg-white rounded-lg shadow-xl w-full max-w-lg mx-4">
             <div className="flex items-center justify-between px-6 py-4 border-b">
               <h2 className="text-lg font-semibold">
-                {editingBranch ? "Sửa chi nhánh" : "Thêm chi nhánh mới"}
+                {editingBranch ? t("modal.editTitle") : t("modal.createTitle")}
               </h2>
               <button onClick={handleCloseModal} className="p-1 hover:bg-gray-100 rounded">
                 <X className="w-5 h-5" />
@@ -306,14 +310,14 @@ export default function BranchesPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Mã chi nhánh *
+                    {t("modal.code")} *
                   </label>
                   <input
                     type="text"
                     name="code"
                     value={formData.code}
                     onChange={handleChange}
-                    placeholder="VD: HCM, HN..."
+                    placeholder={t("modal.codePlaceholder")}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     required
                   />
@@ -330,21 +334,21 @@ export default function BranchesPage() {
                       }
                       className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                     />
-                    <span className="text-sm font-medium text-gray-700">Trụ sở chính</span>
+                    <span className="text-sm font-medium text-gray-700">{t("modal.isHeadquarters")}</span>
                   </label>
                 </div>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Tên chi nhánh *
+                  {t("modal.name")} *
                 </label>
                 <input
                   type="text"
                   name="name"
                   value={formData.name}
                   onChange={handleChange}
-                  placeholder="VD: Chi nhánh Hồ Chí Minh"
+                  placeholder={t("modal.namePlaceholder")}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   required
                 />
@@ -352,14 +356,14 @@ export default function BranchesPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Địa chỉ
+                  {t("modal.address")}
                 </label>
                 <input
                   type="text"
                   name="address"
                   value={formData.address}
                   onChange={handleChange}
-                  placeholder="Số nhà, đường..."
+                  placeholder={t("modal.addressPlaceholder")}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -367,28 +371,28 @@ export default function BranchesPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Thành phố
+                    {t("modal.city")}
                   </label>
                   <input
                     type="text"
                     name="city"
                     value={formData.city}
                     onChange={handleChange}
-                    placeholder="VD: Hồ Chí Minh"
+                    placeholder={t("modal.cityPlaceholder")}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Tỉnh/Thành
+                    {t("modal.province")}
                   </label>
                   <input
                     type="text"
                     name="province"
                     value={formData.province}
                     onChange={handleChange}
-                    placeholder="VD: TP.HCM"
+                    placeholder={t("modal.provincePlaceholder")}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
@@ -397,28 +401,28 @@ export default function BranchesPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Điện thoại
+                    {t("modal.phone")}
                   </label>
                   <input
                     type="tel"
                     name="phone"
                     value={formData.phone}
                     onChange={handleChange}
-                    placeholder="0901234567"
+                    placeholder={t("modal.phonePlaceholder")}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Email
+                    {t("modal.email")}
                   </label>
                   <input
                     type="email"
                     name="email"
                     value={formData.email}
                     onChange={handleChange}
-                    placeholder="email@company.com"
+                    placeholder={t("modal.emailPlaceholder")}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
@@ -430,7 +434,7 @@ export default function BranchesPage() {
                   onClick={handleCloseModal}
                   className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
                 >
-                  Hủy
+                  {tCommon("cancel")}
                 </button>
                 <button
                   type="submit"
@@ -438,7 +442,7 @@ export default function BranchesPage() {
                   className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
                 >
                   <Save className="w-4 h-4" />
-                  {saving ? "Đang lưu..." : "Lưu"}
+                  {saving ? tCommon("loading") : tCommon("save")}
                 </button>
               </div>
             </form>

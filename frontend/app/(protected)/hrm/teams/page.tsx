@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   Plus,
   Search,
@@ -40,6 +41,9 @@ interface Employee {
 }
 
 export default function TeamsPage() {
+  const t = useTranslations("hrm.teamsPage");
+  const tCommon = useTranslations("common");
+
   const [teams, setTeams] = useState<Team[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -143,7 +147,7 @@ export default function TeamsPage() {
       fetchData();
     } catch (error: any) {
       console.error("Failed to save team:", error);
-      alert(error.message || "Không thể lưu nhóm");
+      alert(error.message || t("saveError"));
     } finally {
       setSaving(false);
     }
@@ -151,18 +155,18 @@ export default function TeamsPage() {
 
   const handleDelete = async (id: string, name: string, memberCount: number) => {
     if (memberCount > 0) {
-      alert(`Không thể xóa nhóm "${name}" vì đang có ${memberCount} thành viên`);
+      alert(t("cannotDelete", { name, count: memberCount }));
       return;
     }
 
-    if (!confirm(`Bạn có chắc muốn xóa nhóm "${name}"?`)) return;
+    if (!confirm(t("confirmDelete", { name }))) return;
 
     try {
       await apiFetch(`/hrm/teams/${id}`, { method: "DELETE" });
       fetchData();
     } catch (error: any) {
       console.error("Failed to delete team:", error);
-      alert(error.message || "Không thể xóa nhóm");
+      alert(error.message || t("deleteError"));
     }
   };
 
@@ -177,15 +181,15 @@ export default function TeamsPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Nhóm / Đội</h1>
-          <p className="text-gray-600 mt-1">Quản lý các nhóm làm việc</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t("title")}</h1>
+          <p className="text-gray-600 mt-1">{t("subtitle")}</p>
         </div>
         <button
           onClick={() => handleOpenModal()}
           className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
         >
           <Plus className="w-4 h-4" />
-          Thêm nhóm
+          {t("addTeam")}
         </button>
       </div>
 
@@ -195,7 +199,7 @@ export default function TeamsPage() {
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
             type="text"
-            placeholder="Tìm theo tên hoặc mã nhóm..."
+            placeholder={t("searchPlaceholder")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -210,7 +214,7 @@ export default function TeamsPage() {
         </div>
       ) : filteredTeams.length === 0 ? (
         <div className="text-center p-8 text-gray-500 bg-white rounded-lg shadow border">
-          Không tìm thấy nhóm nào
+          {t("noData")}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -258,7 +262,7 @@ export default function TeamsPage() {
                 {team.leader_name && (
                   <div className="flex items-center gap-2 text-gray-600">
                     <User className="w-4 h-4" />
-                    <span>Trưởng nhóm: {team.leader_name}</span>
+                    <span>{t("teamLead")}: {team.leader_name}</span>
                   </div>
                 )}
 
@@ -269,14 +273,14 @@ export default function TeamsPage() {
                 <div className="flex items-center justify-between pt-2 border-t">
                   <div className="flex items-center gap-2 text-gray-600">
                     <Users className="w-4 h-4" />
-                    <span>{team.member_count} thành viên</span>
+                    <span>{team.member_count} {t("members")}</span>
                   </div>
                   <span
                     className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${
                       team.is_active ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"
                     }`}
                   >
-                    {team.is_active ? "Hoạt động" : "Ngưng"}
+                    {team.is_active ? tCommon("active") : tCommon("inactive")}
                   </span>
                 </div>
               </div>
@@ -291,7 +295,7 @@ export default function TeamsPage() {
           <div className="bg-white rounded-lg shadow-xl w-full max-w-lg mx-4">
             <div className="flex items-center justify-between px-6 py-4 border-b">
               <h2 className="text-lg font-semibold">
-                {editingTeam ? "Sửa nhóm" : "Thêm nhóm mới"}
+                {editingTeam ? t("modal.editTitle") : t("modal.createTitle")}
               </h2>
               <button onClick={handleCloseModal} className="p-1 hover:bg-gray-100 rounded">
                 <X className="w-5 h-5" />
@@ -302,14 +306,14 @@ export default function TeamsPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Mã nhóm *
+                    {t("modal.code")} *
                   </label>
                   <input
                     type="text"
                     name="code"
                     value={formData.code}
                     onChange={handleChange}
-                    placeholder="VD: TEAM-01"
+                    placeholder={t("modal.codePlaceholder")}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     required
                   />
@@ -317,7 +321,7 @@ export default function TeamsPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Phòng ban
+                    {t("modal.department")}
                   </label>
                   <select
                     name="department_id"
@@ -325,7 +329,7 @@ export default function TeamsPage() {
                     onChange={handleChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="">-- Chọn phòng ban --</option>
+                    <option value="">{t("modal.selectDepartment")}</option>
                     {departments.map((d) => (
                       <option key={d.id} value={d.id}>
                         {d.name}
@@ -337,14 +341,14 @@ export default function TeamsPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Tên nhóm *
+                  {t("modal.name")} *
                 </label>
                 <input
                   type="text"
                   name="name"
                   value={formData.name}
                   onChange={handleChange}
-                  placeholder="VD: Đội xe miền Nam"
+                  placeholder={t("modal.namePlaceholder")}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   required
                 />
@@ -352,7 +356,7 @@ export default function TeamsPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Trưởng nhóm
+                  {t("modal.leader")}
                 </label>
                 <select
                   name="leader_id"
@@ -360,7 +364,7 @@ export default function TeamsPage() {
                   onChange={handleChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="">-- Chọn trưởng nhóm --</option>
+                  <option value="">{t("modal.selectLeader")}</option>
                   {employees.map((e) => (
                     <option key={e.id} value={e.id}>
                       {e.full_name} ({e.employee_code})
@@ -371,14 +375,14 @@ export default function TeamsPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Mô tả
+                  {t("modal.description")}
                 </label>
                 <textarea
                   name="description"
                   value={formData.description}
                   onChange={handleChange}
                   rows={3}
-                  placeholder="Mô tả nhóm..."
+                  placeholder={t("modal.descriptionPlaceholder")}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -389,7 +393,7 @@ export default function TeamsPage() {
                   onClick={handleCloseModal}
                   className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
                 >
-                  Hủy
+                  {tCommon("cancel")}
                 </button>
                 <button
                   type="submit"
@@ -397,7 +401,7 @@ export default function TeamsPage() {
                   className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
                 >
                   <Save className="w-4 h-4" />
-                  {saving ? "Đang lưu..." : "Lưu"}
+                  {saving ? tCommon("loading") : tCommon("save")}
                 </button>
               </div>
             </form>

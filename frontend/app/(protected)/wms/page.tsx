@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import {
   Package,
   Warehouse,
@@ -33,6 +34,7 @@ interface StockMovement {
 }
 
 export default function WMSDashboard() {
+  const t = useTranslations("wms.dashboard");
   const [stats, setStats] = useState<WMSStats>({
     total_products: 0,
     total_warehouses: 0,
@@ -111,8 +113,8 @@ export default function WMSDashboard() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">WMS Dashboard</h1>
-          <p className="text-gray-500">Quản lý kho hàng</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t("title")}</h1>
+          <p className="text-gray-500">{t("subtitle")}</p>
         </div>
         <div className="flex gap-2">
           <a
@@ -120,14 +122,14 @@ export default function WMSDashboard() {
             className="flex items-center gap-2 px-4 py-2 border rounded-lg hover:bg-gray-50"
           >
             <PackagePlus className="w-4 h-4" />
-            Nhập kho
+            {t("goodsReceiptBtn")}
           </a>
           <a
             href="/wms/shipping"
             className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           >
             <PackageMinus className="w-4 h-4" />
-            Xuất kho
+            {t("shippingBtn")}
           </a>
         </div>
       </div>
@@ -140,7 +142,7 @@ export default function WMSDashboard() {
               <Package className="w-5 h-5 text-blue-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Sản phẩm</p>
+              <p className="text-sm text-gray-500">{t("productsCount")}</p>
               <p className="text-xl font-bold">{stats.total_products.toLocaleString()}</p>
             </div>
           </div>
@@ -151,7 +153,7 @@ export default function WMSDashboard() {
               <Warehouse className="w-5 h-5 text-purple-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Kho hàng</p>
+              <p className="text-sm text-gray-500">{t("warehouses")}</p>
               <p className="text-xl font-bold">{stats.total_warehouses}</p>
             </div>
           </div>
@@ -162,7 +164,7 @@ export default function WMSDashboard() {
               <TrendingUp className="w-5 h-5 text-green-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Giá trị tồn kho</p>
+              <p className="text-sm text-gray-500">{t("stockValue")}</p>
               <p className="text-lg font-bold">{formatCurrency(stats.total_stock_value)}</p>
             </div>
           </div>
@@ -173,7 +175,7 @@ export default function WMSDashboard() {
               <PackagePlus className="w-5 h-5 text-yellow-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Chờ nhập</p>
+              <p className="text-sm text-gray-500">{t("pendingReceipts")}</p>
               <p className="text-xl font-bold">{stats.pending_receipts}</p>
             </div>
           </div>
@@ -184,7 +186,7 @@ export default function WMSDashboard() {
               <PackageMinus className="w-5 h-5 text-orange-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Chờ xuất</p>
+              <p className="text-sm text-gray-500">{t("pendingShipments")}</p>
               <p className="text-xl font-bold">{stats.pending_shipments}</p>
             </div>
           </div>
@@ -195,7 +197,7 @@ export default function WMSDashboard() {
               <AlertTriangle className="w-5 h-5 text-red-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Sắp hết</p>
+              <p className="text-sm text-gray-500">{t("lowStock")}</p>
               <p className="text-xl font-bold text-red-600">{stats.low_stock_items}</p>
             </div>
           </div>
@@ -206,9 +208,9 @@ export default function WMSDashboard() {
         {/* Recent Movements */}
         <div className="bg-white rounded-xl shadow-sm border p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold">Biến động kho gần đây</h2>
+            <h2 className="text-lg font-semibold">{t("recentMovements")}</h2>
             <a href="/wms/reports/movement" className="text-sm text-blue-600 hover:underline">
-              Xem tất cả
+              {t("viewAll")}
             </a>
           </div>
           <div className="space-y-3">
@@ -237,17 +239,17 @@ export default function WMSDashboard() {
         {/* Low Stock Alert */}
         <div className="bg-white rounded-xl shadow-sm border p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold">Cảnh báo hàng sắp hết</h2>
+            <h2 className="text-lg font-semibold">{t("lowStockAlerts")}</h2>
             <a href="/wms/stock" className="text-sm text-blue-600 hover:underline">
-              Xem tất cả
+              {t("viewAll")}
             </a>
           </div>
           <div className="space-y-3">
             {[
-              { name: "Bàn phím cơ K1", stock: 15, min: 50, warehouse: "Kho HCM" },
-              { name: "Chuột gaming M2", stock: 8, min: 30, warehouse: "Kho HN" },
-              { name: "Tai nghe wireless", stock: 5, min: 20, warehouse: "Kho DN" },
-              { name: "Webcam HD", stock: 12, min: 40, warehouse: "Kho HCM" },
+              { name: "Keyboard K1", stock: 15, min: 50, warehouse: "HCM Warehouse" },
+              { name: "Gaming Mouse M2", stock: 8, min: 30, warehouse: "HN Warehouse" },
+              { name: "Wireless Headset", stock: 5, min: 20, warehouse: "DN Warehouse" },
+              { name: "HD Webcam", stock: 12, min: 40, warehouse: "HCM Warehouse" },
             ].map((item, idx) => (
               <div key={idx} className="flex items-center justify-between p-3 border border-red-200 bg-red-50 rounded-lg">
                 <div>
@@ -256,7 +258,7 @@ export default function WMSDashboard() {
                 </div>
                 <div className="text-right">
                   <p className="font-semibold text-red-600">{item.stock} / {item.min}</p>
-                  <p className="text-xs text-red-500">Dưới mức tối thiểu</p>
+                  <p className="text-xs text-red-500">{t("belowMinimum")}</p>
                 </div>
               </div>
             ))}
@@ -268,19 +270,19 @@ export default function WMSDashboard() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <a href="/wms/stock" className="flex items-center gap-3 p-4 bg-white rounded-xl shadow-sm border hover:bg-gray-50">
           <Boxes className="w-5 h-5 text-blue-500" />
-          <span>Tồn kho</span>
+          <span>{t("stock")}</span>
         </a>
         <a href="/wms/products" className="flex items-center gap-3 p-4 bg-white rounded-xl shadow-sm border hover:bg-gray-50">
           <Package className="w-5 h-5 text-purple-500" />
-          <span>Sản phẩm</span>
+          <span>{t("productsCount")}</span>
         </a>
         <a href="/wms/transfers" className="flex items-center gap-3 p-4 bg-white rounded-xl shadow-sm border hover:bg-gray-50">
           <ArrowLeftRight className="w-5 h-5 text-green-500" />
-          <span>Điều chuyển</span>
+          <span>{t("transfers")}</span>
         </a>
         <a href="/wms/reports/inventory" className="flex items-center gap-3 p-4 bg-white rounded-xl shadow-sm border hover:bg-gray-50">
           <BarChart3 className="w-5 h-5 text-orange-500" />
-          <span>Báo cáo</span>
+          <span>{t("reports")}</span>
         </a>
       </div>
     </div>

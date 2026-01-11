@@ -1,24 +1,21 @@
 import { getRequestConfig } from 'next-intl/server';
 
-export const locales = ['vi', 'en', 'zh', 'ja', 'ko', 'th'] as const;
+export const locales = ['vi', 'en'] as const;
 export type Locale = (typeof locales)[number];
 
 export const localeNames: Record<Locale, string> = {
   vi: 'Tiếng Việt',
   en: 'English',
-  zh: '中文',
-  ja: '日本語',
-  ko: '한국어',
-  th: 'ไทย',
+};
+
+export const localeCodes: Record<Locale, string> = {
+  vi: 'VN',
+  en: 'EN',
 };
 
 export const localeFlags: Record<Locale, string> = {
   vi: '🇻🇳',
-  en: '🇺🇸',
-  zh: '🇨🇳',
-  ja: '🇯🇵',
-  ko: '🇰🇷',
-  th: '🇹🇭',
+  en: '🇬🇧',
 };
 
 export const defaultLocale: Locale = 'vi';

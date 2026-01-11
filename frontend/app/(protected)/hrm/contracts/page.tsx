@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
+import { useTranslations } from "next-intl";
 import {
   Plus,
   Search,
@@ -49,22 +50,12 @@ interface ContractListResponse {
   total_pages: number;
 }
 
-const CONTRACT_TYPES = [
-  { value: "PROBATION", label: "Thử việc" },
-  { value: "DEFINITE_1Y", label: "Xác định 1 năm" },
-  { value: "DEFINITE_2Y", label: "Xác định 2 năm" },
-  { value: "DEFINITE_3Y", label: "Xác định 3 năm" },
-  { value: "INDEFINITE", label: "Không xác định thời hạn" },
-  { value: "SEASONAL", label: "Thời vụ" },
-  { value: "PART_TIME", label: "Bán thời gian" },
-];
-
-const STATUS_MAP: Record<string, { label: string; color: string }> = {
-  DRAFT: { label: "Nháp", color: "bg-gray-100 text-gray-700" },
-  ACTIVE: { label: "Hiệu lực", color: "bg-green-100 text-green-700" },
-  EXPIRED: { label: "Hết hạn", color: "bg-yellow-100 text-yellow-700" },
-  TERMINATED: { label: "Chấm dứt", color: "bg-red-100 text-red-700" },
-  RENEWED: { label: "Đã gia hạn", color: "bg-blue-100 text-blue-700" },
+const STATUS_COLORS: Record<string, string> = {
+  DRAFT: "bg-gray-100 text-gray-700",
+  ACTIVE: "bg-green-100 text-green-700",
+  EXPIRED: "bg-yellow-100 text-yellow-700",
+  TERMINATED: "bg-red-100 text-red-700",
+  RENEWED: "bg-blue-100 text-blue-700",
 };
 
 // Format number with thousand separators
@@ -80,6 +71,9 @@ const parseFormattedNumber = (value: string): string => {
 };
 
 export default function ContractsPage() {
+  const t = useTranslations("hrm.contractsPage");
+  const tCommon = useTranslations("common");
+
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
@@ -269,7 +263,7 @@ export default function ContractsPage() {
       fetchContracts();
     } catch (error: any) {
       console.error("Failed to save contract:", error);
-      alert(error.message || "Không thể lưu hợp đồng");
+      alert(error.message || t("errors.saveFailed"));
     } finally {
       setSaving(false);
     }
@@ -297,7 +291,7 @@ export default function ContractsPage() {
     () => [
       {
         key: "contract_number",
-        header: "SỐ HĐ",
+        header: t("columns.contractNumber"),
         width: 140,
         minWidth: 100,
         sortable: true,
@@ -310,7 +304,7 @@ export default function ContractsPage() {
       },
       {
         key: "employee_name",
-        header: "NHÂN VIÊN",
+        header: t("columns.employee"),
         width: 200,
         minWidth: 150,
         sortable: true,
@@ -323,20 +317,19 @@ export default function ContractsPage() {
       },
       {
         key: "contract_type",
-        header: "LOẠI HĐ",
+        header: t("columns.contractType"),
         width: 160,
         minWidth: 120,
         sortable: true,
         render: (contract) => (
           <span className="text-sm text-gray-600">
-            {CONTRACT_TYPES.find((t) => t.value === contract.contract_type)?.label ||
-              contract.contract_type}
+            {t(`contractTypes.${contract.contract_type}`)}
           </span>
         ),
       },
       {
         key: "start_date",
-        header: "THỜI HẠN",
+        header: t("columns.duration"),
         width: 200,
         minWidth: 150,
         sortable: true,
@@ -349,7 +342,7 @@ export default function ContractsPage() {
             {isExpiringSoon(contract.end_date) && (
               <div className="flex items-center gap-1 text-orange-500 text-xs mt-1">
                 <AlertTriangle className="w-3 h-3" />
-                Sắp hết hạn
+                {t("expiringSoon")}
               </div>
             )}
           </div>
@@ -357,7 +350,7 @@ export default function ContractsPage() {
       },
       {
         key: "basic_salary",
-        header: "LƯƠNG CƠ BẢN",
+        header: t("columns.basicSalary"),
         width: 140,
         minWidth: 100,
         sortable: true,
@@ -368,23 +361,23 @@ export default function ContractsPage() {
       },
       {
         key: "status",
-        header: "TRẠNG THÁI",
+        header: t("columns.status"),
         width: 120,
         minWidth: 90,
         sortable: true,
         render: (contract) => (
           <span
             className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-              STATUS_MAP[contract.status]?.color || "bg-gray-100 text-gray-700"
+              STATUS_COLORS[contract.status] || "bg-gray-100 text-gray-700"
             }`}
           >
-            {STATUS_MAP[contract.status]?.label || contract.status}
+            {t(`status.${contract.status}`)}
           </span>
         ),
       },
       {
         key: "actions",
-        header: "THAO TÁC",
+        header: t("columns.actions"),
         width: 100,
         minWidth: 80,
         sortable: false,
@@ -396,14 +389,14 @@ export default function ContractsPage() {
               handleOpenModal(contract);
             }}
             className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded"
-            title="Sửa"
+            title={tCommon("edit")}
           >
             <Edit className="w-4 h-4" />
           </button>
         ),
       },
     ],
-    []
+    [t, tCommon]
   );
 
   return (
@@ -411,15 +404,15 @@ export default function ContractsPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Hợp đồng lao động</h1>
-          <p className="text-gray-600 mt-1">Quản lý hợp đồng nhân viên</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t("title")}</h1>
+          <p className="text-gray-600 mt-1">{t("subtitle")}</p>
         </div>
         <button
           onClick={() => handleOpenModal()}
           className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
         >
           <Plus className="w-4 h-4" />
-          Tạo hợp đồng
+          {t("createContract")}
         </button>
       </div>
 
@@ -430,7 +423,7 @@ export default function ContractsPage() {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="text"
-              placeholder="Tìm theo số HĐ, tên nhân viên..."
+              placeholder={t("searchPlaceholder")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               onKeyPress={(e) => e.key === "Enter" && handleSearch()}
@@ -446,25 +439,25 @@ export default function ContractsPage() {
             }}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
           >
-            <option value="">Tất cả trạng thái</option>
-            <option value="ACTIVE">Hiệu lực</option>
-            <option value="EXPIRED">Hết hạn</option>
-            <option value="DRAFT">Nháp</option>
-            <option value="TERMINATED">Chấm dứt</option>
+            <option value="">{t("filters.allStatus")}</option>
+            <option value="ACTIVE">{t("filters.active")}</option>
+            <option value="EXPIRED">{t("filters.expired")}</option>
+            <option value="DRAFT">{t("filters.draft")}</option>
+            <option value="TERMINATED">{t("filters.terminated")}</option>
           </select>
 
           <button
             onClick={handleSearch}
             className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
           >
-            Tìm kiếm
+            {tCommon("search")}
           </button>
         </div>
       </div>
 
       {/* Stats */}
       <div className="text-sm text-gray-600">
-        Tổng: <span className="font-medium">{total}</span> hợp đồng
+        {tCommon("total")}: <span className="font-medium">{total}</span> {t("totalContracts")}
       </div>
 
       {/* Data Table */}
@@ -472,7 +465,7 @@ export default function ContractsPage() {
         columns={columns}
         data={contracts}
         loading={loading}
-        emptyMessage="Không tìm thấy hợp đồng nào"
+        emptyMessage={t("noData")}
         rowKey={(c) => c.id}
         maxHeight="calc(100vh - 380px)"
         stickyHeader
@@ -486,7 +479,7 @@ export default function ContractsPage() {
         totalItems={total}
         onPageChange={setPage}
         onPageSizeChange={handlePageSizeChange}
-        itemName="hợp đồng"
+        itemName={t("totalContracts")}
         pageSizeOptions={[50, 100, 200]}
       />
 
@@ -496,7 +489,7 @@ export default function ContractsPage() {
           <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4">
             <div className="flex items-center justify-between px-6 py-4 border-b">
               <h2 className="text-lg font-semibold">
-                {editingContract ? "Sửa hợp đồng" : "Tạo hợp đồng mới"}
+                {editingContract ? t("modal.editTitle") : t("modal.createTitle")}
               </h2>
               <button onClick={handleCloseModal} className="p-1 hover:bg-gray-100 rounded">
                 <X className="w-5 h-5" />
@@ -507,7 +500,7 @@ export default function ContractsPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Nhân viên *
+                    {t("modal.employee")} *
                   </label>
                   <select
                     name="employee_id"
@@ -516,7 +509,7 @@ export default function ContractsPage() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     required
                   >
-                    <option value="">-- Chọn nhân viên --</option>
+                    <option value="">{t("modal.selectEmployee")}</option>
                     {employees.map((e) => (
                       <option key={e.id} value={e.id}>
                         {e.full_name} ({e.employee_code})
@@ -527,7 +520,7 @@ export default function ContractsPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Loại hợp đồng *
+                    {t("modal.contractType")} *
                   </label>
                   <select
                     name="contract_type"
@@ -536,17 +529,19 @@ export default function ContractsPage() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     required
                   >
-                    {CONTRACT_TYPES.map((t) => (
-                      <option key={t.value} value={t.value}>
-                        {t.label}
-                      </option>
-                    ))}
+                    <option value="PROBATION">{t("contractTypes.PROBATION")}</option>
+                    <option value="DEFINITE_1Y">{t("contractTypes.DEFINITE_1Y")}</option>
+                    <option value="DEFINITE_2Y">{t("contractTypes.DEFINITE_2Y")}</option>
+                    <option value="DEFINITE_3Y">{t("contractTypes.DEFINITE_3Y")}</option>
+                    <option value="INDEFINITE">{t("contractTypes.INDEFINITE")}</option>
+                    <option value="SEASONAL">{t("contractTypes.SEASONAL")}</option>
+                    <option value="PART_TIME">{t("contractTypes.PART_TIME")}</option>
                   </select>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Lương cơ bản *
+                    {t("modal.basicSalary")} *
                   </label>
                   <div className="relative">
                     <input
@@ -558,13 +553,13 @@ export default function ContractsPage() {
                       className="w-full px-3 py-2 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                       required
                     />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">đ</span>
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">d</span>
                   </div>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Ngày bắt đầu *
+                    {t("modal.startDate")} *
                   </label>
                   <input
                     type="date"
@@ -578,7 +573,7 @@ export default function ContractsPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Ngày kết thúc
+                    {t("modal.endDate")}
                   </label>
                   <input
                     type="date"
@@ -591,7 +586,7 @@ export default function ContractsPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Lương đóng bảo hiểm
+                    {t("modal.insuranceSalary")}
                   </label>
                   <div className="relative">
                     <input
@@ -602,13 +597,13 @@ export default function ContractsPage() {
                       placeholder="0"
                       className="w-full px-3 py-2 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">đ</span>
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">d</span>
                   </div>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Phụ cấp
+                    {t("modal.allowances")}
                   </label>
                   <div className="relative">
                     <input
@@ -619,13 +614,13 @@ export default function ContractsPage() {
                       placeholder="0"
                       className="w-full px-3 py-2 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">đ</span>
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">d</span>
                   </div>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    % lương thử việc
+                    {t("modal.probationPercent")}
                   </label>
                   <div className="relative">
                     <input
@@ -644,7 +639,7 @@ export default function ContractsPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Nơi làm việc (Chi nhánh)
+                  {t("modal.workLocation")}
                 </label>
                 <select
                   name="work_location"
@@ -652,7 +647,7 @@ export default function ContractsPage() {
                   onChange={handleChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="">-- Chọn chi nhánh --</option>
+                  <option value="">{t("modal.selectBranch")}</option>
                   {branches.map((b) => (
                     <option key={b.id} value={b.id}>
                       {b.name}
@@ -663,7 +658,7 @@ export default function ContractsPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Mô tả công việc
+                  {t("modal.jobDescription")}
                 </label>
                 <textarea
                   name="job_description"
@@ -676,7 +671,7 @@ export default function ContractsPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Ghi chú
+                  {t("modal.notes")}
                 </label>
                 <textarea
                   name="notes"
@@ -693,7 +688,7 @@ export default function ContractsPage() {
                   onClick={handleCloseModal}
                   className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
                 >
-                  Hủy
+                  {tCommon("cancel")}
                 </button>
                 <button
                   type="submit"
@@ -701,7 +696,7 @@ export default function ContractsPage() {
                   className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
                 >
                   <Save className="w-4 h-4" />
-                  {saving ? "Đang lưu..." : "Lưu"}
+                  {saving ? tCommon("loading") : tCommon("save")}
                 </button>
               </div>
             </form>

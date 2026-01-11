@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "i18n:sync": "npx ts-node --skip-project scripts/i18n-sync.ts",
+    "i18n:scan": "npx ts-node --skip-project scripts/i18n-scan.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

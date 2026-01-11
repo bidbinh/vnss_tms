@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import {
   Truck,
   Package,
@@ -68,7 +69,7 @@ const MODULE_COLORS: Record<string, { bg: string; text: string; icon: string }> 
   dms: { bg: "bg-yellow-50", text: "text-yellow-700", icon: "text-yellow-500" },
 };
 
-// Button outline colors for "Truy cập" button (border + text, hover fills bg)
+// Button outline colors for "Access" button (border + text, hover fills bg)
 const MODULE_BUTTON_COLORS: Record<string, string> = {
   tms: "border-blue-500 text-blue-600 hover:bg-blue-500 hover:text-white",
   wms: "border-purple-500 text-purple-600 hover:bg-purple-500 hover:text-white",
@@ -85,21 +86,21 @@ const MODULE_BUTTON_COLORS: Record<string, string> = {
   dms: "border-yellow-500 text-yellow-600 hover:bg-yellow-500 hover:text-white",
 };
 
-// Default stats labels for each module
-const MODULE_STAT_LABELS: Record<string, string[]> = {
-  tms: ["Chuyến xe", "Xe", "Tài xế"],
-  wms: ["Sản phẩm", "Đơn nhập", "Đơn xuất"],
-  fms: ["Lô hàng", "Shipments", "Tờ khai"],
-  pms: ["Cont trong bãi", "Xe chờ", "Tàu cập cảng"],
-  ems: ["Đơn hôm nay", "Đang giao", "COD thu"],
-  mes: ["Lệnh SX", "Đang SX", "Hoàn thành"],
-  crm: ["Khách hàng", "Cơ hội", "Báo giá"],
-  hrm: ["Nhân viên", "Nghỉ phép", "Tuyển dụng"],
-  accounting: ["Phải thu", "Phải trả", "Số dư"],
-  controlling: ["Cost Centers", "Ngân sách", "Variance"],
-  project: ["Dự án", "Tasks", "Milestones"],
-  workflow: ["Quy trình", "Chờ duyệt", "Hoàn thành"],
-  dms: ["Tài liệu", "Thư mục", "Chia sẻ"],
+// Default stats labels for each module (translation keys)
+const MODULE_STAT_KEYS: Record<string, string[]> = {
+  tms: ["stats.trips", "stats.vehicles", "stats.drivers"],
+  wms: ["stats.products", "stats.inboundOrders", "stats.outboundOrders"],
+  fms: ["stats.shipments", "stats.shipments", "stats.declarations"],
+  pms: ["stats.containersInYard", "stats.waitingTrucks", "stats.vesselsDocked"],
+  ems: ["stats.ordersToday", "stats.delivering", "stats.codCollected"],
+  mes: ["stats.productionOrders", "stats.inProduction", "stats.completed"],
+  crm: ["stats.customers", "stats.opportunities", "stats.quotes"],
+  hrm: ["stats.employees", "stats.leaves", "stats.recruitment"],
+  accounting: ["stats.receivable", "stats.payable", "stats.balance"],
+  controlling: ["stats.costCenters", "stats.budget", "stats.variance"],
+  project: ["stats.projects", "stats.tasks", "stats.milestones"],
+  workflow: ["stats.workflows", "stats.pendingApproval", "stats.completed"],
+  dms: ["stats.documents", "stats.folders", "stats.shared"],
 };
 
 interface ModuleFromAPI {
@@ -160,6 +161,7 @@ function formatCurrency(amount: number): string {
 
 export default function PlatformDashboardPage() {
   const router = useRouter();
+  const t = useTranslations("platformDashboard");
   const [loading, setLoading] = useState(true);
   const [modules, setModules] = useState<ModuleCard[]>([]);
   const [tenantName, setTenantName] = useState<string>("");
@@ -181,11 +183,11 @@ export default function PlatformDashboardPage() {
         const data = await apiFetch<TenantMeResponse>("/tenant/me");
         setTenantName(data.tenant.name);
 
-        // Initialize default stats
+        // Initialize default stats with translation keys
         const defaultStats: Record<string, { label: string; value: string | number }[]> = {};
         data.modules.forEach((m) => {
-          const labels = MODULE_STAT_LABELS[m.id] || ["Item 1", "Item 2", "Item 3"];
-          defaultStats[m.id] = labels.map((label) => ({ label, value: "-" }));
+          const keys = MODULE_STAT_KEYS[m.id] || ["stats.items", "stats.items", "stats.items"];
+          defaultStats[m.id] = keys.map((key) => ({ label: key, value: "-" }));
         });
         setModuleStats(defaultStats);
 
@@ -228,7 +230,7 @@ export default function PlatformDashboardPage() {
             id: "tms",
             name: "TMS",
             fullName: "Transportation Management",
-            description: "Quản lý vận tải, đơn hàng, xe và tài xế",
+            description: "Manage transportation, orders, vehicles and drivers",
             icon: Truck,
             href: "/tms",
             enabled: true,
@@ -265,9 +267,9 @@ export default function PlatformDashboardPage() {
         ]);
         const totalVehicles = (dashboardStats?.tractors?.total || 0) + (dashboardStats?.trailers?.total || 0);
         stats.tms = [
-          { label: "Chuyến xe", value: formatNumber(tripStats?.total_trips || 0) },
-          { label: "Xe", value: formatNumber(totalVehicles) },
-          { label: "Tài xế", value: formatNumber(dashboardStats?.drivers?.active || 0) },
+          { label: "stats.trips", value: formatNumber(tripStats?.total_trips || 0) },
+          { label: "stats.vehicles", value: formatNumber(totalVehicles) },
+          { label: "stats.drivers", value: formatNumber(dashboardStats?.drivers?.active || 0) },
         ];
       } catch (e) {
         console.error("TMS stats error:", e);
@@ -283,9 +285,9 @@ export default function PlatformDashboardPage() {
           apiFetch<{ items: unknown[] }>("/hrm/recruitment/jobs?status=OPEN").catch(() => ({ items: [] })),
         ]);
         stats.hrm = [
-          { label: "Nhân viên", value: formatNumber(employeesRes.total || employeesRes.items?.length || 0) },
-          { label: "Nghỉ phép", value: formatNumber((leavesRes as { total?: number }).total || leavesRes.items?.length || 0) },
-          { label: "Tuyển dụng", value: formatNumber((jobsRes as { total?: number }).total || jobsRes.items?.length || 0) },
+          { label: "stats.employees", value: formatNumber(employeesRes.total || employeesRes.items?.length || 0) },
+          { label: "stats.leaves", value: formatNumber((leavesRes as { total?: number }).total || leavesRes.items?.length || 0) },
+          { label: "stats.recruitment", value: formatNumber((jobsRes as { total?: number }).total || jobsRes.items?.length || 0) },
         ];
         setTotalUsers(employeesRes.total || employeesRes.items?.length || 0);
       } catch (e) {
@@ -302,9 +304,9 @@ export default function PlatformDashboardPage() {
           apiFetch<{ total: number; items: unknown[] }>("/crm/quotes?page_size=1").catch(() => ({ total: 0, items: [] })),
         ]);
         stats.crm = [
-          { label: "Khách hàng", value: formatNumber(accountsRes.total || accountsRes.items?.length || 0) },
-          { label: "Cơ hội", value: formatNumber(opportunitiesRes.total || opportunitiesRes.items?.length || 0) },
-          { label: "Báo giá", value: formatNumber(quotesRes.total || quotesRes.items?.length || 0) },
+          { label: "stats.customers", value: formatNumber(accountsRes.total || accountsRes.items?.length || 0) },
+          { label: "stats.opportunities", value: formatNumber(opportunitiesRes.total || opportunitiesRes.items?.length || 0) },
+          { label: "stats.quotes", value: formatNumber(quotesRes.total || quotesRes.items?.length || 0) },
         ];
       } catch (e) {
         console.error("CRM stats error:", e);
@@ -320,9 +322,9 @@ export default function PlatformDashboardPage() {
           apiFetch<{ total: number; items: unknown[] }>("/wms/delivery-orders?page_size=1").catch(() => ({ total: 0, items: [] })),
         ]);
         stats.wms = [
-          { label: "Sản phẩm", value: formatNumber(productsRes.total || productsRes.items?.length || 0) },
-          { label: "Đơn nhập", value: formatNumber(receiptsRes.total || receiptsRes.items?.length || 0) },
-          { label: "Đơn xuất", value: formatNumber(deliveriesRes.total || deliveriesRes.items?.length || 0) },
+          { label: "stats.products", value: formatNumber(productsRes.total || productsRes.items?.length || 0) },
+          { label: "stats.inboundOrders", value: formatNumber(receiptsRes.total || receiptsRes.items?.length || 0) },
+          { label: "stats.outboundOrders", value: formatNumber(deliveriesRes.total || deliveriesRes.items?.length || 0) },
         ];
       } catch (e) {
         console.error("WMS stats error:", e);
@@ -337,9 +339,9 @@ export default function PlatformDashboardPage() {
           apiFetch<{ total: number; items: unknown[] }>("/fms/rates?page_size=1").catch(() => ({ total: 0, items: [] })),
         ]);
         stats.fms = [
-          { label: "Shipments", value: formatNumber(shipmentsRes.total || shipmentsRes.items?.length || 0) },
-          { label: "Rates", value: formatNumber(ratesRes.total || ratesRes.items?.length || 0) },
-          { label: "Tờ khai", value: "-" },
+          { label: "stats.shipments", value: formatNumber(shipmentsRes.total || shipmentsRes.items?.length || 0) },
+          { label: "stats.shipments", value: formatNumber(ratesRes.total || ratesRes.items?.length || 0) },
+          { label: "stats.declarations", value: "-" },
         ];
       } catch (e) {
         console.error("FMS stats error:", e);
@@ -355,9 +357,9 @@ export default function PlatformDashboardPage() {
           apiFetch<{ total: number; items: unknown[] }>("/accounting/journal-entries?page_size=1").catch(() => ({ total: 0, items: [] })),
         ]);
         stats.accounting = [
-          { label: "Hóa đơn", value: formatNumber(invoicesRes.total || invoicesRes.items?.length || 0) },
-          { label: "Chi phí", value: formatNumber(billsRes.total || billsRes.items?.length || 0) },
-          { label: "Bút toán", value: formatNumber(journalRes.total || journalRes.items?.length || 0) },
+          { label: "stats.receivable", value: formatNumber(invoicesRes.total || invoicesRes.items?.length || 0) },
+          { label: "stats.payable", value: formatNumber(billsRes.total || billsRes.items?.length || 0) },
+          { label: "stats.balance", value: formatNumber(journalRes.total || journalRes.items?.length || 0) },
         ];
       } catch (e) {
         console.error("Accounting stats error:", e);
@@ -371,9 +373,9 @@ export default function PlatformDashboardPage() {
           apiFetch<{ items: unknown[] }>("/workflow/workflow-definitions").catch(() => ({ items: [] })),
         ]);
         stats.workflow = [
-          { label: "Quy trình", value: formatNumber(definitionsRes.items?.length || 0) },
-          { label: "Chờ duyệt", value: "-" },
-          { label: "Hoàn thành", value: "-" },
+          { label: "stats.workflows", value: formatNumber(definitionsRes.items?.length || 0) },
+          { label: "stats.pendingApproval", value: "-" },
+          { label: "stats.completed", value: "-" },
         ];
       } catch (e) {
         console.error("Workflow stats error:", e);
@@ -388,9 +390,9 @@ export default function PlatformDashboardPage() {
           apiFetch<{ total: number; items: unknown[] }>("/dms/folders?page_size=1").catch(() => ({ total: 0, items: [] })),
         ]);
         stats.dms = [
-          { label: "Tài liệu", value: formatNumber(documentsRes.total || documentsRes.items?.length || 0) },
-          { label: "Thư mục", value: formatNumber(foldersRes.total || foldersRes.items?.length || 0) },
-          { label: "Chia sẻ", value: "-" },
+          { label: "stats.documents", value: formatNumber(documentsRes.total || documentsRes.items?.length || 0) },
+          { label: "stats.folders", value: formatNumber(foldersRes.total || foldersRes.items?.length || 0) },
+          { label: "stats.shared", value: "-" },
         ];
       } catch (e) {
         console.error("DMS stats error:", e);
@@ -404,9 +406,9 @@ export default function PlatformDashboardPage() {
           apiFetch<{ total: number; items: unknown[] }>("/mes/production-orders?page_size=1").catch(() => ({ total: 0, items: [] })),
         ]);
         stats.mes = [
-          { label: "Lệnh SX", value: formatNumber(productionOrdersRes.total || productionOrdersRes.items?.length || 0) },
-          { label: "Đang SX", value: "-" },
-          { label: "Hoàn thành", value: "-" },
+          { label: "stats.productionOrders", value: formatNumber(productionOrdersRes.total || productionOrdersRes.items?.length || 0) },
+          { label: "stats.inProduction", value: "-" },
+          { label: "stats.completed", value: "-" },
         ];
       } catch (e) {
         console.error("MES stats error:", e);
@@ -477,18 +479,8 @@ export default function PlatformDashboardPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            {tenantName || "9log.tech Platform"}
-          </h1>
-          <p className="text-gray-600 mt-1">Logistics ERP - Chọn module để bắt đầu</p>
+          <p className="text-gray-600">{t("selectModule")}</p>
         </div>
-        <Link
-          href="/"
-          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 bg-white border border-gray-200 hover:border-gray-300 rounded-lg transition-colors"
-        >
-          <Home className="w-4 h-4" />
-          Trang chủ
-        </Link>
       </div>
 
       {/* Quick Stats */}
@@ -499,7 +491,7 @@ export default function PlatformDashboardPage() {
               <CheckCircle2 className="w-5 h-5 text-blue-600" />
             </div>
             <div>
-              <div className="text-sm text-gray-600">Modules Active</div>
+              <div className="text-sm text-gray-600">{t("modulesActive")}</div>
               <div className="text-xl font-bold">{enabledCount} / {totalCount}</div>
             </div>
           </div>
@@ -511,7 +503,7 @@ export default function PlatformDashboardPage() {
               <Users className="w-5 h-5 text-green-600" />
             </div>
             <div>
-              <div className="text-sm text-gray-600">Nhân viên</div>
+              <div className="text-sm text-gray-600">{t("employees")}</div>
               <div className="text-xl font-bold">{totalUsers > 0 ? formatNumber(totalUsers) : "-"}</div>
             </div>
           </div>
@@ -523,7 +515,7 @@ export default function PlatformDashboardPage() {
               <Clock className="w-5 h-5 text-orange-600" />
             </div>
             <div>
-              <div className="text-sm text-gray-600">Pending Tasks</div>
+              <div className="text-sm text-gray-600">{t("pendingTasks")}</div>
               <div className="text-xl font-bold">-</div>
             </div>
           </div>
@@ -535,7 +527,7 @@ export default function PlatformDashboardPage() {
               <AlertCircle className="w-5 h-5 text-red-600" />
             </div>
             <div>
-              <div className="text-sm text-gray-600">Alerts</div>
+              <div className="text-sm text-gray-600">{t("alerts")}</div>
               <div className="text-xl font-bold">-</div>
             </div>
           </div>
@@ -545,8 +537,8 @@ export default function PlatformDashboardPage() {
       {/* Module Cards */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold">Modules ({totalCount})</h2>
-          <span className="text-xs text-gray-400">Kéo thả để sắp xếp</span>
+          <h2 className="text-lg font-semibold">{t("modules")} ({totalCount})</h2>
+          <span className="text-xs text-gray-400">{t("dragToReorder")}</span>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {modules.map((module) => {
@@ -574,11 +566,11 @@ export default function PlatformDashboardPage() {
                         <h3 className={`font-bold text-lg ${module.colors.text}`}>{module.name}</h3>
                         {module.enabled ? (
                           <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
-                            Active
+                            {t("active")}
                           </span>
                         ) : (
                           <span className="text-xs bg-gray-200 text-gray-500 px-2 py-0.5 rounded-full">
-                            Coming Soon
+                            {t("comingSoon")}
                           </span>
                         )}
                       </div>
@@ -601,7 +593,7 @@ export default function PlatformDashboardPage() {
                       {stats.map((stat, idx) => (
                         <div key={idx} className="text-center p-2 bg-gray-50 rounded">
                           <div className="text-lg font-bold text-gray-800">{stat.value}</div>
-                          <div className="text-xs text-gray-500">{stat.label}</div>
+                          <div className="text-xs text-gray-500">{t(stat.label)}</div>
                         </div>
                       ))}
                     </div>
@@ -613,7 +605,7 @@ export default function PlatformDashboardPage() {
                       href={module.href}
                       className={`flex items-center justify-center gap-2 w-full py-2 px-4 bg-white border-2 rounded-lg transition-all ${MODULE_BUTTON_COLORS[module.id] || "border-gray-400 text-gray-600 hover:bg-gray-400 hover:text-white"}`}
                     >
-                      <span>Truy cập</span>
+                      <span>{t("access")}</span>
                       <ArrowRight className="w-4 h-4" />
                     </Link>
                   ) : (
@@ -621,7 +613,7 @@ export default function PlatformDashboardPage() {
                       disabled
                       className="flex items-center justify-center gap-2 w-full py-2 px-4 bg-gray-100 text-gray-400 rounded-lg cursor-not-allowed"
                     >
-                      <span>Liên hệ kích hoạt</span>
+                      <span>{t("contactToActivate")}</span>
                     </button>
                   )}
                 </div>
@@ -635,13 +627,13 @@ export default function PlatformDashboardPage() {
       <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="font-medium text-gray-800">Cần thêm modules?</h3>
+            <h3 className="font-medium text-gray-800">{t("needMoreModules")}</h3>
             <p className="text-sm text-gray-600">
-              Liên hệ với chúng tôi để kích hoạt thêm modules cho doanh nghiệp của bạn
+              {t("contactUsToActivate")}
             </p>
           </div>
           <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-            Liên hệ
+            {t("contact")}
           </button>
         </div>
       </div>

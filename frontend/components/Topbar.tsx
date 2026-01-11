@@ -114,12 +114,11 @@ export default function Topbar({ onAIClick, isAIOpen }: TopbarProps) {
 
   return (
     <header className="h-14 bg-white border-b border-gray-200 flex items-center justify-between px-6">
-      {/* Left side - Platform info */}
+      {/* Left side - Tenant info only (logo is in sidebar) */}
       <div className="flex items-center gap-3">
-        <span className="text-sm text-gray-600">9log.tech - Logistics ERP</span>
         {user?.tenant_name && (
-          <span className="flex items-center gap-1 text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-            <Building2 className="w-3 h-3" />
+          <span className="flex items-center gap-1.5 text-sm font-medium text-gray-700">
+            <Building2 className="w-4 h-4 text-gray-500" />
             {user.tenant_name}
           </span>
         )}

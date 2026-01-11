@@ -43,6 +43,10 @@ class AIParseResult:
     provider_used: Optional[str] = None  # Which provider was used
     latency_ms: int = 0  # API latency in milliseconds
 
+    # Token tracking for billing
+    input_tokens: int = 0
+    output_tokens: int = 0
+
     # Session tracking for audit trail
     session_id: Optional[str] = None  # AIParsingSession ID
     rules_applied: List[str] = field(default_factory=list)  # List of rule IDs applied
@@ -862,12 +866,14 @@ class AIDocumentParser:
                         result.session_id = session_id
                         logger.info(f"parse_pdf_with_ai: {provider.provider_code} success! doc_type={result.document_type}")
 
-                        # Log usage
+                        # Log usage with token counts
                         if self._get_config_service():
                             self._get_config_service().log_usage(
                                 feature_code=FEATURE_CODE,
                                 provider_code=provider.provider_code,
                                 model_used=provider.default_model or "unknown",
+                                input_tokens=result.input_tokens,
+                                output_tokens=result.output_tokens,
                                 latency_ms=latency_ms,
                                 success=True,
                                 tenant_id=tenant_id,
@@ -1039,7 +1045,11 @@ class AIDocumentParser:
                     parsed = json.loads(text)
                     result = self._map_to_result(parsed)
                     result.success = True
-                    logger.info(f"_parse_with_gemini: Successfully parsed, doc_type={result.document_type}")
+                    # Extract token usage from Gemini response
+                    usage_metadata = data.get("usageMetadata", {})
+                    result.input_tokens = usage_metadata.get("promptTokenCount", 0)
+                    result.output_tokens = usage_metadata.get("candidatesTokenCount", 0)
+                    logger.info(f"_parse_with_gemini: Successfully parsed, doc_type={result.document_type}, tokens={result.input_tokens}+{result.output_tokens}")
                 except (KeyError, json.JSONDecodeError) as e:
                     result.error = f"Failed to parse Gemini response: {str(e)}"
                     logger.error(f"_parse_with_gemini: Parse error: {result.error}")
@@ -1128,7 +1138,11 @@ class AIDocumentParser:
                     parsed = json.loads(text.strip())
                     result = self._map_to_result(parsed)
                     result.success = True
-                    logger.info(f"_parse_with_claude: Successfully parsed, doc_type={result.document_type}")
+                    # Extract token usage from Claude response
+                    usage = data.get("usage", {})
+                    result.input_tokens = usage.get("input_tokens", 0)
+                    result.output_tokens = usage.get("output_tokens", 0)
+                    logger.info(f"_parse_with_claude: Successfully parsed, doc_type={result.document_type}, tokens={result.input_tokens}+{result.output_tokens}")
                 except (KeyError, json.JSONDecodeError) as e:
                     result.error = f"Failed to parse Claude response: {str(e)}"
                     logger.error(f"_parse_with_claude: Parse error: {result.error}")
@@ -1222,7 +1236,11 @@ class AIDocumentParser:
                     parsed = json.loads(text)
                     result = self._map_to_result(parsed)
                     result.success = True
-                    logger.info(f"_parse_with_openai: Successfully parsed, doc_type={result.document_type}")
+                    # Extract token usage for billing
+                    usage = data.get("usage", {})
+                    result.input_tokens = usage.get("prompt_tokens", 0)
+                    result.output_tokens = usage.get("completion_tokens", 0)
+                    logger.info(f"_parse_with_openai: Successfully parsed, doc_type={result.document_type}, tokens={result.input_tokens}+{result.output_tokens}")
                 except (KeyError, json.JSONDecodeError) as e:
                     result.error = f"Failed to parse OpenAI response: {str(e)}"
                     logger.error(f"_parse_with_openai: Parse error: {result.error}")
@@ -1341,7 +1359,11 @@ class AIDocumentParser:
                     parsed = json.loads(text.strip())
                     result = self._map_to_result(parsed)
                     result.success = True
-                    logger.info(f"_parse_with_openai_compatible: Successfully parsed, doc_type={result.document_type}")
+                    # Extract token usage for billing
+                    usage = data.get("usage", {})
+                    result.input_tokens = usage.get("prompt_tokens", 0)
+                    result.output_tokens = usage.get("completion_tokens", 0)
+                    logger.info(f"_parse_with_openai_compatible: Successfully parsed, doc_type={result.document_type}, tokens={result.input_tokens}+{result.output_tokens}")
                 except (KeyError, json.JSONDecodeError) as e:
                     result.error = f"Failed to parse response: {str(e)}"
                     logger.error(f"_parse_with_openai_compatible: Parse error: {result.error}")

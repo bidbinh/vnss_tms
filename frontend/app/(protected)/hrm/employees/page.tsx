@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import {
   Plus,
   Search,
@@ -16,7 +17,7 @@ import {
   Mail,
 } from "lucide-react";
 import { apiFetch } from "@/lib/api";
-import DataTable, { Column, TablePagination, PageSizeSelector } from "@/components/DataTable";
+import DataTable, { Column, TablePagination } from "@/components/DataTable";
 
 interface Employee {
   id: string;
@@ -40,26 +41,23 @@ interface EmployeeListResponse {
   total_pages: number;
 }
 
-const STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  ACTIVE: { label: "Đang làm việc", color: "bg-green-100 text-green-700" },
-  PROBATION: { label: "Thử việc", color: "bg-blue-100 text-blue-700" },
-  ON_LEAVE: { label: "Nghỉ phép", color: "bg-yellow-100 text-yellow-700" },
-  SUSPENDED: { label: "Tạm đình chỉ", color: "bg-red-100 text-red-700" },
-  RESIGNED: { label: "Đã nghỉ", color: "bg-gray-100 text-gray-700" },
-  TERMINATED: { label: "Chấm dứt", color: "bg-gray-100 text-gray-700" },
-};
-
-const TYPE_LABELS: Record<string, string> = {
-  FULL_TIME: "Toàn thời gian",
-  PART_TIME: "Bán thời gian",
-  CONTRACT: "Hợp đồng",
-  INTERN: "Thực tập",
-  FREELANCER: "CTV",
-  DRIVER: "Tài xế",
-};
-
 function PageContent() {
   const searchParams = useSearchParams();
+  const t = useTranslations("hrm.employeesPage");
+  const tStatus = useTranslations("hrm.employeesPage.status");
+  const tTypes = useTranslations("hrm.employeesPage.types");
+  const tColumns = useTranslations("hrm.employeesPage.columns");
+  const tFilters = useTranslations("hrm.employeesPage.filters");
+  const tCommon = useTranslations("common");
+
+  const STATUS_COLORS: Record<string, string> = {
+    ACTIVE: "bg-green-100 text-green-700",
+    PROBATION: "bg-blue-100 text-blue-700",
+    ON_LEAVE: "bg-yellow-100 text-yellow-700",
+    SUSPENDED: "bg-red-100 text-red-700",
+    RESIGNED: "bg-gray-100 text-gray-700",
+    TERMINATED: "bg-gray-100 text-gray-700",
+  };
 
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
@@ -111,14 +109,14 @@ function PageContent() {
 
   const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!confirm("Bạn có chắc muốn xóa nhân viên này?")) return;
+    if (!confirm(t("confirmDelete"))) return;
 
     try {
       await apiFetch(`/hrm/employees/${id}`, { method: "DELETE" });
       fetchEmployees();
     } catch (error) {
       console.error("Failed to delete employee:", error);
-      alert("Không thể xóa nhân viên");
+      alert(t("deleteError"));
     }
   };
 
@@ -137,7 +135,7 @@ function PageContent() {
     () => [
       {
         key: "full_name",
-        header: "NHÂN VIÊN",
+        header: tColumns("employee"),
         width: 200,
         minWidth: 150,
         sortable: true,
@@ -150,7 +148,7 @@ function PageContent() {
       },
       {
         key: "phone",
-        header: "LIÊN HỆ",
+        header: tColumns("contact"),
         width: 180,
         minWidth: 120,
         sortable: true,
@@ -174,7 +172,7 @@ function PageContent() {
       },
       {
         key: "department_name",
-        header: "PHÒNG BAN",
+        header: tColumns("department"),
         width: 160,
         minWidth: 100,
         sortable: true,
@@ -190,7 +188,7 @@ function PageContent() {
       },
       {
         key: "position_name",
-        header: "CHỨC VỤ",
+        header: tColumns("position"),
         width: 150,
         minWidth: 100,
         sortable: true,
@@ -206,35 +204,35 @@ function PageContent() {
       },
       {
         key: "employee_type",
-        header: "LOẠI",
+        header: tColumns("type"),
         width: 120,
         minWidth: 80,
         sortable: true,
         render: (emp) => (
           <span className="text-sm text-gray-600">
-            {TYPE_LABELS[emp.employee_type] || emp.employee_type}
+            {tTypes(emp.employee_type)}
           </span>
         ),
       },
       {
         key: "status",
-        header: "TRẠNG THÁI",
+        header: tColumns("status"),
         width: 130,
         minWidth: 100,
         sortable: true,
         render: (emp) => (
           <span
             className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-              STATUS_LABELS[emp.status]?.color || "bg-gray-100 text-gray-700"
+              STATUS_COLORS[emp.status] || "bg-gray-100 text-gray-700"
             }`}
           >
-            {STATUS_LABELS[emp.status]?.label || emp.status}
+            {tStatus(emp.status)}
           </span>
         ),
       },
       {
         key: "join_date",
-        header: "NGÀY VÀO",
+        header: tColumns("joinDate"),
         width: 110,
         minWidth: 90,
         sortable: true,
@@ -244,7 +242,7 @@ function PageContent() {
       },
       {
         key: "actions",
-        header: "THAO TÁC",
+        header: tColumns("actions"),
         width: 120,
         minWidth: 100,
         sortable: false,
@@ -254,7 +252,7 @@ function PageContent() {
             <Link
               href={`/hrm/employees/${emp.id}`}
               className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded"
-              title="Xem chi tiết"
+              title={tCommon("view")}
               onClick={(e) => e.stopPropagation()}
             >
               <Eye className="w-4 h-4" />
@@ -262,7 +260,7 @@ function PageContent() {
             <Link
               href={`/hrm/employees/${emp.id}/edit`}
               className="p-1.5 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded"
-              title="Chỉnh sửa"
+              title={tCommon("edit")}
               onClick={(e) => e.stopPropagation()}
             >
               <Edit className="w-4 h-4" />
@@ -270,7 +268,7 @@ function PageContent() {
             <button
               onClick={(e) => handleDelete(emp.id, e)}
               className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded"
-              title="Xóa"
+              title={tCommon("delete")}
             >
               <Trash2 className="w-4 h-4" />
             </button>
@@ -278,7 +276,7 @@ function PageContent() {
         ),
       },
     ],
-    []
+    [tColumns, tStatus, tTypes, tCommon]
   );
 
   return (
@@ -286,8 +284,8 @@ function PageContent() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Danh sách nhân viên</h1>
-          <p className="text-gray-600 mt-1">Quản lý thông tin nhân viên</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t("title")}</h1>
+          <p className="text-gray-600 mt-1">{t("subtitle")}</p>
         </div>
         <div className="flex items-center gap-2">
           <Link
@@ -295,7 +293,7 @@ function PageContent() {
             className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           >
             <Plus className="w-4 h-4" />
-            Thêm nhân viên
+            {t("addEmployee")}
           </Link>
         </div>
       </div>
@@ -308,7 +306,7 @@ function PageContent() {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="text"
-              placeholder="Tìm theo tên, mã NV, điện thoại, email..."
+              placeholder={tFilters("searchPlaceholder")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               onKeyPress={handleKeyPress}
@@ -325,12 +323,12 @@ function PageContent() {
             }}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           >
-            <option value="">Tất cả trạng thái</option>
-            <option value="ACTIVE">Đang làm việc</option>
-            <option value="PROBATION">Thử việc</option>
-            <option value="ON_LEAVE">Nghỉ phép</option>
-            <option value="SUSPENDED">Tạm đình chỉ</option>
-            <option value="RESIGNED">Đã nghỉ</option>
+            <option value="">{tFilters("allStatus")}</option>
+            <option value="ACTIVE">{tStatus("ACTIVE")}</option>
+            <option value="PROBATION">{tStatus("PROBATION")}</option>
+            <option value="ON_LEAVE">{tStatus("ON_LEAVE")}</option>
+            <option value="SUSPENDED">{tStatus("SUSPENDED")}</option>
+            <option value="RESIGNED">{tStatus("RESIGNED")}</option>
           </select>
 
           {/* Type Filter */}
@@ -342,13 +340,13 @@ function PageContent() {
             }}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           >
-            <option value="">Tất cả loại</option>
-            <option value="FULL_TIME">Toàn thời gian</option>
-            <option value="PART_TIME">Bán thời gian</option>
-            <option value="CONTRACT">Hợp đồng</option>
-            <option value="INTERN">Thực tập</option>
-            <option value="DRIVER">Tài xế</option>
-            <option value="FREELANCER">Cộng tác viên</option>
+            <option value="">{tFilters("allTypes")}</option>
+            <option value="FULL_TIME">{tTypes("FULL_TIME")}</option>
+            <option value="PART_TIME">{tTypes("PART_TIME")}</option>
+            <option value="CONTRACT">{tTypes("CONTRACT")}</option>
+            <option value="INTERN">{tTypes("INTERN")}</option>
+            <option value="DRIVER">{tTypes("DRIVER")}</option>
+            <option value="FREELANCER">{tTypes("FREELANCER")}</option>
           </select>
 
           <button
@@ -362,7 +360,7 @@ function PageContent() {
 
       {/* Stats */}
       <div className="text-sm text-gray-600">
-        Tổng: <span className="font-medium">{total}</span> nhân viên
+        {tCommon("total")}: <span className="font-medium">{total}</span> {t("employees")}
       </div>
 
       {/* Data Table */}
@@ -370,7 +368,7 @@ function PageContent() {
         columns={columns}
         data={employees}
         loading={loading}
-        emptyMessage="Không tìm thấy nhân viên nào"
+        emptyMessage={t("noEmployees")}
         rowKey={(emp) => emp.id}
         maxHeight="calc(100vh - 380px)"
         stickyHeader
@@ -384,7 +382,7 @@ function PageContent() {
         totalItems={total}
         onPageChange={setPage}
         onPageSizeChange={handlePageSizeChange}
-        itemName="nhân viên"
+        itemName={t("employees")}
         pageSizeOptions={[50, 100, 200]}
       />
     </div>
@@ -392,8 +390,9 @@ function PageContent() {
 }
 
 export default function EmployeeListPage() {
+  const t = useTranslations("common");
   return (
-    <Suspense fallback={<div className="p-6">Đang tải...</div>}>
+    <Suspense fallback={<div className="p-6">{t("loading")}</div>}>
       <PageContent />
     </Suspense>
   );

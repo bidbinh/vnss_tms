@@ -1483,22 +1483,30 @@ export default function Sidebar() {
         collapsed ? "w-16" : "w-72"
       } bg-white border-r border-gray-200 flex-shrink-0 transition-all duration-300 flex flex-col h-full`}
     >
-      <div className="px-4 py-4 border-b font-semibold flex items-center justify-between flex-shrink-0">
-        {!collapsed && <span className="text-lg">9log.tech</span>}
-        <button
-          onClick={() => setCollapsed(!collapsed)}
-          className="p-1 hover:bg-gray-100 rounded"
-          title={collapsed ? t("common.expand") : t("common.collapse")}
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d={collapsed ? "M9 5l7 7-7 7" : "M15 19l-7-7 7-7"}
-            />
-          </svg>
-        </button>
+      <div className="px-3 py-3 border-b flex items-center justify-between flex-shrink-0">
+        {!collapsed ? (
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold text-lg">9</span>
+            </div>
+            <span className="font-semibold text-gray-800">log.tech</span>
+          </div>
+        ) : (
+          <div className="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center mx-auto">
+            <span className="text-white font-bold text-lg">9</span>
+          </div>
+        )}
+        {!collapsed && (
+          <button
+            onClick={() => setCollapsed(!collapsed)}
+            className="p-1 hover:bg-gray-100 rounded"
+            title={t("common.collapse")}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+        )}
       </div>
 
       <nav className="p-2 space-y-1 overflow-y-auto flex-1 pb-20">

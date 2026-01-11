@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   Plus,
   Search,
@@ -34,18 +35,21 @@ interface Department {
   name: string;
 }
 
-const LEVELS = [
-  { value: 1, label: "Nhân viên" },
-  { value: 2, label: "Chuyên viên" },
-  { value: 3, label: "Trưởng nhóm" },
-  { value: 4, label: "Phó phòng" },
-  { value: 5, label: "Trưởng phòng" },
-  { value: 6, label: "Phó giám đốc" },
-  { value: 7, label: "Giám đốc" },
-  { value: 8, label: "Tổng giám đốc" },
-];
-
 export default function PositionsPage() {
+  const t = useTranslations("hrm.positionsPage");
+  const tCommon = useTranslations("common");
+
+  const LEVELS = [
+    { value: 1, label: t("levels.staff") },
+    { value: 2, label: t("levels.specialist") },
+    { value: 3, label: t("levels.teamLead") },
+    { value: 4, label: t("levels.deputyManager") },
+    { value: 5, label: t("levels.manager") },
+    { value: 6, label: t("levels.deputyDirector") },
+    { value: 7, label: t("levels.director") },
+    { value: 8, label: t("levels.ceo") },
+  ];
+
   const [positions, setPositions] = useState<Position[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [loading, setLoading] = useState(true);
@@ -154,7 +158,7 @@ export default function PositionsPage() {
       fetchData();
     } catch (error: any) {
       console.error("Failed to save position:", error);
-      alert(error.message || "Không thể lưu chức vụ");
+      alert(error.message || t("saveError"));
     } finally {
       setSaving(false);
     }
@@ -162,24 +166,24 @@ export default function PositionsPage() {
 
   const handleDelete = async (id: string, name: string, empCount: number) => {
     if (empCount > 0) {
-      alert(`Không thể xóa chức vụ "${name}" vì đang có ${empCount} nhân viên`);
+      alert(t("cannotDelete", { name, count: empCount }));
       return;
     }
 
-    if (!confirm(`Bạn có chắc muốn xóa chức vụ "${name}"?`)) return;
+    if (!confirm(t("confirmDelete", { name }))) return;
 
     try {
       await apiFetch(`/hrm/positions/${id}`, { method: "DELETE" });
       fetchData();
     } catch (error: any) {
       console.error("Failed to delete position:", error);
-      alert(error.message || "Không thể xóa chức vụ");
+      alert(error.message || t("deleteError"));
     }
   };
 
   const formatSalary = (value: number | null) => {
     if (!value) return "-";
-    return new Intl.NumberFormat("vi-VN").format(value) + " đ";
+    return new Intl.NumberFormat("vi-VN").format(value) + " d";
   };
 
   const filteredPositions = positions.filter(
@@ -188,28 +192,20 @@ export default function PositionsPage() {
       p.code.toLowerCase().includes(search.toLowerCase())
   );
 
-  // Group by level
-  const groupedPositions = filteredPositions.reduce((acc, pos) => {
-    const level = pos.level;
-    if (!acc[level]) acc[level] = [];
-    acc[level].push(pos);
-    return acc;
-  }, {} as Record<number, Position[]>);
-
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Chức vụ</h1>
-          <p className="text-gray-600 mt-1">Quản lý các chức vụ trong công ty</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t("title")}</h1>
+          <p className="text-gray-600 mt-1">{t("subtitle")}</p>
         </div>
         <button
           onClick={() => handleOpenModal()}
           className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
         >
           <Plus className="w-4 h-4" />
-          Thêm chức vụ
+          {t("addPosition")}
         </button>
       </div>
 
@@ -219,7 +215,7 @@ export default function PositionsPage() {
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
             type="text"
-            placeholder="Tìm theo tên hoặc mã chức vụ..."
+            placeholder={t("searchPlaceholder")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -236,7 +232,7 @@ export default function PositionsPage() {
             </div>
             <div>
               <div className="text-2xl font-bold">{positions.length}</div>
-              <div className="text-sm text-gray-500">Tổng chức vụ</div>
+              <div className="text-sm text-gray-500">{t("stats.totalPositions")}</div>
             </div>
           </div>
         </div>
@@ -249,7 +245,7 @@ export default function PositionsPage() {
               <div className="text-2xl font-bold">
                 {positions.reduce((sum, p) => sum + p.employee_count, 0)}
               </div>
-              <div className="text-sm text-gray-500">Nhân viên</div>
+              <div className="text-sm text-gray-500">{t("stats.totalEmployees")}</div>
             </div>
           </div>
         </div>
@@ -263,7 +259,7 @@ export default function PositionsPage() {
           </div>
         ) : filteredPositions.length === 0 ? (
           <div className="text-center p-8 text-gray-500">
-            Không tìm thấy chức vụ nào
+            {t("noData")}
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -271,28 +267,28 @@ export default function PositionsPage() {
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
                   <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">
-                    Mã
+                    {t("columns.code")}
                   </th>
                   <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">
-                    Tên chức vụ
+                    {t("columns.name")}
                   </th>
                   <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">
-                    Cấp bậc
+                    {t("columns.level")}
                   </th>
                   <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">
-                    Phòng ban
+                    {t("columns.department")}
                   </th>
                   <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">
-                    Mức lương
+                    {t("columns.salaryRange")}
                   </th>
                   <th className="text-center px-4 py-3 text-xs font-medium text-gray-500 uppercase">
-                    Nhân viên
+                    {t("columns.employees")}
                   </th>
                   <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">
-                    Trạng thái
+                    {t("columns.status")}
                   </th>
                   <th className="text-right px-4 py-3 text-xs font-medium text-gray-500 uppercase">
-                    Thao tác
+                    {t("columns.actions")}
                   </th>
                 </tr>
               </thead>
@@ -310,7 +306,7 @@ export default function PositionsPage() {
                     </td>
                     <td className="px-4 py-3">
                       <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-700">
-                        {LEVELS.find((l) => l.value === pos.level)?.label || `Cấp ${pos.level}`}
+                        {LEVELS.find((l) => l.value === pos.level)?.label || `Level ${pos.level}`}
                       </span>
                     </td>
                     <td className="px-4 py-3">
@@ -346,7 +342,7 @@ export default function PositionsPage() {
                             : "bg-gray-100 text-gray-500"
                         }`}
                       >
-                        {pos.is_active ? "Hoạt động" : "Ngưng"}
+                        {pos.is_active ? tCommon("active") : tCommon("inactive")}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-right">
@@ -354,14 +350,14 @@ export default function PositionsPage() {
                         <button
                           onClick={() => handleOpenModal(pos)}
                           className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded"
-                          title="Sửa"
+                          title={tCommon("edit")}
                         >
                           <Edit className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleDelete(pos.id, pos.name, pos.employee_count)}
                           className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded"
-                          title="Xóa"
+                          title={tCommon("delete")}
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -381,7 +377,7 @@ export default function PositionsPage() {
           <div className="bg-white rounded-lg shadow-xl w-full max-w-lg mx-4">
             <div className="flex items-center justify-between px-6 py-4 border-b">
               <h2 className="text-lg font-semibold">
-                {editingPosition ? "Sửa chức vụ" : "Thêm chức vụ mới"}
+                {editingPosition ? t("modal.editTitle") : t("modal.createTitle")}
               </h2>
               <button
                 onClick={handleCloseModal}
@@ -395,14 +391,14 @@ export default function PositionsPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Mã chức vụ *
+                    {t("modal.code")} *
                   </label>
                   <input
                     type="text"
                     name="code"
                     value={formData.code}
                     onChange={handleChange}
-                    placeholder="VD: GD, PGD, TP..."
+                    placeholder={t("modal.codePlaceholder")}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     required
                   />
@@ -410,7 +406,7 @@ export default function PositionsPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Cấp bậc
+                    {t("modal.level")}
                   </label>
                   <select
                     name="level"
@@ -429,14 +425,14 @@ export default function PositionsPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Tên chức vụ *
+                  {t("modal.name")} *
                 </label>
                 <input
                   type="text"
                   name="name"
                   value={formData.name}
                   onChange={handleChange}
-                  placeholder="VD: Giám đốc điều hành"
+                  placeholder={t("modal.namePlaceholder")}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   required
                 />
@@ -444,7 +440,7 @@ export default function PositionsPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Phòng ban
+                  {t("modal.department")}
                 </label>
                 <select
                   name="department_id"
@@ -452,7 +448,7 @@ export default function PositionsPage() {
                   onChange={handleChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="">-- Tất cả phòng ban --</option>
+                  <option value="">{t("modal.allDepartments")}</option>
                   {departments.map((d) => (
                     <option key={d.id} value={d.id}>
                       {d.name}
@@ -464,7 +460,7 @@ export default function PositionsPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Lương tối thiểu
+                    {t("modal.minSalary")}
                   </label>
                   <input
                     type="number"
@@ -478,7 +474,7 @@ export default function PositionsPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Lương tối đa
+                    {t("modal.maxSalary")}
                   </label>
                   <input
                     type="number"
@@ -493,14 +489,14 @@ export default function PositionsPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Mô tả
+                  {t("modal.description")}
                 </label>
                 <textarea
                   name="description"
                   value={formData.description}
                   onChange={handleChange}
                   rows={3}
-                  placeholder="Mô tả công việc, trách nhiệm..."
+                  placeholder={t("modal.descriptionPlaceholder")}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -511,7 +507,7 @@ export default function PositionsPage() {
                   onClick={handleCloseModal}
                   className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
                 >
-                  Hủy
+                  {tCommon("cancel")}
                 </button>
                 <button
                   type="submit"
@@ -519,7 +515,7 @@ export default function PositionsPage() {
                   className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
                 >
                   <Save className="w-4 h-4" />
-                  {saving ? "Đang lưu..." : "Lưu"}
+                  {saving ? tCommon("loading") : tCommon("save")}
                 </button>
               </div>
             </form>

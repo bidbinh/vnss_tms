@@ -2,6 +2,7 @@
 
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   Calendar,
   Clock,
@@ -54,14 +55,17 @@ interface LeaveType {
   is_paid: boolean;
 }
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.ElementType }> = {
-  PENDING: { label: "Chờ duyệt", color: "bg-yellow-100 text-yellow-700", icon: Clock },
-  APPROVED: { label: "Đã duyệt", color: "bg-green-100 text-green-700", icon: Check },
-  REJECTED: { label: "Từ chối", color: "bg-red-100 text-red-700", icon: X },
-  CANCELLED: { label: "Đã hủy", color: "bg-gray-100 text-gray-700", icon: X },
+const STATUS_COLORS: Record<string, { color: string; icon: React.ElementType }> = {
+  PENDING: { color: "bg-yellow-100 text-yellow-700", icon: Clock },
+  APPROVED: { color: "bg-green-100 text-green-700", icon: Check },
+  REJECTED: { color: "bg-red-100 text-red-700", icon: X },
+  CANCELLED: { color: "bg-gray-100 text-gray-700", icon: X },
 };
 
 function LeavesPageContent() {
+  const t = useTranslations("hrm.leavesPage");
+  const tCommon = useTranslations("common");
+
   const searchParams = useSearchParams();
   const [requests, setRequests] = useState<LeaveRequest[]>([]);
   const [leaveTypes, setLeaveTypes] = useState<LeaveType[]>([]);
@@ -145,7 +149,7 @@ function LeavesPageContent() {
       fetchRequests();
     } catch (error) {
       console.error("Failed to approve:", error);
-      alert("Không thể duyệt đơn");
+      alert(t("errors.approveFailed"));
     }
   };
 
@@ -163,7 +167,7 @@ function LeavesPageContent() {
       fetchRequests();
     } catch (error) {
       console.error("Failed to reject:", error);
-      alert("Không thể từ chối đơn");
+      alert(t("errors.rejectFailed"));
     }
   };
 
@@ -180,7 +184,7 @@ function LeavesPageContent() {
 
   const handleCreateRequest = async () => {
     if (!createForm.leave_type_id || !createForm.start_date || !createForm.end_date || !createForm.reason) {
-      setError("Vui lòng điền đầy đủ thông tin");
+      setError(t("errors.fillRequired"));
       return;
     }
 
@@ -211,7 +215,7 @@ function LeavesPageContent() {
       });
       fetchRequests();
     } catch (err: any) {
-      setError(err.message || "Không thể tạo đơn nghỉ phép");
+      setError(err.message || t("errors.createFailed"));
     } finally {
       setSaving(false);
     }
@@ -222,8 +226,8 @@ function LeavesPageContent() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Quản lý nghỉ phép</h1>
-          <p className="text-gray-600 mt-1">Duyệt và theo dõi đơn xin nghỉ</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t("title")}</h1>
+          <p className="text-gray-600 mt-1">{t("subtitle")}</p>
         </div>
         <button
           onClick={() => {
@@ -233,7 +237,7 @@ function LeavesPageContent() {
           className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
         >
           <Plus className="w-4 h-4" />
-          Tạo đơn nghỉ phép
+          {t("createRequest")}
         </button>
       </div>
 
@@ -245,7 +249,7 @@ function LeavesPageContent() {
               <Clock className="w-5 h-5 text-yellow-600" />
             </div>
             <div>
-              <div className="text-sm text-gray-600">Chờ duyệt</div>
+              <div className="text-sm text-gray-600">{t("stats.pending")}</div>
               <div className="text-xl font-bold text-yellow-600">
                 {requests.filter((r) => r.status === "PENDING").length}
               </div>
@@ -258,7 +262,7 @@ function LeavesPageContent() {
               <Check className="w-5 h-5 text-green-600" />
             </div>
             <div>
-              <div className="text-sm text-gray-600">Đã duyệt</div>
+              <div className="text-sm text-gray-600">{t("stats.approved")}</div>
               <div className="text-xl font-bold text-green-600">
                 {requests.filter((r) => r.status === "APPROVED").length}
               </div>
@@ -271,7 +275,7 @@ function LeavesPageContent() {
               <X className="w-5 h-5 text-red-600" />
             </div>
             <div>
-              <div className="text-sm text-gray-600">Từ chối</div>
+              <div className="text-sm text-gray-600">{t("stats.rejected")}</div>
               <div className="text-xl font-bold text-red-600">
                 {requests.filter((r) => r.status === "REJECTED").length}
               </div>
@@ -284,7 +288,7 @@ function LeavesPageContent() {
               <Calendar className="w-5 h-5 text-blue-600" />
             </div>
             <div>
-              <div className="text-sm text-gray-600">Tổng đơn</div>
+              <div className="text-sm text-gray-600">{t("stats.total")}</div>
               <div className="text-xl font-bold text-blue-600">{total}</div>
             </div>
           </div>
@@ -302,11 +306,11 @@ function LeavesPageContent() {
             }}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
           >
-            <option value="">Tất cả trạng thái</option>
-            <option value="PENDING">Chờ duyệt</option>
-            <option value="APPROVED">Đã duyệt</option>
-            <option value="REJECTED">Từ chối</option>
-            <option value="CANCELLED">Đã hủy</option>
+            <option value="">{t("filters.allStatus")}</option>
+            <option value="PENDING">{t("filters.pending")}</option>
+            <option value="APPROVED">{t("filters.approved")}</option>
+            <option value="REJECTED">{t("filters.rejected")}</option>
+            <option value="CANCELLED">{t("filters.cancelled")}</option>
           </select>
 
           <select
@@ -317,7 +321,7 @@ function LeavesPageContent() {
             }}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
           >
-            <option value="">Tất cả loại nghỉ</option>
+            <option value="">{t("filters.allTypes")}</option>
             {leaveTypes.map((type) => (
               <option key={type.id} value={type.id}>
                 {type.name}
@@ -334,38 +338,38 @@ function LeavesPageContent() {
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
           </div>
         ) : requests.length === 0 ? (
-          <div className="text-center p-8 text-gray-500">Không có đơn nghỉ phép nào</div>
+          <div className="text-center p-8 text-gray-500">{t("noData")}</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
                   <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">
-                    Nhân viên
+                    {t("columns.employee")}
                   </th>
                   <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">
-                    Loại nghỉ
+                    {t("columns.leaveType")}
                   </th>
                   <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">
-                    Thời gian
+                    {t("columns.duration")}
                   </th>
                   <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">
-                    Số ngày
+                    {t("columns.days")}
                   </th>
                   <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">
-                    Lý do
+                    {t("columns.reason")}
                   </th>
                   <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">
-                    Trạng thái
+                    {t("columns.status")}
                   </th>
                   <th className="text-right px-4 py-3 text-xs font-medium text-gray-500 uppercase">
-                    Thao tác
+                    {t("columns.actions")}
                   </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {requests.map((req) => {
-                  const statusConfig = STATUS_CONFIG[req.status] || STATUS_CONFIG.PENDING;
+                  const statusConfig = STATUS_COLORS[req.status] || STATUS_COLORS.PENDING;
                   const StatusIcon = statusConfig.icon;
 
                   return (
@@ -401,12 +405,12 @@ function LeavesPageContent() {
                         </div>
                         {req.is_half_day && (
                           <div className="text-xs text-gray-500 mt-1">
-                            Nửa ngày ({req.half_day_type === "MORNING" ? "Sáng" : "Chiều"})
+                            {t("halfDay")} ({req.half_day_type === "MORNING" ? t("morning") : t("afternoon")})
                           </div>
                         )}
                       </td>
                       <td className="px-4 py-3 font-medium text-gray-900">
-                        {req.total_days} ngày
+                        {req.total_days} {t("daysUnit")}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-600 max-w-xs truncate">
                         {req.reason}
@@ -416,7 +420,7 @@ function LeavesPageContent() {
                           className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full ${statusConfig.color}`}
                         >
                           <StatusIcon className="w-3 h-3" />
-                          {statusConfig.label}
+                          {t(`status.${req.status}`)}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-right">
@@ -425,7 +429,7 @@ function LeavesPageContent() {
                             onClick={() => openApproveModal(req)}
                             className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
                           >
-                            Duyệt
+                            {t("actions.approve")}
                           </button>
                         )}
                       </td>
@@ -441,7 +445,7 @@ function LeavesPageContent() {
         {totalPages > 1 && (
           <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200">
             <div className="text-sm text-gray-600">
-              Trang {page} / {totalPages}
+              {t("pagination.page")} {page} {t("pagination.of")} {totalPages}
             </div>
             <div className="flex items-center gap-2">
               <button
@@ -467,29 +471,29 @@ function LeavesPageContent() {
       {showApproveModal && selectedRequest && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-lg p-6">
-            <h2 className="text-lg font-semibold mb-4">Duyệt đơn xin nghỉ</h2>
+            <h2 className="text-lg font-semibold mb-4">{t("approveModal.title")}</h2>
 
             <div className="space-y-3 mb-6 bg-gray-50 p-4 rounded-lg">
               <div className="flex justify-between">
-                <span className="text-gray-600">Nhân viên:</span>
+                <span className="text-gray-600">{t("approveModal.employee")}:</span>
                 <span className="font-medium">{selectedRequest.employee?.full_name}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Loại nghỉ:</span>
+                <span className="text-gray-600">{t("approveModal.leaveType")}:</span>
                 <span className="font-medium">{selectedRequest.leave_type?.name}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Thời gian:</span>
+                <span className="text-gray-600">{t("approveModal.duration")}:</span>
                 <span className="font-medium">
                   {formatDate(selectedRequest.start_date)} - {formatDate(selectedRequest.end_date)}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Số ngày:</span>
-                <span className="font-medium">{selectedRequest.total_days} ngày</span>
+                <span className="text-gray-600">{t("approveModal.days")}:</span>
+                <span className="font-medium">{selectedRequest.total_days} {t("daysUnit")}</span>
               </div>
               <div>
-                <span className="text-gray-600">Lý do:</span>
+                <span className="text-gray-600">{t("approveModal.reason")}:</span>
                 <p className="mt-1 text-gray-900">{selectedRequest.reason}</p>
               </div>
             </div>
@@ -497,27 +501,27 @@ function LeavesPageContent() {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Ghi chú (nếu duyệt)
+                  {t("approveModal.approveNotes")}
                 </label>
                 <textarea
                   value={approveNotes}
                   onChange={(e) => setApproveNotes(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                   rows={2}
-                  placeholder="Ghi chú khi duyệt..."
+                  placeholder={t("approveModal.approveNotesPlaceholder")}
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Lý do từ chối (nếu từ chối)
+                  {t("approveModal.rejectReason")}
                 </label>
                 <textarea
                   value={rejectReason}
                   onChange={(e) => setRejectReason(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                   rows={2}
-                  placeholder="Lý do từ chối..."
+                  placeholder={t("approveModal.rejectReasonPlaceholder")}
                 />
               </div>
             </div>
@@ -527,20 +531,20 @@ function LeavesPageContent() {
                 onClick={() => setShowApproveModal(false)}
                 className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
               >
-                Đóng
+                {t("approveModal.close")}
               </button>
               <button
                 onClick={handleReject}
                 disabled={!rejectReason}
                 className="px-4 py-2 text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50"
               >
-                Từ chối
+                {t("approveModal.reject")}
               </button>
               <button
                 onClick={handleApprove}
                 className="px-4 py-2 text-white bg-green-600 rounded-lg hover:bg-green-700"
               >
-                Duyệt
+                {t("approveModal.approve")}
               </button>
             </div>
           </div>
@@ -551,7 +555,7 @@ function LeavesPageContent() {
       {showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-lg p-6">
-            <h2 className="text-lg font-semibold mb-4">Tạo đơn xin nghỉ phép</h2>
+            <h2 className="text-lg font-semibold mb-4">{t("createModal.title")}</h2>
 
             {error && (
               <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-lg text-sm">
@@ -562,17 +566,17 @@ function LeavesPageContent() {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Loại nghỉ phép <span className="text-red-500">*</span>
+                  {t("createModal.leaveType")} <span className="text-red-500">*</span>
                 </label>
                 <select
                   value={createForm.leave_type_id}
                   onChange={(e) => setCreateForm({ ...createForm, leave_type_id: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="">Chọn loại nghỉ phép</option>
+                  <option value="">{t("createModal.selectLeaveType")}</option>
                   {leaveTypes.map((type) => (
                     <option key={type.id} value={type.id}>
-                      {type.name} ({type.days_per_year} ngày/năm)
+                      {type.name} ({type.days_per_year} {t("daysUnit")}/year)
                     </option>
                   ))}
                 </select>
@@ -581,7 +585,7 @@ function LeavesPageContent() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Ngày bắt đầu <span className="text-red-500">*</span>
+                    {t("createModal.startDate")} <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="date"
@@ -592,7 +596,7 @@ function LeavesPageContent() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Ngày kết thúc <span className="text-red-500">*</span>
+                    {t("createModal.endDate")} <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="date"
@@ -611,7 +615,7 @@ function LeavesPageContent() {
                     onChange={(e) => setCreateForm({ ...createForm, is_half_day: e.target.checked })}
                     className="w-4 h-4 text-blue-600 rounded"
                   />
-                  <span className="text-sm text-gray-700">Nghỉ nửa ngày</span>
+                  <span className="text-sm text-gray-700">{t("createModal.halfDay")}</span>
                 </label>
 
                 {createForm.is_half_day && (
@@ -620,22 +624,22 @@ function LeavesPageContent() {
                     onChange={(e) => setCreateForm({ ...createForm, half_day_type: e.target.value })}
                     className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
                   >
-                    <option value="MORNING">Buổi sáng</option>
-                    <option value="AFTERNOON">Buổi chiều</option>
+                    <option value="MORNING">{t("createModal.morningSession")}</option>
+                    <option value="AFTERNOON">{t("createModal.afternoonSession")}</option>
                   </select>
                 )}
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Lý do <span className="text-red-500">*</span>
+                  {t("createModal.reason")} <span className="text-red-500">*</span>
                 </label>
                 <textarea
                   value={createForm.reason}
                   onChange={(e) => setCreateForm({ ...createForm, reason: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   rows={3}
-                  placeholder="Nhập lý do xin nghỉ phép..."
+                  placeholder={t("createModal.reasonPlaceholder")}
                 />
               </div>
             </div>
@@ -649,7 +653,7 @@ function LeavesPageContent() {
                 disabled={saving}
                 className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-50"
               >
-                Hủy
+                {t("createModal.cancel")}
               </button>
               <button
                 onClick={handleCreateRequest}
@@ -659,7 +663,7 @@ function LeavesPageContent() {
                 {saving && (
                   <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
                 )}
-                Tạo đơn
+                {t("createModal.submit")}
               </button>
             </div>
           </div>

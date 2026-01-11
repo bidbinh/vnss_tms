@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   Clock,
   Calendar,
@@ -48,15 +49,18 @@ interface DailySummary {
   attendance_rate: number;
 }
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.ElementType }> = {
-  PRESENT: { label: "Có mặt", color: "bg-green-100 text-green-700", icon: CheckCircle },
-  LATE: { label: "Đi trễ", color: "bg-yellow-100 text-yellow-700", icon: AlertCircle },
-  ABSENT: { label: "Vắng", color: "bg-red-100 text-red-700", icon: XCircle },
-  ON_LEAVE: { label: "Nghỉ phép", color: "bg-blue-100 text-blue-700", icon: Calendar },
-  HALF_DAY: { label: "Nửa ngày", color: "bg-purple-100 text-purple-700", icon: Clock },
+const STATUS_COLORS: Record<string, { color: string; icon: React.ElementType }> = {
+  PRESENT: { color: "bg-green-100 text-green-700", icon: CheckCircle },
+  LATE: { color: "bg-yellow-100 text-yellow-700", icon: AlertCircle },
+  ABSENT: { color: "bg-red-100 text-red-700", icon: XCircle },
+  ON_LEAVE: { color: "bg-blue-100 text-blue-700", icon: Calendar },
+  HALF_DAY: { color: "bg-purple-100 text-purple-700", icon: Clock },
 };
 
 export default function AttendancePage() {
+  const t = useTranslations("hrm.attendancePage");
+  const tCommon = useTranslations("common");
+
   const [records, setRecords] = useState<AttendanceRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
@@ -110,8 +114,8 @@ export default function AttendancePage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Chấm công</h1>
-          <p className="text-gray-600 mt-1">Theo dõi giờ làm việc nhân viên</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t("title")}</h1>
+          <p className="text-gray-600 mt-1">{t("subtitle")}</p>
         </div>
         <div className="flex items-center gap-3">
           <input
@@ -125,7 +129,7 @@ export default function AttendancePage() {
           />
           <button className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
             <Download className="w-4 h-4" />
-            Xuất Excel
+            {t("exportExcel")}
           </button>
         </div>
       </div>
@@ -139,7 +143,7 @@ export default function AttendancePage() {
                 <Users className="w-5 h-5 text-blue-600" />
               </div>
               <div>
-                <div className="text-sm text-gray-600">Tổng NV</div>
+                <div className="text-sm text-gray-600">{t("stats.totalEmployees")}</div>
                 <div className="text-xl font-bold text-gray-900">{summary.total_employees}</div>
               </div>
             </div>
@@ -151,7 +155,7 @@ export default function AttendancePage() {
                 <CheckCircle className="w-5 h-5 text-green-600" />
               </div>
               <div>
-                <div className="text-sm text-gray-600">Có mặt</div>
+                <div className="text-sm text-gray-600">{t("stats.present")}</div>
                 <div className="text-xl font-bold text-green-600">{summary.present}</div>
               </div>
             </div>
@@ -163,7 +167,7 @@ export default function AttendancePage() {
                 <AlertCircle className="w-5 h-5 text-yellow-600" />
               </div>
               <div>
-                <div className="text-sm text-gray-600">Đi trễ</div>
+                <div className="text-sm text-gray-600">{t("stats.late")}</div>
                 <div className="text-xl font-bold text-yellow-600">{summary.late}</div>
               </div>
             </div>
@@ -175,7 +179,7 @@ export default function AttendancePage() {
                 <XCircle className="w-5 h-5 text-red-600" />
               </div>
               <div>
-                <div className="text-sm text-gray-600">Vắng</div>
+                <div className="text-sm text-gray-600">{t("stats.absent")}</div>
                 <div className="text-xl font-bold text-red-600">{summary.absent}</div>
               </div>
             </div>
@@ -187,7 +191,7 @@ export default function AttendancePage() {
                 <Calendar className="w-5 h-5 text-purple-600" />
               </div>
               <div>
-                <div className="text-sm text-gray-600">Tỷ lệ</div>
+                <div className="text-sm text-gray-600">{t("stats.rate")}</div>
                 <div className="text-xl font-bold text-purple-600">{summary.attendance_rate}%</div>
               </div>
             </div>
@@ -199,9 +203,9 @@ export default function AttendancePage() {
       <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
         <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
           <h2 className="font-semibold">
-            Bảng chấm công ngày {new Date(selectedDate).toLocaleDateString("vi-VN")}
+            {t("tableTitle")} {new Date(selectedDate).toLocaleDateString("vi-VN")}
           </h2>
-          <span className="text-sm text-gray-500">Tổng: {total} bản ghi</span>
+          <span className="text-sm text-gray-500">{t("totalRecords", { count: total })}</span>
         </div>
 
         {loading ? (
@@ -210,7 +214,7 @@ export default function AttendancePage() {
           </div>
         ) : records.length === 0 ? (
           <div className="text-center p-8 text-gray-500">
-            Không có dữ liệu chấm công cho ngày này
+            {t("noData")}
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -218,31 +222,31 @@ export default function AttendancePage() {
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
                   <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">
-                    Nhân viên
+                    {t("columns.employee")}
                   </th>
                   <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">
-                    Ca làm
+                    {t("columns.shift")}
                   </th>
                   <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">
-                    Vào
+                    {t("columns.checkIn")}
                   </th>
                   <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">
-                    Ra
+                    {t("columns.checkOut")}
                   </th>
                   <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">
-                    Số giờ
+                    {t("columns.hours")}
                   </th>
                   <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">
-                    Nguồn
+                    {t("columns.source")}
                   </th>
                   <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">
-                    Trạng thái
+                    {t("columns.status")}
                   </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {records.map((record) => {
-                  const statusConfig = STATUS_CONFIG[record.status] || STATUS_CONFIG.ABSENT;
+                  const statusConfig = STATUS_COLORS[record.status] || STATUS_COLORS.ABSENT;
                   const StatusIcon = statusConfig.icon;
 
                   return (
@@ -258,7 +262,7 @@ export default function AttendancePage() {
                         </div>
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-600">
-                        {record.shift_name || "Chưa phân ca"}
+                        {record.shift_name || t("noShift")}
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1 text-sm">
@@ -288,11 +292,7 @@ export default function AttendancePage() {
                               : "bg-gray-100 text-gray-700"
                           }`}
                         >
-                          {record.source === "MOBILE"
-                            ? "App"
-                            : record.source === "FINGERPRINT"
-                            ? "Vân tay"
-                            : "Thủ công"}
+                          {t(`source.${record.source}`)}
                         </span>
                       </td>
                       <td className="px-4 py-3">
@@ -300,7 +300,7 @@ export default function AttendancePage() {
                           className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full ${statusConfig.color}`}
                         >
                           <StatusIcon className="w-3 h-3" />
-                          {statusConfig.label}
+                          {t(`status.${record.status}`)}
                         </span>
                       </td>
                     </tr>
@@ -315,7 +315,7 @@ export default function AttendancePage() {
       {/* Attendance Progress Bar */}
       {summary && summary.total_employees > 0 && (
         <div className="bg-white p-4 rounded-lg shadow border border-gray-200">
-          <h3 className="font-medium text-gray-900 mb-3">Tổng quan ngày</h3>
+          <h3 className="font-medium text-gray-900 mb-3">{t("dailyOverview")}</h3>
           <div className="relative h-8 bg-gray-200 rounded-full overflow-hidden">
             <div
               className="absolute left-0 top-0 h-full bg-green-500"
@@ -339,19 +339,19 @@ export default function AttendancePage() {
           <div className="flex justify-between mt-2 text-xs text-gray-600">
             <div className="flex items-center gap-1">
               <div className="w-3 h-3 bg-green-500 rounded" />
-              <span>Có mặt ({summary.present})</span>
+              <span>{t("stats.present")} ({summary.present})</span>
             </div>
             <div className="flex items-center gap-1">
               <div className="w-3 h-3 bg-yellow-500 rounded" />
-              <span>Đi trễ ({summary.late})</span>
+              <span>{t("stats.late")} ({summary.late})</span>
             </div>
             <div className="flex items-center gap-1">
               <div className="w-3 h-3 bg-blue-500 rounded" />
-              <span>Nghỉ phép ({summary.on_leave})</span>
+              <span>{t("onLeave")} ({summary.on_leave})</span>
             </div>
             <div className="flex items-center gap-1">
               <div className="w-3 h-3 bg-gray-200 rounded" />
-              <span>Vắng ({summary.absent})</span>
+              <span>{t("stats.absent")} ({summary.absent})</span>
             </div>
           </div>
         </div>

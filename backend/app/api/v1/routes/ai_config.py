@@ -478,12 +478,12 @@ async def get_ai_usage_stats(
             provider_code,
             feature_code,
             COUNT(*) as total_requests,
-            SUM(total_tokens) as total_tokens,
-            SUM(estimated_cost) as total_cost,
+            COALESCE(SUM(total_tokens), 0) as total_tokens,
+            COALESCE(SUM(estimated_cost), 0) as total_cost,
             AVG(CASE WHEN success THEN 1.0 ELSE 0.0 END) * 100 as success_rate,
             AVG(latency_ms) as avg_latency
         FROM ai_usage_logs
-        WHERE created_at >= NOW() - INTERVAL :days DAY
+        WHERE created_at >= NOW() - MAKE_INTERVAL(days => :days)
         GROUP BY provider_code, feature_code
         ORDER BY total_requests DESC
     """), {"days": days})
@@ -495,9 +495,9 @@ async def get_ai_usage_stats(
             "feature_code": row[1],
             "total_requests": row[2],
             "total_tokens": row[3] or 0,
-            "total_cost": round(row[4] or 0, 4),
-            "success_rate": round(row[5] or 0, 2),
-            "avg_latency_ms": round(row[6] or 0, 0),
+            "total_cost": round(float(row[4] or 0), 4),
+            "success_rate": round(float(row[5] or 0), 2),
+            "avg_latency_ms": round(float(row[6] or 0), 0),
         })
 
     return stats
@@ -513,10 +513,10 @@ async def get_ai_usage_summary(
         SELECT
             provider_code,
             COUNT(*) as total_requests,
-            SUM(total_tokens) as total_tokens,
-            SUM(estimated_cost) as total_cost
+            COALESCE(SUM(total_tokens), 0) as total_tokens,
+            COALESCE(SUM(estimated_cost), 0) as total_cost
         FROM ai_usage_logs
-        WHERE created_at >= NOW() - INTERVAL :days DAY
+        WHERE created_at >= NOW() - MAKE_INTERVAL(days => :days)
         GROUP BY provider_code
     """), {"days": days})
 
@@ -525,10 +525,83 @@ async def get_ai_usage_summary(
         summary[row[0]] = {
             "total_requests": row[1],
             "total_tokens": row[2] or 0,
-            "total_cost": round(row[3] or 0, 4),
+            "total_cost": round(float(row[3] or 0), 4),
         }
 
     return summary
+
+
+@router.get("/usage/daily")
+async def get_ai_usage_daily(
+    days: int = 30,
+    db: Session = Depends(get_session)
+):
+    """Get daily AI usage for charts"""
+    result = db.execute(text("""
+        SELECT
+            DATE(created_at) as date,
+            provider_code,
+            COUNT(*) as requests,
+            COALESCE(SUM(total_tokens), 0) as tokens,
+            COALESCE(SUM(estimated_cost), 0) as cost
+        FROM ai_usage_logs
+        WHERE created_at >= NOW() - MAKE_INTERVAL(days => :days)
+        GROUP BY DATE(created_at), provider_code
+        ORDER BY date DESC
+    """), {"days": days})
+
+    daily = []
+    for row in result:
+        daily.append({
+            "date": row[0].isoformat() if row[0] else None,
+            "provider_code": row[1],
+            "requests": row[2],
+            "tokens": row[3] or 0,
+            "cost": round(float(row[4] or 0), 4),
+        })
+
+    return daily
+
+
+@router.get("/usage/totals")
+async def get_ai_usage_totals(
+    days: int = 30,
+    db: Session = Depends(get_session)
+):
+    """Get total AI usage for dashboard"""
+    result = db.execute(text("""
+        SELECT
+            COUNT(*) as total_requests,
+            COALESCE(SUM(input_tokens), 0) as total_input_tokens,
+            COALESCE(SUM(output_tokens), 0) as total_output_tokens,
+            COALESCE(SUM(total_tokens), 0) as total_tokens,
+            COALESCE(SUM(estimated_cost), 0) as total_cost_usd,
+            AVG(latency_ms) as avg_latency,
+            AVG(CASE WHEN success THEN 1.0 ELSE 0.0 END) * 100 as success_rate
+        FROM ai_usage_logs
+        WHERE created_at >= NOW() - MAKE_INTERVAL(days => :days)
+    """), {"days": days})
+
+    row = result.fetchone()
+    if row:
+        return {
+            "total_requests": row[0] or 0,
+            "total_input_tokens": row[1] or 0,
+            "total_output_tokens": row[2] or 0,
+            "total_tokens": row[3] or 0,
+            "total_cost_usd": round(float(row[4] or 0), 4),
+            "avg_latency_ms": round(float(row[5] or 0), 0),
+            "success_rate": round(float(row[6] or 0), 2),
+        }
+    return {
+        "total_requests": 0,
+        "total_input_tokens": 0,
+        "total_output_tokens": 0,
+        "total_tokens": 0,
+        "total_cost_usd": 0,
+        "avg_latency_ms": 0,
+        "success_rate": 0,
+    }
 
 
 # ============================================================
@@ -600,3 +673,101 @@ async def seed_ai_providers(db: Session = Depends(get_session)):
     new_count = result.scalar()
 
     return {"status": "success", "message": f"Seeded AI providers. New count: {new_count}"}
+
+
+@router.post("/features/seed")
+async def seed_ai_features(db: Session = Depends(get_session)):
+    """Seed AI features that are used in code but not yet in database"""
+
+    # All AI features used in the codebase
+    features_to_seed = [
+        {
+            "id": "feat-chat",
+            "feature_code": "chat",
+            "feature_name": "AI Chat Support",
+            "description": "AI-powered customer support chatbot with RAG and tool calling",
+            "module_code": "support",
+            "provider_priority": '["claude", "gemini", "openai"]',
+            "timeout_seconds": 60,
+        },
+        {
+            "id": "feat-document-parser",
+            "feature_code": "document_parser",
+            "feature_name": "Document Parser",
+            "description": "Parse customs declarations, invoices, and shipping documents using AI",
+            "module_code": "fms",
+            "provider_priority": '["gemini", "claude", "openai"]',
+            "timeout_seconds": 120,
+        },
+        {
+            "id": "feat-order-extraction",
+            "feature_code": "order_extraction",
+            "feature_name": "Order Text Extraction",
+            "description": "Extract order information from unstructured text (messages, emails)",
+            "module_code": "tms",
+            "provider_priority": '["claude", "gemini", "openai"]',
+            "timeout_seconds": 60,
+        },
+        {
+            "id": "feat-image-extraction",
+            "feature_code": "image_extraction",
+            "feature_name": "Order Image Extraction",
+            "description": "Extract order information from images (photos, screenshots)",
+            "module_code": "tms",
+            "provider_priority": '["gemini", "claude", "openai"]',
+            "timeout_seconds": 90,
+        },
+        {
+            "id": "feat-fuel-extraction",
+            "feature_code": "fuel_extraction",
+            "feature_name": "Fuel Log Extraction",
+            "description": "Extract fuel receipt information from images",
+            "module_code": "tms",
+            "provider_priority": '["gemini", "claude", "openai"]',
+            "timeout_seconds": 60,
+        },
+        {
+            "id": "feat-driver-suggestion",
+            "feature_code": "driver_suggestion",
+            "feature_name": "AI Driver Suggestion",
+            "description": "Suggest optimal drivers for trips based on availability, location, and history",
+            "module_code": "tms",
+            "provider_priority": '["claude", "gemini", "openai"]',
+            "timeout_seconds": 30,
+        },
+    ]
+
+    inserted = 0
+    skipped = 0
+
+    for feature in features_to_seed:
+        # Check if feature already exists
+        result = db.execute(
+            text("SELECT id FROM ai_feature_configs WHERE feature_code = :code"),
+            {"code": feature["feature_code"]}
+        )
+        if result.fetchone():
+            skipped += 1
+            continue
+
+        # Insert new feature
+        db.execute(
+            text("""
+                INSERT INTO ai_feature_configs
+                (id, feature_code, feature_name, description, module_code,
+                 provider_priority, timeout_seconds, max_retries, fallback_enabled, is_enabled)
+                VALUES
+                (:id, :feature_code, :feature_name, :description, :module_code,
+                 :provider_priority, :timeout_seconds, 3, true, true)
+            """),
+            feature
+        )
+        inserted += 1
+
+    db.commit()
+
+    return {
+        "status": "success",
+        "message": f"Seeded AI features. Inserted: {inserted}, Skipped (already exists): {skipped}",
+        "features": [f["feature_code"] for f in features_to_seed]
+    }

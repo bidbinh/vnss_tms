@@ -35,6 +35,7 @@ import {
   PhoneCall,
   MessageCircle,
   Bot,
+  BookOpen,
 } from "lucide-react";
 import AIChatWidget from "@/components/AIChatWidget";
 
@@ -701,6 +702,15 @@ export default function LandingPage() {
                   {item.label}
                 </button>
               ))}
+              <Link
+                href="/9log.tech-profile"
+                className={`text-sm font-medium transition-colors inline-flex items-center gap-1.5 ${
+                  scrolled ? "text-slate-600 hover:text-slate-900" : "text-white/80 hover:text-white"
+                }`}
+              >
+                <BookOpen className="w-4 h-4" />
+                Profile
+              </Link>
             </div>
 
             {/* Auth Buttons */}
@@ -748,6 +758,13 @@ export default function LandingPage() {
                   {id === "modules" ? "Giải pháp" : id === "features" ? "Tính năng" : id === "pricing" ? "Bảng giá" : "Khách hàng"}
                 </button>
               ))}
+              <Link
+                href="/9log.tech-profile"
+                className="flex items-center gap-2 w-full text-left px-4 py-3 text-slate-700 hover:bg-slate-50 rounded-lg"
+              >
+                <BookOpen className="w-4 h-4" />
+                Profile
+              </Link>
               <div className="pt-4 border-t border-slate-100 space-y-2">
                 <Link href="/login" className="block w-full text-center px-4 py-3 text-slate-700 border border-slate-200 rounded-lg">
                   Đăng nhập
@@ -1172,6 +1189,12 @@ export default function LandingPage() {
             <div>
               <h4 className="text-sm font-semibold text-white mb-4">Công ty</h4>
               <ul className="space-y-3">
+                <li>
+                  <Link href="/9log.tech-profile" className="inline-flex items-center gap-1.5 text-sm text-slate-400 hover:text-white transition-colors">
+                    <BookOpen className="w-3.5 h-3.5" />
+                    Company Profile
+                  </Link>
+                </li>
                 {["Về chúng tôi", "Blog", "Tuyển dụng", "Liên hệ"].map((item) => (
                   <li key={item}>
                     <a href="#" className="text-sm text-slate-400 hover:text-white transition-colors">

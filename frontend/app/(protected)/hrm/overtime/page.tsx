@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   Clock,
   Plus,
@@ -45,21 +46,31 @@ interface OvertimeResponse {
   page_size: number;
 }
 
-const OT_TYPE_CONFIG: Record<string, { label: string; rate: string; color: string }> = {
-  WEEKDAY: { label: "Ngày thường", rate: "150%", color: "bg-blue-100 text-blue-700" },
-  WEEKEND: { label: "Cuối tuần", rate: "200%", color: "bg-purple-100 text-purple-700" },
-  HOLIDAY: { label: "Lễ/Tết", rate: "300%", color: "bg-red-100 text-red-700" },
-  NIGHT: { label: "Ca đêm", rate: "130%", color: "bg-gray-100 text-gray-700" },
+const OT_TYPE_COLORS: Record<string, string> = {
+  WEEKDAY: "bg-blue-100 text-blue-700",
+  WEEKEND: "bg-purple-100 text-purple-700",
+  HOLIDAY: "bg-red-100 text-red-700",
+  NIGHT: "bg-gray-100 text-gray-700",
 };
 
-const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
-  PENDING: { label: "Chờ duyệt", color: "bg-yellow-100 text-yellow-700" },
-  APPROVED: { label: "Đã duyệt", color: "bg-green-100 text-green-700" },
-  REJECTED: { label: "Từ chối", color: "bg-red-100 text-red-700" },
-  CANCELLED: { label: "Đã hủy", color: "bg-gray-100 text-gray-700" },
+const OT_TYPE_RATES: Record<string, string> = {
+  WEEKDAY: "150%",
+  WEEKEND: "200%",
+  HOLIDAY: "300%",
+  NIGHT: "130%",
+};
+
+const STATUS_COLORS: Record<string, string> = {
+  PENDING: "bg-yellow-100 text-yellow-700",
+  APPROVED: "bg-green-100 text-green-700",
+  REJECTED: "bg-red-100 text-red-700",
+  CANCELLED: "bg-gray-100 text-gray-700",
 };
 
 export default function OvertimePage() {
+  const t = useTranslations("hrm.overtimePage");
+  const tCommon = useTranslations("common");
+
   const [requests, setRequests] = useState<OvertimeRequest[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
@@ -137,7 +148,7 @@ export default function OvertimePage() {
 
   const handleCreate = async () => {
     if (!form.employee_id || !form.request_date || !form.reason) {
-      setError("Vui lòng điền đầy đủ thông tin");
+      setError(t("errors.fillRequired"));
       return;
     }
 
@@ -152,7 +163,7 @@ export default function OvertimePage() {
       resetForm();
       fetchRequests();
     } catch (error: any) {
-      setError(error?.message || "Không thể tạo đơn tăng ca");
+      setError(error?.message || t("errors.createFailed"));
     } finally {
       setSaving(false);
     }
@@ -170,7 +181,7 @@ export default function OvertimePage() {
       setSelectedRequest(null);
       fetchRequests();
     } catch (error: any) {
-      setError(error?.message || "Không thể duyệt đơn");
+      setError(error?.message || t("errors.approveFailed"));
     } finally {
       setSaving(false);
     }
@@ -188,7 +199,7 @@ export default function OvertimePage() {
       setSelectedRequest(null);
       fetchRequests();
     } catch (error: any) {
-      setError(error?.message || "Không thể từ chối đơn");
+      setError(error?.message || t("errors.rejectFailed"));
     } finally {
       setSaving(false);
     }
@@ -224,8 +235,8 @@ export default function OvertimePage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Quản lý tăng ca</h1>
-          <p className="text-gray-600 mt-1">Đăng ký và duyệt làm thêm giờ</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t("title")}</h1>
+          <p className="text-gray-600 mt-1">{t("subtitle")}</p>
         </div>
         <button
           onClick={() => {
@@ -235,7 +246,7 @@ export default function OvertimePage() {
           className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
         >
           <Plus className="w-5 h-5" />
-          Đăng ký tăng ca
+          {t("registerOT")}
         </button>
       </div>
 
@@ -247,7 +258,7 @@ export default function OvertimePage() {
               <Clock className="w-5 h-5 text-yellow-600" />
             </div>
             <div>
-              <div className="text-sm text-gray-600">Chờ duyệt</div>
+              <div className="text-sm text-gray-600">{t("stats.pending")}</div>
               <div className="text-xl font-bold text-yellow-600">
                 {requests.filter((r) => r.status === "PENDING").length}
               </div>
@@ -260,7 +271,7 @@ export default function OvertimePage() {
               <Check className="w-5 h-5 text-green-600" />
             </div>
             <div>
-              <div className="text-sm text-gray-600">Đã duyệt</div>
+              <div className="text-sm text-gray-600">{t("stats.approved")}</div>
               <div className="text-xl font-bold text-green-600">
                 {requests.filter((r) => r.status === "APPROVED").length}
               </div>
@@ -273,7 +284,7 @@ export default function OvertimePage() {
               <X className="w-5 h-5 text-red-600" />
             </div>
             <div>
-              <div className="text-sm text-gray-600">Từ chối</div>
+              <div className="text-sm text-gray-600">{t("stats.rejected")}</div>
               <div className="text-xl font-bold text-red-600">
                 {requests.filter((r) => r.status === "REJECTED").length}
               </div>
@@ -286,7 +297,7 @@ export default function OvertimePage() {
               <Clock className="w-5 h-5 text-blue-600" />
             </div>
             <div>
-              <div className="text-sm text-gray-600">Tổng giờ OT (đã duyệt)</div>
+              <div className="text-sm text-gray-600">{t("stats.totalOTHours")}</div>
               <div className="text-xl font-bold text-blue-600">{totalOTHours}h</div>
             </div>
           </div>
@@ -297,7 +308,7 @@ export default function OvertimePage() {
       <div className="bg-white p-4 rounded-lg shadow border border-gray-200">
         <div className="flex flex-col md:flex-row gap-4">
           <div>
-            <label className="block text-sm text-gray-600 mb-1">Tháng</label>
+            <label className="block text-sm text-gray-600 mb-1">{t("filters.month")}</label>
             <input
               type="month"
               value={monthFilter}
@@ -310,7 +321,7 @@ export default function OvertimePage() {
           </div>
 
           <div>
-            <label className="block text-sm text-gray-600 mb-1">Trạng thái</label>
+            <label className="block text-sm text-gray-600 mb-1">{t("filters.status")}</label>
             <select
               value={statusFilter}
               onChange={(e) => {
@@ -319,10 +330,10 @@ export default function OvertimePage() {
               }}
               className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             >
-              <option value="">Tất cả</option>
-              <option value="PENDING">Chờ duyệt</option>
-              <option value="APPROVED">Đã duyệt</option>
-              <option value="REJECTED">Từ chối</option>
+              <option value="">{tCommon("all")}</option>
+              <option value="PENDING">{t("status.PENDING")}</option>
+              <option value="APPROVED">{t("status.APPROVED")}</option>
+              <option value="REJECTED">{t("status.REJECTED")}</option>
             </select>
           </div>
         </div>
@@ -337,7 +348,7 @@ export default function OvertimePage() {
         ) : requests.length === 0 ? (
           <div className="text-center p-8 text-gray-500">
             <FileText className="w-12 h-12 mx-auto text-gray-300 mb-3" />
-            <p>Chưa có đơn tăng ca nào</p>
+            <p>{t("noData")}</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -345,35 +356,36 @@ export default function OvertimePage() {
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
                   <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">
-                    Nhân viên
+                    {t("columns.employee")}
                   </th>
                   <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">
-                    Ngày
+                    {t("columns.date")}
                   </th>
                   <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">
-                    Thời gian
+                    {t("columns.time")}
                   </th>
                   <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">
-                    Số giờ
+                    {t("columns.hours")}
                   </th>
                   <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">
-                    Loại OT
+                    {t("columns.otType")}
                   </th>
                   <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">
-                    Lý do
+                    {t("columns.reason")}
                   </th>
                   <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">
-                    Trạng thái
+                    {t("columns.status")}
                   </th>
                   <th className="text-right px-4 py-3 text-xs font-medium text-gray-500 uppercase">
-                    Thao tác
+                    {tCommon("actions")}
                   </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {requests.map((req) => {
-                  const typeConfig = OT_TYPE_CONFIG[req.ot_type] || OT_TYPE_CONFIG.WEEKDAY;
-                  const statusConfig = STATUS_CONFIG[req.status] || STATUS_CONFIG.PENDING;
+                  const typeColor = OT_TYPE_COLORS[req.ot_type] || OT_TYPE_COLORS.WEEKDAY;
+                  const typeRate = OT_TYPE_RATES[req.ot_type] || OT_TYPE_RATES.WEEKDAY;
+                  const statusColor = STATUS_COLORS[req.status] || STATUS_COLORS.PENDING;
 
                   return (
                     <tr key={req.id} className="hover:bg-gray-50">
@@ -397,16 +409,16 @@ export default function OvertimePage() {
                         {req.hours}h
                       </td>
                       <td className="px-4 py-3">
-                        <span className={`inline-flex px-2 py-1 text-xs font-medium rounded ${typeConfig.color}`}>
-                          {typeConfig.label} ({typeConfig.rate})
+                        <span className={`inline-flex px-2 py-1 text-xs font-medium rounded ${typeColor}`}>
+                          {t(`otTypes.${req.ot_type}`)} ({typeRate})
                         </span>
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-600 max-w-xs truncate">
                         {req.reason}
                       </td>
                       <td className="px-4 py-3">
-                        <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${statusConfig.color}`}>
-                          {statusConfig.label}
+                        <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${statusColor}`}>
+                          {t(`status.${req.status}`)}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-right">
@@ -418,7 +430,7 @@ export default function OvertimePage() {
                             }}
                             className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
                           >
-                            Duyệt
+                            {t("actions.approve")}
                           </button>
                         )}
                       </td>
@@ -434,7 +446,7 @@ export default function OvertimePage() {
         {totalPages > 1 && (
           <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200">
             <div className="text-sm text-gray-600">
-              Trang {page} / {totalPages}
+              {tCommon("page")} {page} / {totalPages}
             </div>
             <div className="flex items-center gap-2">
               <button
@@ -460,19 +472,19 @@ export default function OvertimePage() {
       {showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-lg p-6">
-            <h2 className="text-lg font-semibold mb-4">Đăng ký tăng ca</h2>
+            <h2 className="text-lg font-semibold mb-4">{t("modal.createTitle")}</h2>
 
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Nhân viên *
+                  {t("modal.employee")} *
                 </label>
                 <select
                   value={form.employee_id}
                   onChange={(e) => setForm({ ...form, employee_id: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="">-- Chọn nhân viên --</option>
+                  <option value="">{t("modal.selectEmployee")}</option>
                   {employees.map((emp) => (
                     <option key={emp.id} value={emp.id}>
                       {emp.employee_code} - {emp.full_name}
@@ -483,7 +495,7 @@ export default function OvertimePage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Ngày tăng ca *
+                  {t("modal.overtimeDate")} *
                 </label>
                 <input
                   type="date"
@@ -496,7 +508,7 @@ export default function OvertimePage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Từ
+                    {t("modal.from")}
                   </label>
                   <input
                     type="time"
@@ -507,7 +519,7 @@ export default function OvertimePage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Đến
+                    {t("modal.to")}
                   </label>
                   <input
                     type="time"
@@ -520,30 +532,30 @@ export default function OvertimePage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Loại OT
+                  {t("modal.otType")}
                 </label>
                 <select
                   value={form.ot_type}
                   onChange={(e) => setForm({ ...form, ot_type: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="WEEKDAY">Ngày thường (150%)</option>
-                  <option value="WEEKEND">Cuối tuần (200%)</option>
-                  <option value="HOLIDAY">Lễ/Tết (300%)</option>
-                  <option value="NIGHT">Ca đêm (130%)</option>
+                  <option value="WEEKDAY">{t("otTypes.WEEKDAY")} (150%)</option>
+                  <option value="WEEKEND">{t("otTypes.WEEKEND")} (200%)</option>
+                  <option value="HOLIDAY">{t("otTypes.HOLIDAY")} (300%)</option>
+                  <option value="NIGHT">{t("otTypes.NIGHT")} (130%)</option>
                 </select>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Lý do *
+                  {t("modal.reason")} *
                 </label>
                 <textarea
                   value={form.reason}
                   onChange={(e) => setForm({ ...form, reason: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   rows={3}
-                  placeholder="Mô tả công việc cần làm thêm..."
+                  placeholder={t("modal.reasonPlaceholder")}
                 />
               </div>
 
@@ -560,14 +572,14 @@ export default function OvertimePage() {
                 onClick={() => setShowCreateModal(false)}
                 className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
               >
-                Hủy
+                {tCommon("cancel")}
               </button>
               <button
                 onClick={handleCreate}
                 disabled={saving}
                 className="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50"
               >
-                {saving ? "Đang lưu..." : "Đăng ký"}
+                {saving ? tCommon("loading") : t("registerOT")}
               </button>
             </div>
           </div>
@@ -578,31 +590,31 @@ export default function OvertimePage() {
       {showApproveModal && selectedRequest && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-lg p-6">
-            <h2 className="text-lg font-semibold mb-4">Duyệt đơn tăng ca</h2>
+            <h2 className="text-lg font-semibold mb-4">{t("approveModal.title")}</h2>
 
             <div className="space-y-3 mb-6 bg-gray-50 p-4 rounded-lg">
               <div className="flex justify-between">
-                <span className="text-gray-600">Nhân viên:</span>
+                <span className="text-gray-600">{t("approveModal.employee")}:</span>
                 <span className="font-medium">{selectedRequest.employee?.full_name}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Ngày:</span>
+                <span className="text-gray-600">{t("approveModal.date")}:</span>
                 <span className="font-medium">{formatDate(selectedRequest.date)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Thời gian:</span>
+                <span className="text-gray-600">{t("approveModal.time")}:</span>
                 <span className="font-medium">
                   {formatTime(selectedRequest.start_time)} - {formatTime(selectedRequest.end_time)} ({selectedRequest.hours}h)
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Loại OT:</span>
+                <span className="text-gray-600">{t("approveModal.otType")}:</span>
                 <span className="font-medium">
-                  {OT_TYPE_CONFIG[selectedRequest.ot_type]?.label || selectedRequest.ot_type}
+                  {t(`otTypes.${selectedRequest.ot_type}`)}
                 </span>
               </div>
               <div>
-                <span className="text-gray-600">Lý do:</span>
+                <span className="text-gray-600">{t("approveModal.reason")}:</span>
                 <p className="mt-1 text-gray-900">{selectedRequest.reason}</p>
               </div>
             </div>
@@ -612,21 +624,21 @@ export default function OvertimePage() {
                 onClick={() => setShowApproveModal(false)}
                 className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
               >
-                Đóng
+                {tCommon("close")}
               </button>
               <button
                 onClick={handleReject}
                 disabled={saving}
                 className="px-4 py-2 text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50"
               >
-                Từ chối
+                {t("actions.reject")}
               </button>
               <button
                 onClick={handleApprove}
                 disabled={saving}
                 className="px-4 py-2 text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50"
               >
-                Duyệt
+                {t("actions.approve")}
               </button>
             </div>
           </div>

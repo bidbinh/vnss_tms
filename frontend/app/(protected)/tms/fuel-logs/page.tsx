@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef } from "react";
+import { useTranslations } from "next-intl";
 import Pagination, { PageSizeSelector } from "@/components/Pagination";
 import { Camera, Upload, X } from "lucide-react";
 import { getDriverColor } from "@/lib/utils";
@@ -63,6 +64,7 @@ interface Driver {
 }
 
 export default function FuelLogsPage() {
+  const t = useTranslations("tms.fuelLogsPage");
   const [fuelLogs, setFuelLogs] = useState<FuelLog[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [drivers, setDrivers] = useState<Driver[]>([]);
@@ -237,7 +239,7 @@ export default function FuelLogsPage() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm("Xóa bản ghi đổ dầu này?")) return;
+    if (!confirm(t("confirmations.delete"))) return;
 
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/fuel-logs/${id}`, {
@@ -296,7 +298,7 @@ export default function FuelLogsPage() {
     if (!file) return;
 
     if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
-      alert('Vui lòng chọn file Excel (.xlsx hoặc .xls)');
+      alert(t("errors.selectExcelFile"));
       return;
     }
 

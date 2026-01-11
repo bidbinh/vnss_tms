@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { apiFetch } from "@/lib/api";
 import { TablePagination } from "@/components/DataTable";
 import { Building2, Plus, Search, FileText, ArrowUpDown, ArrowUp, ArrowDown, Eye, Edit, Phone, Mail } from "lucide-react";
@@ -58,6 +59,7 @@ function StatCard({ icon: Icon, label, value, color }: { icon: any; label: strin
 // ============ Main Component ============
 export default function CustomersPage() {
   const router = useRouter();
+  const t = useTranslations("tms.customersPage");
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState<Customer[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -89,7 +91,7 @@ export default function CustomersPage() {
       const data = await apiFetch<Customer[]>("/api/v1/customers");
       setRows(data);
     } catch (e: any) {
-      setError(e?.message || "Load failed");
+      setError(e?.message || t("errors.loadFailed"));
     } finally {
       setLoading(false);
     }
@@ -168,7 +170,7 @@ export default function CustomersPage() {
     setError(null);
     try {
       if (!form.code.trim() || !form.name.trim()) {
-        throw new Error("Code và Name là bắt buộc.");
+        throw new Error(t("errors.codeAndNameRequired"));
       }
 
       const payload = {
@@ -194,7 +196,7 @@ export default function CustomersPage() {
       setOpen(false);
       await load();
     } catch (e: any) {
-      setError(e?.message || "Save failed");
+      setError(e?.message || t("errors.saveFailed"));
     } finally {
       setSaving(false);
     }
@@ -217,14 +219,14 @@ export default function CustomersPage() {
 
   // ============ Table Columns ============
   const columnDefs = [
-    { key: "code", header: "Mã KH", width: 100, sortable: true },
-    { key: "name", header: "Tên khách hàng", width: 250, sortable: true },
-    { key: "tax_code", header: "MST", width: 120, sortable: true },
-    { key: "contact", header: "Liên hệ", width: 180, sortable: false },
-    { key: "city", header: "Tỉnh/TP", width: 100, sortable: true },
-    { key: "status", header: "Trạng thái", width: 100, sortable: false },
-    { key: "updated_at", header: "Cập nhật", width: 100, sortable: true },
-    { key: "actions", header: "Thao tác", width: 100, sortable: false },
+    { key: "code", header: t("columns.code"), width: 100, sortable: true },
+    { key: "name", header: t("columns.name"), width: 250, sortable: true },
+    { key: "tax_code", header: t("columns.taxCode"), width: 120, sortable: true },
+    { key: "contact", header: t("columns.contact"), width: 180, sortable: false },
+    { key: "city", header: t("columns.city"), width: 100, sortable: true },
+    { key: "status", header: t("columns.status"), width: 100, sortable: false },
+    { key: "updated_at", header: t("columns.updatedAt"), width: 100, sortable: true },
+    { key: "actions", header: t("columns.actions"), width: 100, sortable: false },
   ];
 
   function renderCell(row: Customer, key: string) {
@@ -270,12 +272,12 @@ export default function CustomersPage() {
         return (
           <div className="flex items-center gap-1">
             {row.is_active !== false ? (
-              <span className="px-2 py-0.5 text-xs rounded-full bg-green-100 text-green-700">HĐ</span>
+              <span className="px-2 py-0.5 text-xs rounded-full bg-green-100 text-green-700">{t("status.active")}</span>
             ) : (
-              <span className="px-2 py-0.5 text-xs rounded-full bg-red-100 text-red-700">Ngừng</span>
+              <span className="px-2 py-0.5 text-xs rounded-full bg-red-100 text-red-700">{t("status.inactive")}</span>
             )}
             {row.crm_account_id && (
-              <span className="px-2 py-0.5 text-xs rounded-full bg-purple-100 text-purple-700">CRM</span>
+              <span className="px-2 py-0.5 text-xs rounded-full bg-purple-100 text-purple-700">{t("status.crm")}</span>
             )}
           </div>
         );
@@ -291,14 +293,14 @@ export default function CustomersPage() {
             <Link
               href={`/tms/customers/${row.id}`}
               className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded"
-              title="Xem chi tiết"
+              title={t("actions.viewDetails")}
             >
               <Eye className="w-4 h-4" />
             </Link>
             <Link
               href={`/tms/customers/${row.id}/edit`}
               className="p-1.5 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded"
-              title="Sửa"
+              title={t("actions.edit")}
             >
               <Edit className="w-4 h-4" />
             </Link>
@@ -316,8 +318,8 @@ export default function CustomersPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Quản lý Khách hàng</h1>
-            <p className="text-sm text-gray-500 mt-1">Quản lý danh sách khách hàng vận tải (Master Data)</p>
+            <h1 className="text-2xl font-bold text-gray-900">{t("title")}</h1>
+            <p className="text-sm text-gray-500 mt-1">{t("subtitle")}</p>
           </div>
 
           <button
@@ -325,16 +327,16 @@ export default function CustomersPage() {
             className="rounded-xl bg-blue-600 text-white px-4 py-2 text-sm font-medium hover:bg-blue-700 flex items-center gap-2"
           >
             <Plus className="w-4 h-4" />
-            Thêm khách hàng
+            {t("addCustomer")}
           </button>
         </div>
 
         {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <StatCard icon={Building2} label="Tổng khách hàng" value={stats.total} color="blue" />
-          <StatCard icon={FileText} label="Có mã số thuế" value={stats.withTaxCode} color="green" />
-          <StatCard icon={Building2} label="Liên kết CRM" value={stats.withCRM} color="gray" />
-          <StatCard icon={Building2} label="Đang hoạt động" value={stats.active} color="green" />
+          <StatCard icon={Building2} label={t("stats.totalCustomers")} value={stats.total} color="blue" />
+          <StatCard icon={FileText} label={t("stats.withTaxCode")} value={stats.withTaxCode} color="green" />
+          <StatCard icon={Building2} label={t("stats.linkedCRM")} value={stats.withCRM} color="gray" />
+          <StatCard icon={Building2} label={t("stats.active")} value={stats.active} color="green" />
         </div>
       </div>
 
@@ -348,11 +350,11 @@ export default function CustomersPage() {
               <input
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Tìm theo mã, tên, MST, SĐT, tỉnh/TP..."
+                placeholder={t("search.placeholder")}
                 className="w-full pl-10 pr-4 py-2 rounded-xl border border-gray-300 outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 text-sm"
               />
             </div>
-            <div className="text-sm text-gray-500">{loading ? "Đang tải..." : `${filteredRows.length} khách hàng`}</div>
+            <div className="text-sm text-gray-500">{loading ? t("search.loading") : `${filteredRows.length} ${t("search.customers")}`}</div>
           </div>
 
           {/* Error */}
@@ -395,14 +397,14 @@ export default function CustomersPage() {
                   <td colSpan={columnDefs.length} className="px-4 py-8 text-center text-gray-500">
                     <div className="flex items-center justify-center gap-2">
                       <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                      Đang tải...
+                      {t("table.loading")}
                     </div>
                   </td>
                 </tr>
               ) : paginatedRows.length === 0 ? (
                 <tr>
                   <td colSpan={columnDefs.length} className="px-4 py-8 text-center text-gray-500">
-                    Chưa có khách hàng nào
+                    {t("table.noData")}
                   </td>
                 </tr>
               ) : (
@@ -444,7 +446,7 @@ export default function CustomersPage() {
           totalItems={filteredRows.length}
           onPageChange={setCurrentPage}
           onPageSizeChange={setPageSize}
-          itemName="khách hàng"
+          itemName={t("pagination.customers")}
         />
       </div>
 
@@ -454,7 +456,7 @@ export default function CustomersPage() {
           <div className="w-full max-w-lg rounded-2xl bg-white shadow-xl border border-gray-200">
             <div className="px-6 py-4 border-b flex items-center justify-between">
               <div className="font-semibold text-lg">
-                {mode === "create" ? "Thêm khách hàng mới" : `Chỉnh sửa: ${editing?.code}`}
+                {mode === "create" ? t("modal.createTitle") : t("modal.editTitle", { code: editing?.code })}
               </div>
               <button onClick={() => setOpen(false)} className="text-gray-500 hover:text-black text-xl">
                 &times;
@@ -463,40 +465,40 @@ export default function CustomersPage() {
 
             <div className="p-6 space-y-4">
               <p className="text-sm text-gray-500 mb-2">
-                Đây là form tạo nhanh. Để nhập đầy đủ thông tin, vui lòng tạo từ CRM hoặc chỉnh sửa sau.
+                {t("modal.quickNote")}
               </p>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs text-gray-600 mb-1">
-                    Mã khách hàng <span className="text-red-500">*</span>
+                    {t("modal.customerCode")} <span className="text-red-500">*</span>
                   </label>
                   <input
                     value={form.code}
                     onChange={(e) => setForm((s) => ({ ...s, code: e.target.value }))}
                     className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-200"
-                    placeholder="ADG"
+                    placeholder={t("modal.customerCodePlaceholder")}
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-600 mb-1">Mã số thuế</label>
+                  <label className="block text-xs text-gray-600 mb-1">{t("modal.taxCode")}</label>
                   <input
                     value={form.tax_code}
                     onChange={(e) => setForm((s) => ({ ...s, tax_code: e.target.value }))}
                     className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-200"
-                    placeholder="010..."
+                    placeholder={t("modal.taxCodePlaceholder")}
                   />
                 </div>
               </div>
 
               <div>
                 <label className="block text-xs text-gray-600 mb-1">
-                  Tên khách hàng <span className="text-red-500">*</span>
+                  {t("modal.customerName")} <span className="text-red-500">*</span>
                 </label>
                 <input
                   value={form.name}
                   onChange={(e) => setForm((s) => ({ ...s, name: e.target.value }))}
                   className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-200"
-                  placeholder="An Dương Group"
+                  placeholder={t("modal.customerNamePlaceholder")}
                 />
               </div>
 
@@ -507,14 +509,14 @@ export default function CustomersPage() {
 
             <div className="px-6 py-4 border-t flex items-center justify-end gap-2">
               <button onClick={() => setOpen(false)} className="rounded-xl border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50">
-                Hủy
+                {t("modal.cancel")}
               </button>
               <button
                 onClick={onSave}
                 disabled={saving}
                 className="rounded-xl bg-blue-600 text-white px-4 py-2 text-sm font-medium disabled:opacity-60 hover:bg-blue-700"
               >
-                {saving ? "Đang lưu..." : "Lưu"}
+                {saving ? t("modal.saving") : t("modal.save")}
               </button>
             </div>
           </div>

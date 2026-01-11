@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 
 interface IncomeTaxSetting {
   id: string;
@@ -67,6 +68,9 @@ interface FormData {
 }
 
 export default function IncomeTaxSettingsPage() {
+  const t = useTranslations("hrm.incomeTaxSettingsPage");
+  const tCommon = useTranslations("common");
+
   const [settings, setSettings] = useState<IncomeTaxSetting[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -254,16 +258,16 @@ export default function IncomeTaxSettingsPage() {
         closeModal();
       } else {
         const error = await res.json();
-        alert(`Lỗi: ${error.detail || "Không thể lưu cài đặt"}`);
+        alert(`${t("errors.saveFailed")}: ${error.detail || ""}`);
       }
     } catch (error) {
       console.error("Error saving setting:", error);
-      alert("Lỗi khi lưu cài đặt");
+      alert(t("errors.saveFailed"));
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Bạn có chắc chắn muốn xóa cài đặt này?")) return;
+    if (!confirm(t("confirmDelete"))) return;
 
     try {
       const token = localStorage.getItem("access_token");
@@ -276,11 +280,11 @@ export default function IncomeTaxSettingsPage() {
         await fetchSettings();
       } else {
         const error = await res.json();
-        alert(`Lỗi: ${error.detail || "Không thể xóa cài đặt"}`);
+        alert(`${t("errors.deleteFailed")}: ${error.detail || ""}`);
       }
     } catch (error) {
       console.error("Error deleting setting:", error);
-      alert("Lỗi khi xóa cài đặt");
+      alert(t("errors.deleteFailed"));
     }
   };
 
@@ -296,18 +300,18 @@ export default function IncomeTaxSettingsPage() {
   };
 
   if (loading) {
-    return <div className="p-8">Đang tải...</div>;
+    return <div className="p-8">{t("loading")}</div>;
   }
 
   return (
     <div className="p-8">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Cài đặt Thuế Thu nhập Cá nhân</h1>
+        <h1 className="text-2xl font-bold">{t("title")}</h1>
         <button
           onClick={() => openModal()}
           className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800"
         >
-          + Thêm Cài đặt Mới
+          + {t("addSetting")}
         </button>
       </div>
 
@@ -316,25 +320,25 @@ export default function IncomeTaxSettingsPage() {
           <thead className="bg-gray-50 sticky top-0 z-10">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase">
-                Hiệu lực từ
+                {t("columns.effectiveFrom")}
               </th>
               <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase">
-                Hiệu lực đến
+                {t("columns.effectiveTo")}
               </th>
               <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase">
-                Giảm trừ bản thân
+                {t("columns.personalDeduction")}
               </th>
               <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase">
-                Giảm trừ người phụ thuộc
+                {t("columns.dependentDeduction")}
               </th>
               <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase">
-                Tổng BHXH/YT/TN
+                {t("columns.totalInsurance")}
               </th>
               <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase">
-                Trạng thái
+                {t("columns.status")}
               </th>
               <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase">
-                Hành động
+                {t("columns.actions")}
               </th>
             </tr>
           </thead>
@@ -366,7 +370,7 @@ export default function IncomeTaxSettingsPage() {
                         : "bg-gray-100 text-gray-800"
                     }`}
                   >
-                    {setting.status === "ACTIVE" ? "Đang áp dụng" : "Không áp dụng"}
+                    {t(`status.${setting.status}` as any)}
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm space-x-2">
@@ -374,13 +378,13 @@ export default function IncomeTaxSettingsPage() {
                     onClick={() => openModal(setting)}
                     className="text-blue-600 hover:text-blue-800"
                   >
-                    Sửa
+                    {tCommon("edit")}
                   </button>
                   <button
                     onClick={() => handleDelete(setting.id)}
                     className="text-red-600 hover:text-red-800"
                   >
-                    Xóa
+                    {tCommon("delete")}
                   </button>
                 </td>
               </tr>
@@ -390,7 +394,7 @@ export default function IncomeTaxSettingsPage() {
 
         {settings.length === 0 && (
           <div className="text-center py-8 text-gray-500">
-            Chưa có cài đặt nào. Nhấn "Thêm Cài đặt Mới" để tạo.
+            {t("noSettings")}
           </div>
         )}
       </div>
@@ -400,7 +404,7 @@ export default function IncomeTaxSettingsPage() {
           <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <h2 className="text-xl font-bold mb-4">
-                {editingSetting ? "Sửa Cài đặt Thuế" : "Thêm Cài đặt Thuế Mới"}
+                {editingSetting ? t("modal.editTitle") : t("modal.createTitle")}
               </h2>
 
               <form onSubmit={handleSubmit} className="space-y-6">
@@ -408,7 +412,7 @@ export default function IncomeTaxSettingsPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium mb-1">
-                      Hiệu lực từ <span className="text-red-500">*</span>
+                      {t("modal.effectiveFrom")} <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="date"
@@ -422,7 +426,7 @@ export default function IncomeTaxSettingsPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium mb-1">Hiệu lực đến</label>
+                    <label className="block text-sm font-medium mb-1">{t("modal.effectiveTo")}</label>
                     <input
                       type="date"
                       value={formData.effective_to}
@@ -436,11 +440,11 @@ export default function IncomeTaxSettingsPage() {
 
                 {/* Deductions */}
                 <div className="border-t pt-4">
-                  <h3 className="font-semibold mb-3">Mức giảm trừ</h3>
+                  <h3 className="font-semibold mb-3">{t("modal.deductionSection")}</h3>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium mb-1">
-                        Giảm trừ bản thân (VNĐ)
+                        {t("modal.personalDeduction")}
                       </label>
                       <input
                         type="number"
@@ -455,7 +459,7 @@ export default function IncomeTaxSettingsPage() {
 
                     <div>
                       <label className="block text-sm font-medium mb-1">
-                        Giảm trừ người phụ thuộc (VNĐ)
+                        {t("modal.dependentDeduction")}
                       </label>
                       <input
                         type="number"
@@ -472,10 +476,10 @@ export default function IncomeTaxSettingsPage() {
 
                 {/* Insurance Rates */}
                 <div className="border-t pt-4">
-                  <h3 className="font-semibold mb-3">Tỷ lệ bảo hiểm</h3>
+                  <h3 className="font-semibold mb-3">{t("modal.insuranceSection")}</h3>
                   <div className="grid grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-sm font-medium mb-1">BHXH (%)</label>
+                      <label className="block text-sm font-medium mb-1">{t("modal.socialInsurance")}</label>
                       <input
                         type="number"
                         step="0.001"
@@ -489,7 +493,7 @@ export default function IncomeTaxSettingsPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium mb-1">BHYT (%)</label>
+                      <label className="block text-sm font-medium mb-1">{t("modal.healthInsurance")}</label>
                       <input
                         type="number"
                         step="0.001"
@@ -503,7 +507,7 @@ export default function IncomeTaxSettingsPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium mb-1">BHTN (%)</label>
+                      <label className="block text-sm font-medium mb-1">{t("modal.unemploymentInsurance")}</label>
                       <input
                         type="number"
                         step="0.001"
@@ -523,14 +527,14 @@ export default function IncomeTaxSettingsPage() {
 
                 {/* Tax Brackets */}
                 <div className="border-t pt-4">
-                  <h3 className="font-semibold mb-3">Bậc thuế thu nhập cá nhân</h3>
+                  <h3 className="font-semibold mb-3">{t("modal.taxBracketsSection")}</h3>
 
                   {/* Bracket 1 */}
                   <div className="mb-4 p-3 bg-gray-50 rounded">
-                    <h4 className="text-sm font-medium mb-2">Bậc 1</h4>
+                    <h4 className="text-sm font-medium mb-2">{t("modal.bracket")} 1</h4>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-xs mb-1">Thu nhập tối đa (VNĐ)</label>
+                        <label className="block text-xs mb-1">{t("modal.maxIncome")}</label>
                         <input
                           type="number"
                           required
@@ -542,7 +546,7 @@ export default function IncomeTaxSettingsPage() {
                         />
                       </div>
                       <div>
-                        <label className="block text-xs mb-1">Thuế suất (%)</label>
+                        <label className="block text-xs mb-1">{t("modal.taxRate")}</label>
                         <input
                           type="number"
                           step="0.01"
@@ -559,10 +563,10 @@ export default function IncomeTaxSettingsPage() {
 
                   {/* Bracket 2 */}
                   <div className="mb-4 p-3 bg-gray-50 rounded">
-                    <h4 className="text-sm font-medium mb-2">Bậc 2</h4>
+                    <h4 className="text-sm font-medium mb-2">{t("modal.bracket")} 2</h4>
                     <div className="grid grid-cols-3 gap-3">
                       <div>
-                        <label className="block text-xs mb-1">Thu nhập tối đa (VNĐ)</label>
+                        <label className="block text-xs mb-1">{t("modal.maxIncome")}</label>
                         <input
                           type="number"
                           required
@@ -574,7 +578,7 @@ export default function IncomeTaxSettingsPage() {
                         />
                       </div>
                       <div>
-                        <label className="block text-xs mb-1">Thuế suất (%)</label>
+                        <label className="block text-xs mb-1">{t("modal.taxRate")}</label>
                         <input
                           type="number"
                           step="0.01"
@@ -587,7 +591,7 @@ export default function IncomeTaxSettingsPage() {
                         />
                       </div>
                       <div>
-                        <label className="block text-xs mb-1">Khấu trừ nhanh (VNĐ)</label>
+                        <label className="block text-xs mb-1">{t("modal.quickDeduction")}</label>
                         <input
                           type="number"
                           required
@@ -603,10 +607,10 @@ export default function IncomeTaxSettingsPage() {
 
                   {/* Bracket 3 */}
                   <div className="mb-4 p-3 bg-gray-50 rounded">
-                    <h4 className="text-sm font-medium mb-2">Bậc 3</h4>
+                    <h4 className="text-sm font-medium mb-2">{t("modal.bracket")} 3</h4>
                     <div className="grid grid-cols-3 gap-3">
                       <div>
-                        <label className="block text-xs mb-1">Thu nhập tối đa (VNĐ)</label>
+                        <label className="block text-xs mb-1">{t("modal.maxIncome")}</label>
                         <input
                           type="number"
                           required
@@ -618,7 +622,7 @@ export default function IncomeTaxSettingsPage() {
                         />
                       </div>
                       <div>
-                        <label className="block text-xs mb-1">Thuế suất (%)</label>
+                        <label className="block text-xs mb-1">{t("modal.taxRate")}</label>
                         <input
                           type="number"
                           step="0.01"
@@ -631,7 +635,7 @@ export default function IncomeTaxSettingsPage() {
                         />
                       </div>
                       <div>
-                        <label className="block text-xs mb-1">Khấu trừ nhanh (VNĐ)</label>
+                        <label className="block text-xs mb-1">{t("modal.quickDeduction")}</label>
                         <input
                           type="number"
                           required
@@ -647,10 +651,10 @@ export default function IncomeTaxSettingsPage() {
 
                   {/* Bracket 4 */}
                   <div className="mb-4 p-3 bg-gray-50 rounded">
-                    <h4 className="text-sm font-medium mb-2">Bậc 4</h4>
+                    <h4 className="text-sm font-medium mb-2">{t("modal.bracket")} 4</h4>
                     <div className="grid grid-cols-3 gap-3">
                       <div>
-                        <label className="block text-xs mb-1">Thu nhập tối đa (VNĐ)</label>
+                        <label className="block text-xs mb-1">{t("modal.maxIncome")}</label>
                         <input
                           type="number"
                           required
@@ -662,7 +666,7 @@ export default function IncomeTaxSettingsPage() {
                         />
                       </div>
                       <div>
-                        <label className="block text-xs mb-1">Thuế suất (%)</label>
+                        <label className="block text-xs mb-1">{t("modal.taxRate")}</label>
                         <input
                           type="number"
                           step="0.01"
@@ -675,7 +679,7 @@ export default function IncomeTaxSettingsPage() {
                         />
                       </div>
                       <div>
-                        <label className="block text-xs mb-1">Khấu trừ nhanh (VNĐ)</label>
+                        <label className="block text-xs mb-1">{t("modal.quickDeduction")}</label>
                         <input
                           type="number"
                           required
@@ -691,10 +695,10 @@ export default function IncomeTaxSettingsPage() {
 
                   {/* Bracket 5 */}
                   <div className="mb-4 p-3 bg-gray-50 rounded">
-                    <h4 className="text-sm font-medium mb-2">Bậc 5</h4>
+                    <h4 className="text-sm font-medium mb-2">{t("modal.bracket")} 5</h4>
                     <div className="grid grid-cols-3 gap-3">
                       <div>
-                        <label className="block text-xs mb-1">Thu nhập tối đa (VNĐ)</label>
+                        <label className="block text-xs mb-1">{t("modal.maxIncome")}</label>
                         <input
                           type="number"
                           required
@@ -706,7 +710,7 @@ export default function IncomeTaxSettingsPage() {
                         />
                       </div>
                       <div>
-                        <label className="block text-xs mb-1">Thuế suất (%)</label>
+                        <label className="block text-xs mb-1">{t("modal.taxRate")}</label>
                         <input
                           type="number"
                           step="0.01"
@@ -719,7 +723,7 @@ export default function IncomeTaxSettingsPage() {
                         />
                       </div>
                       <div>
-                        <label className="block text-xs mb-1">Khấu trừ nhanh (VNĐ)</label>
+                        <label className="block text-xs mb-1">{t("modal.quickDeduction")}</label>
                         <input
                           type="number"
                           required
@@ -735,10 +739,10 @@ export default function IncomeTaxSettingsPage() {
 
                   {/* Bracket 6 */}
                   <div className="mb-4 p-3 bg-gray-50 rounded">
-                    <h4 className="text-sm font-medium mb-2">Bậc 6</h4>
+                    <h4 className="text-sm font-medium mb-2">{t("modal.bracket")} 6</h4>
                     <div className="grid grid-cols-3 gap-3">
                       <div>
-                        <label className="block text-xs mb-1">Thu nhập tối đa (VNĐ)</label>
+                        <label className="block text-xs mb-1">{t("modal.maxIncome")}</label>
                         <input
                           type="number"
                           required
@@ -750,7 +754,7 @@ export default function IncomeTaxSettingsPage() {
                         />
                       </div>
                       <div>
-                        <label className="block text-xs mb-1">Thuế suất (%)</label>
+                        <label className="block text-xs mb-1">{t("modal.taxRate")}</label>
                         <input
                           type="number"
                           step="0.01"
@@ -763,7 +767,7 @@ export default function IncomeTaxSettingsPage() {
                         />
                       </div>
                       <div>
-                        <label className="block text-xs mb-1">Khấu trừ nhanh (VNĐ)</label>
+                        <label className="block text-xs mb-1">{t("modal.quickDeduction")}</label>
                         <input
                           type="number"
                           required
@@ -779,10 +783,10 @@ export default function IncomeTaxSettingsPage() {
 
                   {/* Bracket 7 */}
                   <div className="mb-4 p-3 bg-gray-50 rounded">
-                    <h4 className="text-sm font-medium mb-2">Bậc 7 (Trên 80 triệu)</h4>
+                    <h4 className="text-sm font-medium mb-2">{t("modal.bracket7Label")}</h4>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-xs mb-1">Thuế suất (%)</label>
+                        <label className="block text-xs mb-1">{t("modal.taxRate")}</label>
                         <input
                           type="number"
                           step="0.01"
@@ -795,7 +799,7 @@ export default function IncomeTaxSettingsPage() {
                         />
                       </div>
                       <div>
-                        <label className="block text-xs mb-1">Khấu trừ nhanh (VNĐ)</label>
+                        <label className="block text-xs mb-1">{t("modal.quickDeduction")}</label>
                         <input
                           type="number"
                           required
@@ -812,14 +816,14 @@ export default function IncomeTaxSettingsPage() {
 
                 {/* Status */}
                 <div className="border-t pt-4">
-                  <label className="block text-sm font-medium mb-1">Trạng thái</label>
+                  <label className="block text-sm font-medium mb-1">{t("modal.statusLabel")}</label>
                   <select
                     value={formData.status}
                     onChange={(e) => setFormData({ ...formData, status: e.target.value })}
                     className="w-full border rounded px-3 py-2"
                   >
-                    <option value="ACTIVE">Đang áp dụng</option>
-                    <option value="INACTIVE">Không áp dụng</option>
+                    <option value="ACTIVE">{t("status.ACTIVE")}</option>
+                    <option value="INACTIVE">{t("status.INACTIVE")}</option>
                   </select>
                 </div>
 
@@ -830,13 +834,13 @@ export default function IncomeTaxSettingsPage() {
                     onClick={closeModal}
                     className="px-4 py-2 border rounded hover:bg-gray-50"
                   >
-                    Hủy
+                    {tCommon("cancel")}
                   </button>
                   <button
                     type="submit"
                     className="px-4 py-2 bg-black text-white rounded hover:bg-gray-800"
                   >
-                    {editingSetting ? "Cập nhật" : "Tạo mới"}
+                    {editingSetting ? tCommon("update") : tCommon("create")}
                   </button>
                 </div>
               </form>

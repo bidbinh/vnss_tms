@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { Globe, Check, ChevronDown } from "lucide-react";
-import { locales, localeNames, localeFlags, type Locale } from "@/i18n";
+import { locales, localeNames, localeFlags, localeCodes, type Locale } from "@/i18n";
 
 interface LanguageSwitcherProps {
   currentLocale: Locale;
@@ -67,25 +67,24 @@ export default function LanguageSwitcher({
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors"
+        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors"
       >
         <Globe className="w-4 h-4" />
-        {showFlag && <span className="text-base">{localeFlags[currentLocale]}</span>}
-        {showLabel && <span className="hidden sm:inline">{localeNames[currentLocale]}</span>}
-        <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? "rotate-180" : ""}`} />
+        <span className="font-medium">{localeCodes[currentLocale]}</span>
+        <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isOpen ? "rotate-180" : ""}`} />
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+        <div className="absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
           {locales.map((locale) => (
             <button
               key={locale}
               onClick={() => handleLocaleChange(locale)}
-              className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-gray-50 transition-colors ${
+              className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-gray-50 transition-colors ${
                 currentLocale === locale ? "bg-blue-50 text-blue-700" : "text-gray-700"
               }`}
             >
-              <span className="text-lg">{localeFlags[locale]}</span>
+              <span className="font-medium w-6">{localeCodes[locale]}</span>
               <span className="flex-1 text-left">{localeNames[locale]}</span>
               {currentLocale === locale && <Check className="w-4 h-4 text-blue-600" />}
             </button>

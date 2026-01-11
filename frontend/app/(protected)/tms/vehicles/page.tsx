@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { apiFetch } from "@/lib/api";
 import DataTable, { Column, TablePagination } from "@/components/DataTable";
 import { Truck, Plus, Search, CheckCircle, XCircle, Wrench, Calendar, Pencil, Trash2, Copy, ArrowUpDown, ArrowUp, ArrowDown, Ban, Link2, Unlink } from "lucide-react";
@@ -89,6 +90,7 @@ function StatCard({ icon: Icon, label, value, color }: { icon: any; label: strin
 
 // ============ Main Component ============
 export default function VehiclesPage() {
+  const t = useTranslations("tms.vehiclesPage");
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState<Vehicle[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -310,13 +312,13 @@ export default function VehiclesPage() {
   }
 
   async function onDelete(id: string) {
-    if (!confirm("Bạn có chắc muốn xóa phương tiện này?")) return;
+    if (!confirm(t("confirmations.deleteVehicle"))) return;
     setDeleting(id);
     try {
       await apiFetch(`/api/v1/vehicles/${id}`, { method: "DELETE" });
       await load();
     } catch (e: any) {
-      alert("Xóa thất bại: " + (e?.message || "Unknown error"));
+      alert(t("errors.deleteFailed") + (e?.message || "Unknown error"));
     } finally {
       setDeleting(null);
     }
@@ -364,11 +366,11 @@ export default function VehiclesPage() {
 
   async function createPairing() {
     if (!pairingForm.tractor_id || !pairingForm.trailer_id) {
-      alert("Vui lòng chọn đầu kéo và rơ mooc");
+      alert(t("errors.selectTractorTrailer"));
       return;
     }
     if (!pairingForm.effective_date) {
-      alert("Vui lòng chọn ngày hiệu lực");
+      alert(t("errors.selectEffectiveDate"));
       return;
     }
 
@@ -393,33 +395,33 @@ export default function VehiclesPage() {
         notes: "",
       });
     } catch (e: any) {
-      alert("Lỗi: " + (e?.message || "Không thể tạo ghép cặp"));
+      alert(t("errors.createPairingFailed") + (e?.message ? ": " + e.message : ""));
     } finally {
       setPairingSaving(false);
     }
   }
 
   async function endPairing(id: string) {
-    if (!confirm("Bạn có chắc muốn kết thúc ghép cặp này?")) return;
+    if (!confirm(t("confirmations.endPairing"))) return;
     try {
       await apiFetch(`/api/v1/tractor-trailer-pairings/${id}/end`, {
         method: "POST",
       });
       await loadPairings();
     } catch (e: any) {
-      alert("Lỗi: " + (e?.message || "Không thể kết thúc ghép cặp"));
+      alert(t("errors.endPairingFailed") + (e?.message ? ": " + e.message : ""));
     }
   }
 
   async function deletePairing(id: string) {
-    if (!confirm("Bạn có chắc muốn xóa ghép cặp này?")) return;
+    if (!confirm(t("confirmations.deletePairing"))) return;
     try {
       await apiFetch(`/api/v1/tractor-trailer-pairings/${id}`, {
         method: "DELETE",
       });
       await loadPairings();
     } catch (e: any) {
-      alert("Lỗi: " + (e?.message || "Không thể xóa ghép cặp"));
+      alert(t("errors.deletePairingFailed") + (e?.message ? ": " + e.message : ""));
     }
   }
 
@@ -432,7 +434,7 @@ export default function VehiclesPage() {
     setError(null);
     try {
       if (!form.plate_no.trim()) {
-        throw new Error("Biển số xe là bắt buộc.");
+        throw new Error(t("modal.plateNoRequired"));
       }
 
       const payload: any = {
@@ -479,15 +481,15 @@ export default function VehiclesPage() {
 
   // ============ Table Columns ============
   const columnDefs = [
-    { key: "code", header: "Mã", width: 70, sortable: true },
-    { key: "plate_no", header: "Biển số", width: 110, sortable: true },
-    { key: "type", header: "Loại", width: 90, sortable: true },
-    { key: "manufacturer", header: "Hãng xe", width: 100, sortable: true },
-    { key: "model", header: "Dòng xe", width: 90, sortable: true },
-    { key: "year_of_manufacture", header: "Năm SX", width: 70, sortable: true },
-    { key: "registration_expiry", header: "Đăng kiểm", width: 100, sortable: true },
-    { key: "status", header: "Trạng thái", width: 100, sortable: true },
-    { key: "actions", header: "Thao tác", width: 110, sortable: false },
+    { key: "code", header: t("columns.code"), width: 70, sortable: true },
+    { key: "plate_no", header: t("columns.plateNo"), width: 110, sortable: true },
+    { key: "type", header: t("columns.type"), width: 90, sortable: true },
+    { key: "manufacturer", header: t("columns.manufacturer"), width: 100, sortable: true },
+    { key: "model", header: t("columns.model"), width: 90, sortable: true },
+    { key: "year_of_manufacture", header: t("columns.yearOfManufacture"), width: 70, sortable: true },
+    { key: "registration_expiry", header: t("columns.registrationExpiry"), width: 100, sortable: true },
+    { key: "status", header: t("columns.status"), width: 100, sortable: true },
+    { key: "actions", header: t("columns.actions"), width: 110, sortable: false },
   ];
 
   function renderCell(row: Vehicle, key: string) {
@@ -503,7 +505,7 @@ export default function VehiclesPage() {
               row.type === "TRACTOR" ? "bg-blue-100 text-blue-800" : "bg-purple-100 text-purple-800"
             }`}
           >
-            {row.type === "TRACTOR" ? "Đầu kéo" : "Rơ mooc"}
+            {row.type === "TRACTOR" ? t("types.tractor") : t("types.trailer")}
           </span>
         );
       case "manufacturer":
@@ -533,15 +535,15 @@ export default function VehiclesPage() {
           INACTIVE: "bg-gray-100 text-gray-800",
           DISPOSED: "bg-red-100 text-red-800",
         };
-        const statusLabels: Record<string, string> = {
-          ACTIVE: "Hoạt động",
-          MAINTENANCE: "Bảo trì",
-          INACTIVE: "Ngừng",
-          DISPOSED: "Đã thanh lý",
+        const statusKeys: Record<string, string> = {
+          ACTIVE: "active",
+          MAINTENANCE: "maintenance",
+          INACTIVE: "inactive",
+          DISPOSED: "disposed",
         };
         return (
           <span className={`px-2 py-1 rounded-lg text-xs font-semibold ${statusColors[row.status] || statusColors.INACTIVE}`}>
-            {statusLabels[row.status] || row.status}
+            {t(`status.${statusKeys[row.status] || "inactive"}`)}
           </span>
         );
       case "actions":
@@ -550,14 +552,14 @@ export default function VehiclesPage() {
             <button
               onClick={(e) => { e.stopPropagation(); openEdit(row); }}
               className="p-1.5 hover:bg-blue-50 rounded-lg text-blue-600 hover:text-blue-800"
-              title="Sửa"
+              title={t("actions.edit")}
             >
               <Pencil className="w-4 h-4" />
             </button>
             <button
               onClick={(e) => { e.stopPropagation(); openDuplicate(row); }}
               className="p-1.5 hover:bg-green-50 rounded-lg text-green-600 hover:text-green-800"
-              title="Nhân bản"
+              title={t("actions.duplicate")}
             >
               <Copy className="w-4 h-4" />
             </button>
@@ -565,7 +567,7 @@ export default function VehiclesPage() {
               onClick={(e) => { e.stopPropagation(); onDelete(row.id); }}
               disabled={deleting === row.id}
               className="p-1.5 hover:bg-red-50 rounded-lg text-red-600 hover:text-red-800 disabled:opacity-50"
-              title="Xóa"
+              title={t("actions.delete")}
             >
               {deleting === row.id ? (
                 <div className="w-4 h-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
@@ -582,13 +584,13 @@ export default function VehiclesPage() {
 
   return (
     <div className="h-[calc(100vh-64px)] overflow-auto">
-      {/* Phần 1: Header & Stats - Cuộn đi */}
+      {/* Header & Stats */}
       <div className="p-6 pb-4 space-y-4">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Quản lý Phương tiện</h1>
-            <p className="text-sm text-gray-500 mt-1">Quản lý xe đầu kéo và rơ mooc</p>
+            <h1 className="text-2xl font-bold text-gray-900">{t("title")}</h1>
+            <p className="text-sm text-gray-500 mt-1">{t("subtitle")}</p>
           </div>
 
           <div className="flex items-center gap-2">
@@ -597,30 +599,30 @@ export default function VehiclesPage() {
               className="rounded-xl bg-purple-600 text-white px-4 py-2 text-sm font-medium hover:bg-purple-700 flex items-center gap-2"
             >
               <Link2 className="w-4 h-4" />
-              Ghép cặp
+              {t("pairing")}
             </button>
             <button
               onClick={openCreate}
               className="rounded-xl bg-blue-600 text-white px-4 py-2 text-sm font-medium hover:bg-blue-700 flex items-center gap-2"
             >
               <Plus className="w-4 h-4" />
-              Thêm phương tiện
+              {t("addVehicle")}
             </button>
           </div>
         </div>
 
         {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
-          <StatCard icon={Truck} label="Tổng phương tiện" value={stats.total} color="blue" />
-          <StatCard icon={Truck} label="Đầu kéo" value={`${stats.tractorsActive}/${stats.tractors}`} color="blue" />
-          <StatCard icon={Truck} label="Rơ mooc" value={`${stats.trailersActive}/${stats.trailers}`} color="purple" />
-          <StatCard icon={CheckCircle} label="Đang hoạt động" value={stats.active} color="green" />
-          <StatCard icon={Ban} label="Đã thanh lý" value={stats.disposed} color="gray" />
-          <StatCard icon={Calendar} label="Sắp hết hạn ĐK" value={stats.expiringRegistration} color="yellow" />
+          <StatCard icon={Truck} label={t("stats.totalVehicles")} value={stats.total} color="blue" />
+          <StatCard icon={Truck} label={t("stats.tractors")} value={`${stats.tractorsActive}/${stats.tractors}`} color="blue" />
+          <StatCard icon={Truck} label={t("stats.trailers")} value={`${stats.trailersActive}/${stats.trailers}`} color="purple" />
+          <StatCard icon={CheckCircle} label={t("stats.active")} value={stats.active} color="green" />
+          <StatCard icon={Ban} label={t("stats.disposed")} value={stats.disposed} color="gray" />
+          <StatCard icon={Calendar} label={t("stats.expiringRegistration")} value={stats.expiringRegistration} color="yellow" />
         </div>
       </div>
 
-      {/* Phần 2: Filter & Search + Table Header - Sticky */}
+      {/* Filter & Search + Table Header - Sticky */}
       <div className="sticky top-0 z-20 bg-white shadow-sm">
         {/* Filter Bar */}
         <div className="border-y border-gray-200 px-6 py-3">
@@ -629,9 +631,9 @@ export default function VehiclesPage() {
               {/* Type Filter Tabs */}
               <div className="flex bg-gray-100 rounded-xl p-1">
                 {[
-                  { key: "ALL", label: "Tất cả" },
-                  { key: "TRACTOR", label: "Đầu kéo" },
-                  { key: "TRAILER", label: "Rơ mooc" },
+                  { key: "ALL", labelKey: "filters.all" },
+                  { key: "TRACTOR", labelKey: "filters.tractor" },
+                  { key: "TRAILER", labelKey: "filters.trailer" },
                 ].map((tab) => (
                   <button
                     key={tab.key}
@@ -640,7 +642,7 @@ export default function VehiclesPage() {
                       filterType === tab.key ? "bg-white text-blue-600 shadow-sm" : "text-gray-600 hover:text-gray-900"
                     }`}
                   >
-                    {tab.label}
+                    {t(tab.labelKey)}
                   </button>
                 ))}
               </div>
@@ -651,13 +653,13 @@ export default function VehiclesPage() {
                 <input
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Tìm biển số, hãng xe..."
+                  placeholder={t("filters.searchPlaceholder")}
                   className="pl-10 pr-4 py-2 rounded-xl border border-gray-300 outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 text-sm w-64"
                 />
               </div>
             </div>
 
-            <div className="text-sm text-gray-500">{loading ? "Đang tải..." : `${filteredRows.length} phương tiện`}</div>
+            <div className="text-sm text-gray-500">{loading ? t("filters.loading") : `${filteredRows.length} ${t("filters.vehicles")}`}</div>
           </div>
 
           {/* Error */}
@@ -700,14 +702,14 @@ export default function VehiclesPage() {
                   <td colSpan={columnDefs.length} className="px-4 py-8 text-center text-gray-500">
                     <div className="flex items-center justify-center gap-2">
                       <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                      Đang tải...
+                      {t("table.loading")}
                     </div>
                   </td>
                 </tr>
               ) : paginatedRows.length === 0 ? (
                 <tr>
                   <td colSpan={columnDefs.length} className="px-4 py-8 text-center text-gray-500">
-                    Chưa có phương tiện nào
+                    {t("table.noData")}
                   </td>
                 </tr>
               ) : (
@@ -730,7 +732,7 @@ export default function VehiclesPage() {
         </div>
       </div>
 
-      {/* Phần 4: Pagination - Sticky bottom */}
+      {/* Pagination - Sticky bottom */}
       <div className="sticky bottom-0 bg-white border-t border-gray-200 px-6 shadow-[0_-2px_4px_rgba(0,0,0,0.05)]">
         <TablePagination
           currentPage={currentPage}
@@ -739,7 +741,7 @@ export default function VehiclesPage() {
           totalItems={filteredRows.length}
           onPageChange={setCurrentPage}
           onPageSizeChange={setPageSize}
-          itemName="phương tiện"
+          itemName={t("pagination.vehicles")}
         />
       </div>
 
@@ -749,7 +751,7 @@ export default function VehiclesPage() {
           <div className="w-full max-w-4xl rounded-2xl bg-white shadow-xl border border-gray-200 max-h-[90vh] overflow-y-auto">
             <div className="px-6 py-4 border-b flex items-center justify-between sticky top-0 bg-white z-10">
               <div className="font-semibold text-lg">
-                {mode === "create" ? "Thêm phương tiện mới" : `Chỉnh sửa: ${editing?.plate_no}`}
+                {mode === "create" ? t("modal.createTitle") : t("modal.editTitle", { plateNo: editing?.plate_no })}
               </div>
               <button onClick={() => setOpen(false)} className="text-gray-500 hover:text-black text-xl">
                 &times;
@@ -761,49 +763,49 @@ export default function VehiclesPage() {
               <div>
                 <h3 className="text-sm font-semibold mb-3 text-gray-800 flex items-center gap-2">
                   <div className="w-1 h-4 bg-blue-600 rounded"></div>
-                  Thông tin cơ bản
+                  {t("modal.basicInfo")}
                 </h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs text-gray-600 mb-1">Mã phương tiện</label>
+                    <label className="block text-xs text-gray-600 mb-1">{t("modal.vehicleCode")}</label>
                     <input
                       value={form.code}
                       onChange={(e) => setForm((s) => ({ ...s, code: e.target.value }))}
                       className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-200"
-                      placeholder="R01, T01, etc."
+                      placeholder={t("modal.vehicleCodePlaceholder")}
                     />
                   </div>
                   <div>
                     <label className="block text-xs text-gray-600 mb-1">
-                      Biển số xe <span className="text-red-500">*</span>
+                      {t("modal.plateNo")} <span className="text-red-500">*</span>
                     </label>
                     <input
                       value={form.plate_no}
                       onChange={(e) => setForm((s) => ({ ...s, plate_no: e.target.value }))}
                       className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-200"
-                      placeholder="51C-12345"
+                      placeholder={t("modal.plateNoPlaceholder")}
                     />
                   </div>
                   <div>
                     <label className="block text-xs text-gray-600 mb-1">
-                      Loại <span className="text-red-500">*</span>
+                      {t("modal.type")} <span className="text-red-500">*</span>
                     </label>
                     <select
                       value={form.type}
                       onChange={(e) => setForm((s) => ({ ...s, type: e.target.value }))}
                       className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-200"
                     >
-                      <option value="TRACTOR">TRACTOR (Đầu kéo)</option>
-                      <option value="TRAILER">TRAILER (Rơ mooc)</option>
+                      <option value="TRACTOR">{t("typeOptions.tractor")}</option>
+                      <option value="TRAILER">{t("typeOptions.trailer")}</option>
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs text-gray-600 mb-1">Tên loại phương tiện</label>
+                    <label className="block text-xs text-gray-600 mb-1">{t("modal.vehicleTypeName")}</label>
                     <input
                       value={form.vehicle_type_name}
                       onChange={(e) => setForm((s) => ({ ...s, vehicle_type_name: e.target.value }))}
                       className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-200"
-                      placeholder="Romooc, Đầu kéo"
+                      placeholder={t("modal.vehicleTypeNamePlaceholder")}
                     />
                   </div>
                 </div>
@@ -813,44 +815,44 @@ export default function VehiclesPage() {
               <div>
                 <h3 className="text-sm font-semibold mb-3 text-gray-800 flex items-center gap-2">
                   <div className="w-1 h-4 bg-purple-600 rounded"></div>
-                  Thông tin nhà sản xuất
+                  {t("modal.manufacturerInfo")}
                 </h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs text-gray-600 mb-1">Hãng xe</label>
+                    <label className="block text-xs text-gray-600 mb-1">{t("modal.manufacturer")}</label>
                     <input
                       value={form.manufacturer}
                       onChange={(e) => setForm((s) => ({ ...s, manufacturer: e.target.value }))}
                       className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-200"
-                      placeholder="Hyundai"
+                      placeholder={t("modal.manufacturerPlaceholder")}
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-gray-600 mb-1">Dòng xe</label>
+                    <label className="block text-xs text-gray-600 mb-1">{t("modal.model")}</label>
                     <input
                       value={form.model}
                       onChange={(e) => setForm((s) => ({ ...s, model: e.target.value }))}
                       className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-200"
-                      placeholder="HD700"
+                      placeholder={t("modal.modelPlaceholder")}
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-gray-600 mb-1">Nước sản xuất</label>
+                    <label className="block text-xs text-gray-600 mb-1">{t("modal.countryOfOrigin")}</label>
                     <input
                       value={form.country_of_origin}
                       onChange={(e) => setForm((s) => ({ ...s, country_of_origin: e.target.value }))}
                       className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-200"
-                      placeholder="VN, HQ"
+                      placeholder={t("modal.countryOfOriginPlaceholder")}
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-gray-600 mb-1">Năm sản xuất</label>
+                    <label className="block text-xs text-gray-600 mb-1">{t("modal.yearOfManufacture")}</label>
                     <input
                       type="number"
                       value={form.year_of_manufacture}
                       onChange={(e) => setForm((s) => ({ ...s, year_of_manufacture: e.target.value }))}
                       className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-200"
-                      placeholder="2015"
+                      placeholder={t("modal.yearOfManufacturePlaceholder")}
                     />
                   </div>
                 </div>
@@ -860,64 +862,64 @@ export default function VehiclesPage() {
               <div>
                 <h3 className="text-sm font-semibold mb-3 text-gray-800 flex items-center gap-2">
                   <div className="w-1 h-4 bg-green-600 rounded"></div>
-                  Thông số kỹ thuật
+                  {t("modal.technicalSpecs")}
                 </h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs text-gray-600 mb-1">Số khung</label>
+                    <label className="block text-xs text-gray-600 mb-1">{t("modal.chassisNumber")}</label>
                     <input
                       value={form.chassis_number}
                       onChange={(e) => setForm((s) => ({ ...s, chassis_number: e.target.value }))}
                       className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-200"
-                      placeholder="RPUF403V2F3000004"
+                      placeholder={t("modal.chassisNumberPlaceholder")}
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-gray-600 mb-1">Số máy</label>
+                    <label className="block text-xs text-gray-600 mb-1">{t("modal.engineNumber")}</label>
                     <input
                       value={form.engine_number}
                       onChange={(e) => setForm((s) => ({ ...s, engine_number: e.target.value }))}
                       className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-200"
-                      placeholder="D6ACF1279583"
+                      placeholder={t("modal.engineNumberPlaceholder")}
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-gray-600 mb-1">Khối lượng bản thân (kg)</label>
+                    <label className="block text-xs text-gray-600 mb-1">{t("modal.curbWeight")}</label>
                     <input
                       type="number"
                       value={form.curb_weight}
                       onChange={(e) => setForm((s) => ({ ...s, curb_weight: e.target.value }))}
                       className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-200"
-                      placeholder="7020"
+                      placeholder={t("modal.curbWeightPlaceholder")}
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-gray-600 mb-1">Khối lượng hàng (kg)</label>
+                    <label className="block text-xs text-gray-600 mb-1">{t("modal.payloadCapacity")}</label>
                     <input
                       type="number"
                       value={form.payload_capacity}
                       onChange={(e) => setForm((s) => ({ ...s, payload_capacity: e.target.value }))}
                       className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-200"
-                      placeholder="32790"
+                      placeholder={t("modal.payloadCapacityPlaceholder")}
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-gray-600 mb-1">Khối lượng toàn bộ (kg)</label>
+                    <label className="block text-xs text-gray-600 mb-1">{t("modal.grossWeight")}</label>
                     <input
                       type="number"
                       value={form.gross_weight}
                       onChange={(e) => setForm((s) => ({ ...s, gross_weight: e.target.value }))}
                       className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-200"
-                      placeholder="39810"
+                      placeholder={t("modal.grossWeightPlaceholder")}
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-gray-600 mb-1">Kích thước bao (mm)</label>
+                    <label className="block text-xs text-gray-600 mb-1">{t("modal.dimensions")}</label>
                     <input
                       value={form.dimensions}
                       onChange={(e) => setForm((s) => ({ ...s, dimensions: e.target.value }))}
                       className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-200"
-                      placeholder="12310x2500x1490"
+                      placeholder={t("modal.dimensionsPlaceholder")}
                     />
                   </div>
                 </div>
@@ -927,11 +929,11 @@ export default function VehiclesPage() {
               <div>
                 <h3 className="text-sm font-semibold mb-3 text-gray-800 flex items-center gap-2">
                   <div className="w-1 h-4 bg-yellow-600 rounded"></div>
-                  Đăng kiểm & Trạng thái
+                  {t("modal.registrationStatus")}
                 </h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs text-gray-600 mb-1">Hạn đăng kiểm</label>
+                    <label className="block text-xs text-gray-600 mb-1">{t("modal.registrationExpiry")}</label>
                     <input
                       type="date"
                       value={form.registration_expiry}
@@ -941,28 +943,28 @@ export default function VehiclesPage() {
                   </div>
                   <div>
                     <label className="block text-xs text-gray-600 mb-1">
-                      Trạng thái <span className="text-red-500">*</span>
+                      {t("modal.status")} <span className="text-red-500">*</span>
                     </label>
                     <select
                       value={form.status}
                       onChange={(e) => setForm((s) => ({ ...s, status: e.target.value }))}
                       className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-200"
                     >
-                      <option value="ACTIVE">ACTIVE - Hoạt động</option>
-                      <option value="INACTIVE">INACTIVE - Ngừng hoạt động</option>
-                      <option value="MAINTENANCE">MAINTENANCE - Bảo trì</option>
-                      <option value="DISPOSED">DISPOSED - Đã thanh lý</option>
+                      <option value="ACTIVE">{t("statusOptions.active")}</option>
+                      <option value="INACTIVE">{t("statusOptions.inactive")}</option>
+                      <option value="MAINTENANCE">{t("statusOptions.maintenance")}</option>
+                      <option value="DISPOSED">{t("statusOptions.disposed")}</option>
                     </select>
                   </div>
                   {form.status === "INACTIVE" && (
                     <div className="col-span-2">
-                      <label className="block text-xs text-gray-600 mb-1">Lý do ngừng hoạt động</label>
+                      <label className="block text-xs text-gray-600 mb-1">{t("modal.inactiveReason")}</label>
                       <textarea
                         value={form.inactive_reason}
                         onChange={(e) => setForm((s) => ({ ...s, inactive_reason: e.target.value }))}
                         className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-200"
                         rows={2}
-                        placeholder="Nhập lý do..."
+                        placeholder={t("modal.inactiveReasonPlaceholder")}
                       />
                     </div>
                   )}
@@ -976,14 +978,14 @@ export default function VehiclesPage() {
 
             <div className="px-6 py-4 border-t flex items-center justify-end gap-2 sticky bottom-0 bg-white">
               <button onClick={() => setOpen(false)} className="rounded-xl border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50">
-                Hủy
+                {t("modal.cancel")}
               </button>
               <button
                 onClick={onSave}
                 disabled={saving}
                 className="rounded-xl bg-blue-600 text-white px-4 py-2 text-sm font-medium disabled:opacity-60 hover:bg-blue-700"
               >
-                {saving ? "Đang lưu..." : "Lưu"}
+                {saving ? t("modal.saving") : t("modal.save")}
               </button>
             </div>
           </div>
@@ -997,7 +999,7 @@ export default function VehiclesPage() {
             <div className="px-6 py-4 border-b flex items-center justify-between bg-white">
               <div className="font-semibold text-lg flex items-center gap-2">
                 <Link2 className="w-5 h-5 text-purple-600" />
-                Ghép cặp Đầu kéo - Rơ mooc
+                {t("pairingModal.title")}
               </div>
               <button onClick={() => setPairingModalOpen(false)} className="text-gray-500 hover:text-black text-xl">
                 &times;
@@ -1009,46 +1011,46 @@ export default function VehiclesPage() {
               <div className="border border-purple-200 rounded-xl p-4 bg-purple-50/50">
                 <h3 className="text-sm font-semibold mb-3 text-purple-800 flex items-center gap-2">
                   <Plus className="w-4 h-4" />
-                  Tạo ghép cặp mới
+                  {t("pairingModal.createNew")}
                 </h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs text-gray-600 mb-1">
-                      Đầu kéo <span className="text-red-500">*</span>
+                      {t("pairingModal.tractor")} <span className="text-red-500">*</span>
                     </label>
                     <select
                       value={pairingForm.tractor_id}
                       onChange={(e) => setPairingForm(s => ({ ...s, tractor_id: e.target.value }))}
                       className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-purple-200"
                     >
-                      <option value="">-- Chọn đầu kéo --</option>
-                      {tractors.map(t => (
-                        <option key={t.id} value={t.id}>
-                          {t.code ? `${t.code} - ` : ""}{t.plate_no}
+                      <option value="">{t("pairingModal.selectTractor")}</option>
+                      {tractors.map(tr => (
+                        <option key={tr.id} value={tr.id}>
+                          {tr.code ? `${tr.code} - ` : ""}{tr.plate_no}
                         </option>
                       ))}
                     </select>
                   </div>
                   <div>
                     <label className="block text-xs text-gray-600 mb-1">
-                      Rơ mooc <span className="text-red-500">*</span>
+                      {t("pairingModal.trailer")} <span className="text-red-500">*</span>
                     </label>
                     <select
                       value={pairingForm.trailer_id}
                       onChange={(e) => setPairingForm(s => ({ ...s, trailer_id: e.target.value }))}
                       className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-purple-200"
                     >
-                      <option value="">-- Chọn rơ mooc --</option>
-                      {trailers.map(t => (
-                        <option key={t.id} value={t.id}>
-                          {t.code ? `${t.code} - ` : ""}{t.plate_no}
+                      <option value="">{t("pairingModal.selectTrailer")}</option>
+                      {trailers.map(tr => (
+                        <option key={tr.id} value={tr.id}>
+                          {tr.code ? `${tr.code} - ` : ""}{tr.plate_no}
                         </option>
                       ))}
                     </select>
                   </div>
                   <div>
                     <label className="block text-xs text-gray-600 mb-1">
-                      Ngày hiệu lực <span className="text-red-500">*</span>
+                      {t("pairingModal.effectiveDate")} <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="date"
@@ -1058,7 +1060,7 @@ export default function VehiclesPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-gray-600 mb-1">Ngày kết thúc (để trống nếu chưa biết)</label>
+                    <label className="block text-xs text-gray-600 mb-1">{t("pairingModal.endDate")}</label>
                     <input
                       type="date"
                       value={pairingForm.end_date}
@@ -1067,12 +1069,12 @@ export default function VehiclesPage() {
                     />
                   </div>
                   <div className="col-span-2">
-                    <label className="block text-xs text-gray-600 mb-1">Ghi chú</label>
+                    <label className="block text-xs text-gray-600 mb-1">{t("pairingModal.notes")}</label>
                     <input
                       value={pairingForm.notes}
                       onChange={(e) => setPairingForm(s => ({ ...s, notes: e.target.value }))}
                       className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-purple-200"
-                      placeholder="Ghi chú (tuỳ chọn)"
+                      placeholder={t("pairingModal.notesPlaceholder")}
                     />
                   </div>
                   <div className="col-span-2 flex justify-end">
@@ -1084,12 +1086,12 @@ export default function VehiclesPage() {
                       {pairingSaving ? (
                         <>
                           <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                          Đang lưu...
+                          {t("pairingModal.saving")}
                         </>
                       ) : (
                         <>
                           <Link2 className="w-4 h-4" />
-                          Tạo ghép cặp
+                          {t("pairingModal.createPairing")}
                         </>
                       )}
                     </button>
@@ -1101,29 +1103,29 @@ export default function VehiclesPage() {
               <div>
                 <h3 className="text-sm font-semibold mb-3 text-gray-800 flex items-center gap-2">
                   <div className="w-1 h-4 bg-purple-600 rounded"></div>
-                  Danh sách ghép cặp ({pairings.length})
+                  {t("pairingModal.pairingList")} ({pairings.length})
                 </h3>
 
                 {pairingsLoading ? (
                   <div className="text-center py-8 text-gray-500">
                     <div className="w-6 h-6 border-2 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-                    Đang tải...
+                    {t("pairingModal.loading")}
                   </div>
                 ) : pairings.length === 0 ? (
                   <div className="text-center py-8 text-gray-500">
-                    Chưa có ghép cặp nào
+                    {t("pairingModal.noPairings")}
                   </div>
                 ) : (
                   <div className="border border-gray-200 rounded-xl overflow-hidden">
                     <table className="w-full text-sm">
                       <thead className="bg-gray-50">
                         <tr>
-                          <th className="px-3 py-2.5 text-left font-semibold text-gray-700">Đầu kéo</th>
-                          <th className="px-3 py-2.5 text-left font-semibold text-gray-700">Rơ mooc</th>
-                          <th className="px-3 py-2.5 text-left font-semibold text-gray-700">Ngày hiệu lực</th>
-                          <th className="px-3 py-2.5 text-left font-semibold text-gray-700">Ngày kết thúc</th>
-                          <th className="px-3 py-2.5 text-left font-semibold text-gray-700">Trạng thái</th>
-                          <th className="px-3 py-2.5 text-left font-semibold text-gray-700">Thao tác</th>
+                          <th className="px-3 py-2.5 text-left font-semibold text-gray-700">{t("pairingModal.columns.tractor")}</th>
+                          <th className="px-3 py-2.5 text-left font-semibold text-gray-700">{t("pairingModal.columns.trailer")}</th>
+                          <th className="px-3 py-2.5 text-left font-semibold text-gray-700">{t("pairingModal.columns.effectiveDate")}</th>
+                          <th className="px-3 py-2.5 text-left font-semibold text-gray-700">{t("pairingModal.columns.endDate")}</th>
+                          <th className="px-3 py-2.5 text-left font-semibold text-gray-700">{t("pairingModal.columns.status")}</th>
+                          <th className="px-3 py-2.5 text-left font-semibold text-gray-700">{t("pairingModal.columns.actions")}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -1154,11 +1156,11 @@ export default function VehiclesPage() {
                             <td className="px-3 py-2.5">
                               {p.is_active ? (
                                 <span className="px-2 py-1 rounded-lg text-xs font-semibold bg-green-100 text-green-800">
-                                  Đang hoạt động
+                                  {t("pairingModal.status.active")}
                                 </span>
                               ) : (
                                 <span className="px-2 py-1 rounded-lg text-xs font-semibold bg-gray-100 text-gray-600">
-                                  Đã kết thúc
+                                  {t("pairingModal.status.ended")}
                                 </span>
                               )}
                             </td>
@@ -1168,7 +1170,7 @@ export default function VehiclesPage() {
                                   <button
                                     onClick={() => endPairing(p.id)}
                                     className="p-1.5 hover:bg-orange-50 rounded-lg text-orange-600 hover:text-orange-800"
-                                    title="Kết thúc ghép cặp"
+                                    title={t("pairingModal.actions.endPairing")}
                                   >
                                     <Unlink className="w-4 h-4" />
                                   </button>
@@ -1176,7 +1178,7 @@ export default function VehiclesPage() {
                                 <button
                                   onClick={() => deletePairing(p.id)}
                                   className="p-1.5 hover:bg-red-50 rounded-lg text-red-600 hover:text-red-800"
-                                  title="Xóa"
+                                  title={t("pairingModal.actions.delete")}
                                 >
                                   <Trash2 className="w-4 h-4" />
                                 </button>
@@ -1196,7 +1198,7 @@ export default function VehiclesPage() {
                 onClick={() => setPairingModalOpen(false)}
                 className="rounded-xl border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50"
               >
-                Đóng
+                {t("pairingModal.close")}
               </button>
             </div>
           </div>

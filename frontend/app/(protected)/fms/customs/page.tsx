@@ -17,6 +17,8 @@ import {
   Download,
   ChevronUp,
   ChevronDown,
+  Trash2,
+  GripVertical,
 } from "lucide-react";
 import { usePageTranslations } from "@/hooks/usePageTranslations";
 
@@ -31,11 +33,14 @@ interface CustomsDeclaration {
   customs_office?: string;
   invoice_no?: string;
   invoice_date?: string;
+  bl_no?: string;
+  foreign_partner_name?: string;
+  foreign_partner_country?: string;
   currency_code?: string;
   total_value?: number;
   total_taxes?: number;
   submission_date?: string;
-  registered_date?: string;
+  registration_date?: string;
   release_date?: string;
   inspection_required: boolean;
   created_at: string;
@@ -43,18 +48,23 @@ interface CustomsDeclaration {
 
 // Default column widths
 const DEFAULT_COLUMN_WIDTHS = {
-  declarationNo: 140,
-  type: 80,
+  declarationNo: 130,
+  invoiceNo: 120,
+  blNo: 140,
+  type: 70,
+  exporter: 180,
   trader: 180,
-  customsOffice: 120,
-  value: 100,
-  taxes: 100,
-  status: 110,
-  actions: 100,
+  registeredDate: 100,
+  status: 100,
+  actions: 80,
 };
 
-type SortField = "declaration_no" | "declaration_type" | "trader_name" | "total_value" | "status";
+type SortField = "declaration_no" | "invoice_no" | "bl_no" | "declaration_type" | "foreign_partner_name" | "trader_name" | "registration_date" | "status";
 type SortOrder = "asc" | "desc";
+
+// Column definition for drag & drop
+type ColumnKey = "declarationNo" | "invoiceNo" | "blNo" | "type" | "exporter" | "trader" | "registeredDate" | "status" | "actions";
+const DEFAULT_COLUMN_ORDER: ColumnKey[] = ["declarationNo", "invoiceNo", "blNo", "type", "exporter", "trader", "registeredDate", "status", "actions"];
 
 export default function CustomsPage() {
   const { t } = usePageTranslations("fms.customsPage");
@@ -79,6 +89,14 @@ export default function CustomsPage() {
   const [resizing, setResizing] = useState<string | null>(null);
   const startX = useRef(0);
   const startWidth = useRef(0);
+
+  // Column drag & drop reorder
+  const [columnOrder, setColumnOrder] = useState<ColumnKey[]>(DEFAULT_COLUMN_ORDER);
+  const [draggingColumn, setDraggingColumn] = useState<ColumnKey | null>(null);
+  const [dragOverColumn, setDragOverColumn] = useState<ColumnKey | null>(null);
+
+  // Delete state
+  const [deleting, setDeleting] = useState<string | null>(null);
 
   useEffect(() => {
     fetchDeclarations();
@@ -297,6 +315,227 @@ export default function CustomsPage() {
     }
   };
 
+  // Delete declaration
+  const handleDeleteDeclaration = async (id: string, declarationNo?: string) => {
+    if (!confirm(t("confirmDelete") || `Bạn có chắc chắn muốn xóa tờ khai ${declarationNo || id}?`)) return;
+
+    setDeleting(id);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(
+        `/api/v1/fms/customs/${id}`,
+        {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (res.ok) {
+        fetchDeclarations();
+      } else {
+        const data = await res.json();
+        alert(`${t("deleteError") || "Lỗi xóa"}: ${data.detail || ""}`);
+      }
+    } catch (error) {
+      alert(t("errors.generalError"));
+    } finally {
+      setDeleting(null);
+    }
+  };
+
+  // Column drag & drop handlers
+  const handleDragStart = (col: ColumnKey) => {
+    setDraggingColumn(col);
+  };
+
+  const handleDragOver = (e: React.DragEvent, col: ColumnKey) => {
+    e.preventDefault();
+    if (col !== draggingColumn && col !== "actions") {
+      setDragOverColumn(col);
+    }
+  };
+
+  const handleDragEnd = () => {
+    if (draggingColumn && dragOverColumn && draggingColumn !== dragOverColumn) {
+      const newOrder = [...columnOrder];
+      const fromIndex = newOrder.indexOf(draggingColumn);
+      const toIndex = newOrder.indexOf(dragOverColumn);
+      newOrder.splice(fromIndex, 1);
+      newOrder.splice(toIndex, 0, draggingColumn);
+      setColumnOrder(newOrder);
+    }
+    setDraggingColumn(null);
+    setDragOverColumn(null);
+  };
+
+  // Column config mapping
+  const columnConfig: Record<ColumnKey, { sortField?: SortField; label: string }> = {
+    declarationNo: { sortField: "declaration_no", label: t("columns.declarationNo") },
+    invoiceNo: { sortField: "invoice_no", label: t("columns.invoiceNo") },
+    blNo: { sortField: "bl_no", label: t("columns.blNo") },
+    type: { sortField: "declaration_type", label: t("columns.type") },
+    exporter: { sortField: "foreign_partner_name", label: t("columns.exporter") },
+    trader: { sortField: "trader_name", label: t("columns.trader") },
+    registeredDate: { sortField: "registration_date", label: t("columns.registeredDate") },
+    status: { sortField: "status", label: t("columns.status") },
+    actions: { label: t("columns.actions") },
+  };
+
+  // Render header cell
+  const renderHeaderCell = (col: ColumnKey) => {
+    const config = columnConfig[col];
+    const isActions = col === "actions";
+    const isDragging = draggingColumn === col;
+    const isDragOver = dragOverColumn === col;
+
+    return (
+      <th
+        key={col}
+        style={{ width: columnWidths[col] }}
+        className={`text-left px-2 py-2 font-bold text-gray-700 ${
+          config.sortField ? "cursor-pointer hover:bg-gray-100" : ""
+        } ${isDragging ? "opacity-50" : ""} ${isDragOver ? "bg-blue-50 border-l-2 border-blue-500" : ""}`}
+        onClick={() => config.sortField && handleSort(config.sortField)}
+        draggable={!isActions}
+        onDragStart={() => handleDragStart(col)}
+        onDragOver={(e) => handleDragOver(e, col)}
+        onDragEnd={handleDragEnd}
+      >
+        <div className="flex items-center gap-1">
+          {!isActions && (
+            <GripVertical className="w-3 h-3 text-gray-400 cursor-grab" />
+          )}
+          <span className={isActions ? "ml-auto" : ""}>{config.label}</span>
+          {config.sortField && <SortIcon field={config.sortField} />}
+        </div>
+        <div
+          className={`resize-handle ${resizing === col ? "active" : ""}`}
+          onMouseDown={(e) => { e.stopPropagation(); handleMouseDown(col, e); }}
+        />
+      </th>
+    );
+  };
+
+  // Render body cell
+  const renderBodyCell = (col: ColumnKey, declaration: CustomsDeclaration) => {
+    switch (col) {
+      case "declarationNo":
+        return (
+          <td key={col} style={{ width: columnWidths.declarationNo }} className="px-2 py-1.5">
+            <p className="font-medium text-blue-600 truncate">
+              {declaration.declaration_no || t("filters.draft")}
+            </p>
+          </td>
+        );
+      case "invoiceNo":
+        return (
+          <td key={col} style={{ width: columnWidths.invoiceNo }} className="px-2 py-1.5 truncate">
+            {declaration.invoice_no || "-"}
+          </td>
+        );
+      case "blNo":
+        return (
+          <td key={col} style={{ width: columnWidths.blNo }} className="px-2 py-1.5 truncate">
+            {declaration.bl_no || "-"}
+          </td>
+        );
+      case "type":
+        return (
+          <td key={col} style={{ width: columnWidths.type }} className="px-2 py-1.5">
+            <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
+              declaration.declaration_type === "IMPORT"
+                ? "bg-blue-100 text-blue-800"
+                : declaration.declaration_type === "EXPORT"
+                ? "bg-green-100 text-green-800"
+                : "bg-purple-100 text-purple-800"
+            }`}>
+              {getTypeLabel(declaration.declaration_type)}
+            </span>
+          </td>
+        );
+      case "exporter":
+        return (
+          <td key={col} style={{ width: columnWidths.exporter }} className="px-2 py-1.5 truncate">
+            {declaration.foreign_partner_name || "-"}
+          </td>
+        );
+      case "trader":
+        return (
+          <td key={col} style={{ width: columnWidths.trader }} className="px-2 py-1.5">
+            <p className="truncate">{declaration.trader_name || "-"}</p>
+            <p className="text-[10px] text-gray-500">{declaration.trader_tax_code}</p>
+          </td>
+        );
+      case "registeredDate":
+        return (
+          <td key={col} style={{ width: columnWidths.registeredDate }} className="px-2 py-1.5 truncate">
+            {declaration.registration_date ? new Date(declaration.registration_date).toLocaleDateString("vi-VN") : "-"}
+          </td>
+        );
+      case "status":
+        return (
+          <td key={col} style={{ width: columnWidths.status }} className="px-2 py-1.5">
+            <div className="flex items-center gap-1">
+              {getStatusIcon(declaration.status)}
+              <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${getStatusColor(declaration.status)}`}>
+                {getStatusLabel(declaration.status)}
+              </span>
+            </div>
+          </td>
+        );
+      case "actions":
+        return (
+          <td key={col} style={{ width: columnWidths.actions }} className="px-2 py-1.5 text-right">
+            <div className="flex items-center justify-end gap-1">
+              <button
+                onClick={() => handleViewDeclaration(declaration.id)}
+                className="p-1 hover:bg-gray-100 rounded"
+                title={t("actions.view")}
+              >
+                <Eye className="w-3 h-3 text-gray-600" />
+              </button>
+              <button
+                onClick={() => handleEditDeclaration(declaration.id)}
+                className="p-1 hover:bg-gray-100 rounded"
+                title={t("actions.edit")}
+              >
+                <Edit className="w-3 h-3 text-gray-600" />
+              </button>
+              {declaration.status === "DRAFT" && (
+                <button
+                  onClick={() => handleSubmitDeclaration(declaration.id)}
+                  disabled={submitting === declaration.id}
+                  className="p-1 hover:bg-gray-100 rounded disabled:opacity-50"
+                  title={t("actions.submit")}
+                >
+                  <Upload className={`w-3 h-3 ${submitting === declaration.id ? "animate-spin text-gray-400" : "text-blue-600"}`} />
+                </button>
+              )}
+              {declaration.status !== "DRAFT" && (
+                <button
+                  onClick={() => handleExportXML(declaration.id, declaration.declaration_no)}
+                  className="p-1 hover:bg-gray-100 rounded"
+                  title={t("actions.exportXml")}
+                >
+                  <Download className="w-3 h-3 text-green-600" />
+                </button>
+              )}
+              <button
+                onClick={() => handleDeleteDeclaration(declaration.id, declaration.declaration_no)}
+                disabled={deleting === declaration.id}
+                className="p-1 hover:bg-red-100 rounded disabled:opacity-50"
+                title={t("actions.delete") || "Xóa"}
+              >
+                <Trash2 className={`w-3 h-3 ${deleting === declaration.id ? "animate-spin text-gray-400" : "text-red-600"}`} />
+              </button>
+            </div>
+          </td>
+        );
+      default:
+        return null;
+    }
+  };
+
   const totalPages = Math.ceil(total / pageSize);
 
   return (
@@ -399,92 +638,7 @@ export default function CustomsPage() {
         <table className="w-full text-xs" style={{ tableLayout: "fixed" }}>
           <thead className="bg-gray-50 border-b">
             <tr>
-              <th
-                style={{ width: columnWidths.declarationNo }}
-                className="text-left px-2 py-2 font-bold text-gray-700 cursor-pointer hover:bg-gray-100"
-                onClick={() => handleSort("declaration_no")}
-              >
-                {t("columns.declarationNo")}
-                <SortIcon field="declaration_no" />
-                <div
-                  className={`resize-handle ${resizing === "declarationNo" ? "active" : ""}`}
-                  onMouseDown={(e) => handleMouseDown("declarationNo", e)}
-                />
-              </th>
-              <th
-                style={{ width: columnWidths.type }}
-                className="text-left px-2 py-2 font-bold text-gray-700 cursor-pointer hover:bg-gray-100"
-                onClick={() => handleSort("declaration_type")}
-              >
-                {t("columns.type")}
-                <SortIcon field="declaration_type" />
-                <div
-                  className={`resize-handle ${resizing === "type" ? "active" : ""}`}
-                  onMouseDown={(e) => handleMouseDown("type", e)}
-                />
-              </th>
-              <th
-                style={{ width: columnWidths.trader }}
-                className="text-left px-2 py-2 font-bold text-gray-700 cursor-pointer hover:bg-gray-100"
-                onClick={() => handleSort("trader_name")}
-              >
-                {t("columns.trader")}
-                <SortIcon field="trader_name" />
-                <div
-                  className={`resize-handle ${resizing === "trader" ? "active" : ""}`}
-                  onMouseDown={(e) => handleMouseDown("trader", e)}
-                />
-              </th>
-              <th
-                style={{ width: columnWidths.customsOffice }}
-                className="text-left px-2 py-2 font-bold text-gray-700"
-              >
-                {t("columns.customsOffice")}
-                <div
-                  className={`resize-handle ${resizing === "customsOffice" ? "active" : ""}`}
-                  onMouseDown={(e) => handleMouseDown("customsOffice", e)}
-                />
-              </th>
-              <th
-                style={{ width: columnWidths.value }}
-                className="text-right px-2 py-2 font-bold text-gray-700 cursor-pointer hover:bg-gray-100"
-                onClick={() => handleSort("total_value")}
-              >
-                {t("columns.value")}
-                <SortIcon field="total_value" />
-                <div
-                  className={`resize-handle ${resizing === "value" ? "active" : ""}`}
-                  onMouseDown={(e) => handleMouseDown("value", e)}
-                />
-              </th>
-              <th
-                style={{ width: columnWidths.taxes }}
-                className="text-right px-2 py-2 font-bold text-gray-700"
-              >
-                {t("columns.taxes")}
-                <div
-                  className={`resize-handle ${resizing === "taxes" ? "active" : ""}`}
-                  onMouseDown={(e) => handleMouseDown("taxes", e)}
-                />
-              </th>
-              <th
-                style={{ width: columnWidths.status }}
-                className="text-left px-2 py-2 font-bold text-gray-700 cursor-pointer hover:bg-gray-100"
-                onClick={() => handleSort("status")}
-              >
-                {t("columns.status")}
-                <SortIcon field="status" />
-                <div
-                  className={`resize-handle ${resizing === "status" ? "active" : ""}`}
-                  onMouseDown={(e) => handleMouseDown("status", e)}
-                />
-              </th>
-              <th
-                style={{ width: columnWidths.actions }}
-                className="text-right px-2 py-2 font-bold text-gray-700"
-              >
-                {t("columns.actions")}
-              </th>
+              {columnOrder.map((col) => renderHeaderCell(col))}
             </tr>
           </thead>
         </table>
@@ -506,83 +660,7 @@ export default function CustomsPage() {
           <tbody className="divide-y divide-gray-100">
             {filteredDeclarations.map((declaration) => (
               <tr key={declaration.id} className="hover:bg-gray-50">
-                <td style={{ width: columnWidths.declarationNo }} className="px-2 py-1.5">
-                  <p className="font-medium text-blue-600 truncate">
-                    {declaration.declaration_no || t("filters.draft")}
-                  </p>
-                  <p className="text-[10px] text-gray-500 truncate">
-                    {t("columns.invoiceNo")}: {declaration.invoice_no || "-"}
-                  </p>
-                </td>
-                <td style={{ width: columnWidths.type }} className="px-2 py-1.5">
-                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
-                    declaration.declaration_type === "IMPORT"
-                      ? "bg-blue-100 text-blue-800"
-                      : declaration.declaration_type === "EXPORT"
-                      ? "bg-green-100 text-green-800"
-                      : "bg-purple-100 text-purple-800"
-                  }`}>
-                    {getTypeLabel(declaration.declaration_type)}
-                  </span>
-                </td>
-                <td style={{ width: columnWidths.trader }} className="px-2 py-1.5">
-                  <p className="truncate">{declaration.trader_name || "-"}</p>
-                  <p className="text-[10px] text-gray-500">{declaration.trader_tax_code}</p>
-                </td>
-                <td style={{ width: columnWidths.customsOffice }} className="px-2 py-1.5 truncate">
-                  {declaration.customs_office || "-"}
-                </td>
-                <td style={{ width: columnWidths.value }} className="px-2 py-1.5 text-right">
-                  {formatCurrency(declaration.total_value, declaration.currency_code)}
-                </td>
-                <td style={{ width: columnWidths.taxes }} className="px-2 py-1.5 text-right font-medium text-red-600">
-                  {formatCurrency(declaration.total_taxes, "VND")}
-                </td>
-                <td style={{ width: columnWidths.status }} className="px-2 py-1.5">
-                  <div className="flex items-center gap-1">
-                    {getStatusIcon(declaration.status)}
-                    <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${getStatusColor(declaration.status)}`}>
-                      {getStatusLabel(declaration.status)}
-                    </span>
-                  </div>
-                </td>
-                <td style={{ width: columnWidths.actions }} className="px-2 py-1.5 text-right">
-                  <div className="flex items-center justify-end gap-1">
-                    <button
-                      onClick={() => handleViewDeclaration(declaration.id)}
-                      className="p-1 hover:bg-gray-100 rounded"
-                      title={t("actions.view")}
-                    >
-                      <Eye className="w-3 h-3 text-gray-600" />
-                    </button>
-                    <button
-                      onClick={() => handleEditDeclaration(declaration.id)}
-                      className="p-1 hover:bg-gray-100 rounded"
-                      title={t("actions.edit")}
-                    >
-                      <Edit className="w-3 h-3 text-gray-600" />
-                    </button>
-                    {declaration.status === "DRAFT" && (
-                      <button
-                        onClick={() => handleSubmitDeclaration(declaration.id)}
-                        disabled={submitting === declaration.id}
-                        className="p-1 hover:bg-gray-100 rounded disabled:opacity-50"
-                        title={t("actions.submit")}
-                      >
-                        <Upload className={`w-3 h-3 ${submitting === declaration.id ? "animate-spin text-gray-400" : "text-blue-600"}`} />
-                      </button>
-                    )}
-                    {declaration.status !== "DRAFT" && (
-                      <button
-                        onClick={() => handleExportXML(declaration.id, declaration.declaration_no)}
-                        className="p-1 hover:bg-gray-100 rounded"
-                        title={t("actions.exportXml")}
-                      >
-                        <Download className="w-3 h-3 text-green-600" />
-                      </button>
-                    )}
-                  </div>
-                </td>
+                {columnOrder.map((col) => renderBodyCell(col, declaration))}
               </tr>
             ))}
           </tbody>

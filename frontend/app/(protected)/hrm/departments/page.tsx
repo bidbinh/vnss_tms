@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import {
   Plus,
@@ -32,6 +33,9 @@ interface Department {
 }
 
 export default function DepartmentsPage() {
+  const t = useTranslations("hrm.departmentsPage");
+  const tCommon = useTranslations("common");
+
   const [departments, setDepartments] = useState<Department[]>([]);
   const [treeData, setTreeData] = useState<Department[]>([]);
   const [loading, setLoading] = useState(true);
@@ -126,20 +130,20 @@ export default function DepartmentsPage() {
       fetchDepartments();
     } catch (error: any) {
       console.error("Failed to save department:", error);
-      const message = error?.message || error?.detail || "Không thể lưu phòng ban";
+      const message = error?.message || error?.detail || t("saveError");
       alert(message);
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Bạn có chắc muốn xóa phòng ban này?")) return;
+    if (!confirm(t("confirmDelete"))) return;
 
     try {
       await apiFetch(`/hrm/departments/${id}`, { method: "DELETE" });
       fetchDepartments();
     } catch (error: any) {
       console.error("Failed to delete department:", error);
-      alert(error.message || "Không thể xóa phòng ban");
+      alert(error.message || t("deleteError"));
     }
   };
 
@@ -200,7 +204,7 @@ export default function DepartmentsPage() {
                   className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 w-full text-left"
                 >
                   <Plus className="w-4 h-4" />
-                  Thêm phòng con
+                  {t("addSubDepartment")}
                 </button>
                 <button
                   onClick={() => {
@@ -210,7 +214,7 @@ export default function DepartmentsPage() {
                   className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 w-full text-left"
                 >
                   <Edit className="w-4 h-4" />
-                  Chỉnh sửa
+                  {t("actions.edit")}
                 </button>
                 <button
                   onClick={() => {
@@ -220,7 +224,7 @@ export default function DepartmentsPage() {
                   className="flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 w-full text-left"
                 >
                   <Trash2 className="w-4 h-4" />
-                  Xóa
+                  {t("actions.delete")}
                 </button>
               </div>
             )}
@@ -241,8 +245,8 @@ export default function DepartmentsPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Phòng ban</h1>
-          <p className="text-gray-600 mt-1">Quản lý cơ cấu tổ chức</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t("title")}</h1>
+          <p className="text-gray-600 mt-1">{t("subtitle")}</p>
         </div>
         <div className="flex items-center gap-3">
           <div className="flex bg-gray-100 rounded-lg p-1">
@@ -252,7 +256,7 @@ export default function DepartmentsPage() {
                 viewMode === "list" ? "bg-white shadow" : "text-gray-600"
               }`}
             >
-              Danh sách
+              {t("viewModes.list")}
             </button>
             <button
               onClick={() => setViewMode("tree")}
@@ -260,7 +264,7 @@ export default function DepartmentsPage() {
                 viewMode === "tree" ? "bg-white shadow" : "text-gray-600"
               }`}
             >
-              Cây
+              {t("viewModes.tree")}
             </button>
           </div>
           <button
@@ -268,7 +272,7 @@ export default function DepartmentsPage() {
             className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           >
             <Plus className="w-4 h-4" />
-            Thêm phòng ban
+            {t("addDepartment")}
           </button>
         </div>
       </div>
@@ -276,17 +280,17 @@ export default function DepartmentsPage() {
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-white p-4 rounded-lg shadow border border-gray-200">
-          <div className="text-sm text-gray-600">Tổng phòng ban</div>
+          <div className="text-sm text-gray-600">{t("stats.totalDepartments")}</div>
           <div className="text-2xl font-bold text-gray-900">{departments.length}</div>
         </div>
         <div className="bg-white p-4 rounded-lg shadow border border-gray-200">
-          <div className="text-sm text-gray-600">Phòng cấp 1</div>
+          <div className="text-sm text-gray-600">{t("stats.level1Departments")}</div>
           <div className="text-2xl font-bold text-gray-900">
             {departments.filter((d) => !d.parent_id).length}
           </div>
         </div>
         <div className="bg-white p-4 rounded-lg shadow border border-gray-200">
-          <div className="text-sm text-gray-600">Tổng nhân viên</div>
+          <div className="text-sm text-gray-600">{t("stats.totalEmployees")}</div>
           <div className="text-2xl font-bold text-gray-900">
             {departments.reduce((sum, d) => sum + d.employee_count, 0)}
           </div>
@@ -302,7 +306,7 @@ export default function DepartmentsPage() {
         ) : viewMode === "tree" ? (
           <div>
             {treeData.length === 0 ? (
-              <div className="text-center p-8 text-gray-500">Chưa có phòng ban nào</div>
+              <div className="text-center p-8 text-gray-500">{t("noData")}</div>
             ) : (
               treeData.map((dept) => renderTreeNode(dept))
             )}
@@ -313,22 +317,22 @@ export default function DepartmentsPage() {
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
                   <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">
-                    Mã
+                    {t("columns.code")}
                   </th>
                   <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">
-                    Tên phòng ban
+                    {t("columns.name")}
                   </th>
                   <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">
-                    Phòng cha
+                    {t("columns.parent")}
                   </th>
                   <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">
-                    Trưởng phòng
+                    {t("columns.manager")}
                   </th>
                   <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">
-                    Số NV
+                    {t("columns.employeeCount")}
                   </th>
                   <th className="text-right px-4 py-3 text-xs font-medium text-gray-500 uppercase">
-                    Thao tác
+                    {t("columns.actions")}
                   </th>
                 </tr>
               </thead>
@@ -383,12 +387,12 @@ export default function DepartmentsPage() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
             <h2 className="text-lg font-semibold mb-4">
-              {editingDept ? "Chỉnh sửa phòng ban" : "Thêm phòng ban mới"}
+              {editingDept ? t("modal.editTitle") : t("modal.createTitle")}
             </h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Mã phòng ban *
+                  {t("modal.code")} *
                 </label>
                 <input
                   type="text"
@@ -400,7 +404,7 @@ export default function DepartmentsPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Tên phòng ban *
+                  {t("modal.name")} *
                 </label>
                 <input
                   type="text"
@@ -412,14 +416,14 @@ export default function DepartmentsPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Phòng cha
+                  {t("modal.parent")}
                 </label>
                 <select
                   value={formData.parent_id}
                   onChange={(e) => setFormData({ ...formData, parent_id: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="">-- Không có --</option>
+                  <option value="">{t("modal.noParent")}</option>
                   {departments
                     .filter((d) => d.id !== editingDept?.id)
                     .map((d) => (
@@ -430,7 +434,7 @@ export default function DepartmentsPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Ghi chú</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t("modal.notes")}</label>
                 <textarea
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
@@ -444,13 +448,13 @@ export default function DepartmentsPage() {
                   onClick={() => setShowModal(false)}
                   className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
                 >
-                  Hủy
+                  {tCommon("cancel")}
                 </button>
                 <button
                   type="submit"
                   className="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700"
                 >
-                  {editingDept ? "Cập nhật" : "Thêm mới"}
+                  {editingDept ? tCommon("update") : tCommon("save")}
                 </button>
               </div>
             </form>

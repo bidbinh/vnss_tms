@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import {
   Users,
   UserPlus,
@@ -65,6 +66,9 @@ interface Invitation {
 }
 
 export default function WorkersPage() {
+  const t = useTranslations("hrm.workersPage");
+  const tCommon = useTranslations("common");
+
   const [workers, setWorkers] = useState<ConnectedWorker[]>([]);
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -148,7 +152,7 @@ export default function WorkersPage() {
         }),
       });
 
-      setInviteSuccess("Đã gửi lời mời thành công!");
+      setInviteSuccess(t("success.inviteSent"));
       setInviteForm({ email: "", worker_username: "", role: "DRIVER", message: "" });
       fetchData();
 
@@ -157,14 +161,14 @@ export default function WorkersPage() {
         setInviteSuccess("");
       }, 2000);
     } catch (error) {
-      setInviteError(error instanceof Error ? error.message : "Gửi lời mời thất bại");
+      setInviteError(error instanceof Error ? error.message : t("errors.inviteFailed"));
     } finally {
       setInviting(false);
     }
   };
 
   const handleRevokeInvitation = async (invitationId: string) => {
-    if (!confirm("Bạn có chắc muốn hủy lời mời này?")) return;
+    if (!confirm(t("confirmations.revokeInvitation"))) return;
 
     try {
       await apiFetch(`/workspace/invitations/${invitationId}`, {
@@ -177,7 +181,7 @@ export default function WorkersPage() {
   };
 
   const handleDisconnectWorker = async (accessId: string, workerName: string) => {
-    if (!confirm(`Bạn có chắc muốn hủy kết nối với ${workerName}?\n\nWorker sẽ không thể nhận việc từ công ty nữa.`)) return;
+    if (!confirm(t("confirmations.disconnect", { name: workerName }))) return;
 
     try {
       await apiFetch(`/workspace/workers/${accessId}`, {
@@ -186,7 +190,7 @@ export default function WorkersPage() {
       fetchData();
     } catch (error) {
       console.error("Failed to disconnect worker:", error);
-      alert("Không thể hủy kết nối. Vui lòng thử lại.");
+      alert(t("errors.disconnectFailed"));
     }
   };
 
@@ -238,14 +242,14 @@ export default function WorkersPage() {
         }),
       });
 
-      setEditRoleSuccess("Đã cập nhật quyền thành công!");
+      setEditRoleSuccess(t("success.roleUpdated"));
       setTimeout(() => {
         setShowEditRoleModal(false);
         setEditRoleSuccess("");
         fetchData();
       }, 1500);
     } catch (error) {
-      setEditRoleError(error instanceof Error ? error.message : "Cập nhật thất bại");
+      setEditRoleError(error instanceof Error ? error.message : t("errors.updateRoleFailed"));
     } finally {
       setSavingRole(false);
     }
@@ -287,14 +291,14 @@ export default function WorkersPage() {
         }),
       });
 
-      setAssignSuccess("Đã giao việc thành công!");
+      setAssignSuccess(t("success.taskAssigned"));
       setTimeout(() => {
         setShowAssignTaskModal(false);
         setAssignSuccess("");
         fetchData();
       }, 1500);
     } catch (error) {
-      setAssignError(error instanceof Error ? error.message : "Giao việc thất bại");
+      setAssignError(error instanceof Error ? error.message : t("errors.assignFailed"));
     } finally {
       setAssigning(false);
     }
@@ -314,9 +318,9 @@ export default function WorkersPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Workers</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{t("title")}</h1>
           <p className="text-gray-600">
-            Quản lý workers từ Personal Workspace
+            {t("subtitle")}
           </p>
         </div>
         <button
@@ -324,7 +328,7 @@ export default function WorkersPage() {
           className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center gap-2"
         >
           <UserPlus className="w-5 h-5" />
-          Mời Worker
+          {t("inviteWorker")}
         </button>
       </div>
 
@@ -332,25 +336,25 @@ export default function WorkersPage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white rounded-xl border p-4">
           <div className="text-2xl font-bold text-blue-600">{workers.length}</div>
-          <div className="text-sm text-gray-500">Workers kết nối</div>
+          <div className="text-sm text-gray-500">{t("stats.connectedWorkers")}</div>
         </div>
         <div className="bg-white rounded-xl border p-4">
           <div className="text-2xl font-bold text-green-600">
             {workers.filter((w) => w.worker.is_available).length}
           </div>
-          <div className="text-sm text-gray-500">Sẵn sàng làm việc</div>
+          <div className="text-sm text-gray-500">{t("stats.readyToWork")}</div>
         </div>
         <div className="bg-white rounded-xl border p-4">
           <div className="text-2xl font-bold text-yellow-600">
             {pendingInvitations.length}
           </div>
-          <div className="text-sm text-gray-500">Lời mời đang chờ</div>
+          <div className="text-sm text-gray-500">{t("stats.pendingInvitations")}</div>
         </div>
         <div className="bg-white rounded-xl border p-4">
           <div className="text-2xl font-bold text-purple-600">
             {workers.reduce((sum, w) => sum + w.total_tasks_completed, 0)}
           </div>
-          <div className="text-sm text-gray-500">Tổng việc hoàn thành</div>
+          <div className="text-sm text-gray-500">{t("stats.totalTasksCompleted")}</div>
         </div>
       </div>
 
@@ -366,7 +370,7 @@ export default function WorkersPage() {
                   : "border-transparent text-gray-500 hover:text-gray-700"
               }`}
             >
-              Workers kết nối ({workers.length})
+              {t("tabs.connected")} ({workers.length})
             </button>
             <button
               onClick={() => setTab("invitations")}
@@ -376,7 +380,7 @@ export default function WorkersPage() {
                   : "border-transparent text-gray-500 hover:text-gray-700"
               }`}
             >
-              Lời mời ({invitations.length})
+              {t("tabs.invitations")} ({invitations.length})
             </button>
           </div>
         </div>
@@ -391,7 +395,7 @@ export default function WorkersPage() {
                   type="text"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Tìm worker..."
+                  placeholder={t("searchPlaceholder")}
                   className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -405,12 +409,12 @@ export default function WorkersPage() {
             ) : filteredWorkers.length === 0 ? (
               <div className="p-8 text-center text-gray-500">
                 <Users className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                <p>Chưa có worker nào</p>
+                <p>{t("noWorkers")}</p>
                 <button
                   onClick={() => setShowInviteModal(true)}
                   className="mt-3 text-blue-600 hover:underline"
                 >
-                  Mời worker đầu tiên
+                  {t("inviteFirst")}
                 </button>
               </div>
             ) : (
@@ -442,11 +446,11 @@ export default function WorkersPage() {
                             </span>
                             {w.worker.is_available ? (
                               <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full">
-                                Sẵn sàng
+                                {t("workerStatus.available")}
                               </span>
                             ) : (
                               <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full">
-                                Tạm ngưng
+                                {t("workerStatus.unavailable")}
                               </span>
                             )}
                           </div>
@@ -455,9 +459,9 @@ export default function WorkersPage() {
                               <span>{w.worker.job_title}</span>
                             )}
                             {w.worker.license_class && (
-                              <span>GPLX: {w.worker.license_class}</span>
+                              <span>{t("labels.license")}: {w.worker.license_class}</span>
                             )}
-                            <span>Vai trò: {w.role}</span>
+                            <span>{t("labels.role")}: {w.role}</span>
                           </div>
                         </div>
                       </div>
@@ -466,7 +470,7 @@ export default function WorkersPage() {
                         <div className="text-right">
                           <div className="flex items-center gap-1 text-gray-600">
                             <CheckCircle className="w-4 h-4" />
-                            <span>{w.total_tasks_completed} việc</span>
+                            <span>{w.total_tasks_completed} {t("labels.tasks")}</span>
                           </div>
                           {w.rating && (
                             <div className="flex items-center gap-1 text-yellow-500">
@@ -480,12 +484,12 @@ export default function WorkersPage() {
                           className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-sm rounded-lg flex items-center gap-1.5"
                         >
                           <Briefcase className="w-4 h-4" />
-                          Giao việc
+                          {t("labels.assignTask")}
                         </button>
                         <button
                           onClick={() => openEditRoleModal(w)}
                           className="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg"
-                          title="Đổi quyền"
+                          title={t("labels.changeRole")}
                         >
                           <Shield className="w-5 h-5" />
                         </button>
@@ -494,14 +498,14 @@ export default function WorkersPage() {
                           target="_blank"
                           rel="noopener noreferrer"
                           className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg"
-                          title="Xem workspace"
+                          title={t("labels.viewWorkspace")}
                         >
                           <ExternalLink className="w-5 h-5" />
                         </a>
                         <button
                           onClick={() => handleDisconnectWorker(w.access_id, w.worker.full_name)}
                           className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
-                          title="Hủy kết nối"
+                          title={t("labels.disconnect")}
                         >
                           <UserMinus className="w-5 h-5" />
                         </button>
@@ -519,7 +523,7 @@ export default function WorkersPage() {
             {invitations.length === 0 ? (
               <div className="p-8 text-center text-gray-500">
                 <Mail className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                <p>Chưa có lời mời nào</p>
+                <p>{t("noInvitations")}</p>
               </div>
             ) : (
               invitations.map((inv) => (
@@ -541,7 +545,7 @@ export default function WorkersPage() {
                           ) : null}
                         </div>
                         <div className="text-sm text-gray-500">
-                          Vai trò: {inv.role} • Gửi lúc:{" "}
+                          {t("labels.role")}: {inv.role} - {t("labels.sentAt")}{" "}
                           {new Date(inv.created_at).toLocaleDateString("vi-VN")}
                         </div>
                       </div>
@@ -558,13 +562,7 @@ export default function WorkersPage() {
                             : "bg-gray-100 text-gray-700"
                         }`}
                       >
-                        {inv.status === "PENDING"
-                          ? "Đang chờ"
-                          : inv.status === "ACCEPTED"
-                          ? "Đã chấp nhận"
-                          : inv.status === "DECLINED"
-                          ? "Đã từ chối"
-                          : inv.status}
+                        {t(`invitationStatus.${inv.status}` as any)}
                       </span>
                       {inv.status === "PENDING" && (
                         <button
@@ -589,7 +587,7 @@ export default function WorkersPage() {
           <div className="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
             <div className="p-4 border-b border-gray-200 flex items-center justify-between sticky top-0 bg-white">
               <div>
-                <h3 className="text-lg font-semibold">Giao việc cho Worker</h3>
+                <h3 className="text-lg font-semibold">{t("assignTaskModal.title")}</h3>
                 <p className="text-sm text-gray-500">{selectedWorker.worker.full_name}</p>
               </div>
               <button
@@ -616,13 +614,13 @@ export default function WorkersPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Loại công việc
+                  {t("assignTaskModal.taskType")}
                 </label>
                 <div className="grid grid-cols-3 gap-2">
                   {[
-                    { value: "ORDER", label: "Đơn hàng", icon: Package },
-                    { value: "TRIP", label: "Chuyến xe", icon: Truck },
-                    { value: "DELIVERY", label: "Giao hàng", icon: Package },
+                    { value: "ORDER", labelKey: "ORDER", icon: Package },
+                    { value: "TRIP", labelKey: "TRIP", icon: Truck },
+                    { value: "DELIVERY", labelKey: "DELIVERY", icon: Package },
                   ].map((type) => (
                     <button
                       key={type.value}
@@ -635,7 +633,7 @@ export default function WorkersPage() {
                       }`}
                     >
                       <type.icon className="w-5 h-5" />
-                      <span className="text-sm">{type.label}</span>
+                      <span className="text-sm">{t(`assignTaskModal.taskTypes.${type.labelKey}` as any)}</span>
                     </button>
                   ))}
                 </div>
@@ -643,13 +641,13 @@ export default function WorkersPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Tiêu đề công việc *
+                  {t("assignTaskModal.taskTitle")} *
                 </label>
                 <input
                   type="text"
                   value={taskForm.title}
                   onChange={(e) => setTaskForm({ ...taskForm, title: e.target.value })}
-                  placeholder="VD: Giao hàng cho Công ty ABC"
+                  placeholder={t("assignTaskModal.taskTitlePlaceholder")}
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 />
@@ -658,25 +656,25 @@ export default function WorkersPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Mã tham chiếu
+                    {t("assignTaskModal.refId")}
                   </label>
                   <input
                     type="text"
                     value={taskForm.task_ref_id}
                     onChange={(e) => setTaskForm({ ...taskForm, task_ref_id: e.target.value })}
-                    placeholder="ID đơn hàng/chuyến xe"
+                    placeholder={t("assignTaskModal.refIdPlaceholder")}
                     className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Mã công việc
+                    {t("assignTaskModal.taskCode")}
                   </label>
                   <input
                     type="text"
                     value={taskForm.task_code}
                     onChange={(e) => setTaskForm({ ...taskForm, task_code: e.target.value })}
-                    placeholder="VD: TASK-001"
+                    placeholder={t("assignTaskModal.taskCodePlaceholder")}
                     className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
@@ -684,13 +682,13 @@ export default function WorkersPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Mô tả chi tiết
+                  {t("assignTaskModal.description")}
                 </label>
                 <textarea
                   value={taskForm.description}
                   onChange={(e) => setTaskForm({ ...taskForm, description: e.target.value })}
                   rows={3}
-                  placeholder="Mô tả chi tiết công việc cần làm..."
+                  placeholder={t("assignTaskModal.descriptionPlaceholder")}
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -699,7 +697,7 @@ export default function WorkersPage() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     <Calendar className="w-4 h-4 inline mr-1" />
-                    Bắt đầu
+                    {t("assignTaskModal.startTime")}
                   </label>
                   <input
                     type="datetime-local"
@@ -711,7 +709,7 @@ export default function WorkersPage() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     <Calendar className="w-4 h-4 inline mr-1" />
-                    Kết thúc
+                    {t("assignTaskModal.endTime")}
                   </label>
                   <input
                     type="datetime-local"
@@ -725,7 +723,7 @@ export default function WorkersPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   <DollarSign className="w-4 h-4 inline mr-1" />
-                  Số tiền thanh toán (VNĐ)
+                  {t("assignTaskModal.paymentAmount")}
                 </label>
                 <input
                   type="number"
@@ -742,7 +740,7 @@ export default function WorkersPage() {
                   onClick={() => setShowAssignTaskModal(false)}
                   className="flex-1 px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50"
                 >
-                  Hủy
+                  {tCommon("cancel")}
                 </button>
                 <button
                   type="submit"
@@ -754,7 +752,7 @@ export default function WorkersPage() {
                   ) : (
                     <>
                       <Briefcase className="w-4 h-4" />
-                      Giao việc
+                      {t("labels.assignTask")}
                     </>
                   )}
                 </button>
@@ -769,7 +767,7 @@ export default function WorkersPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
             <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Mời Worker</h3>
+              <h3 className="text-lg font-semibold">{t("inviteModal.title")}</h3>
               <button
                 onClick={() => setShowInviteModal(false)}
                 className="p-1 hover:bg-gray-100 rounded"
@@ -793,7 +791,7 @@ export default function WorkersPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email hoặc Username
+                  {t("inviteModal.emailOrUsername")}
                 </label>
                 <input
                   type="text"
@@ -806,46 +804,46 @@ export default function WorkersPage() {
                       setInviteForm({ ...inviteForm, worker_username: value, email: "" });
                     }
                   }}
-                  placeholder="email@example.com hoặc username"
+                  placeholder={t("inviteModal.emailOrUsernamePlaceholder")}
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  Nhập email để mời hoặc username của worker đã có tài khoản
+                  {t("inviteModal.emailHint")}
                 </p>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Vai trò
+                  {t("inviteModal.role")}
                 </label>
                 <select
                   value={inviteForm.role}
                   onChange={(e) => setInviteForm({ ...inviteForm, role: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="DRIVER">🚛 Tài xế - Xem và cập nhật đơn hàng được giao</option>
-                  <option value="DISPATCHER">📋 Điều phối - Quản lý đơn hàng, tài xế, xe</option>
-                  <option value="MANAGER">👔 Quản lý - Full quyền TMS + Master data</option>
-                  <option value="ACCOUNTANT">💰 Kế toán - Xem báo cáo, đơn hàng</option>
-                  <option value="WORKER">👷 Nhân viên - Xem công việc được giao</option>
-                  <option value="FREELANCER">🏃 Freelancer - Nhận việc theo dự án</option>
-                  <option value="CONTRACTOR">🏗️ Nhà thầu - Nhận việc theo hợp đồng</option>
+                  <option value="DRIVER">{t("inviteModal.roles.DRIVER")}</option>
+                  <option value="DISPATCHER">{t("inviteModal.roles.DISPATCHER")}</option>
+                  <option value="MANAGER">{t("inviteModal.roles.MANAGER")}</option>
+                  <option value="ACCOUNTANT">{t("inviteModal.roles.ACCOUNTANT")}</option>
+                  <option value="WORKER">{t("inviteModal.roles.WORKER")}</option>
+                  <option value="FREELANCER">{t("inviteModal.roles.FREELANCER")}</option>
+                  <option value="CONTRACTOR">{t("inviteModal.roles.CONTRACTOR")}</option>
                 </select>
                 <p className="text-xs text-gray-500 mt-1">
-                  Quyền có thể được tùy chỉnh sau khi worker chấp nhận lời mời
+                  {t("inviteModal.roleHint")}
                 </p>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Lời nhắn (tùy chọn)
+                  {t("inviteModal.message")}
                 </label>
                 <textarea
                   value={inviteForm.message}
                   onChange={(e) => setInviteForm({ ...inviteForm, message: e.target.value })}
                   rows={3}
-                  placeholder="Viết lời nhắn cho worker..."
+                  placeholder={t("inviteModal.messagePlaceholder")}
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -856,7 +854,7 @@ export default function WorkersPage() {
                   onClick={() => setShowInviteModal(false)}
                   className="flex-1 px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50"
                 >
-                  Hủy
+                  {tCommon("cancel")}
                 </button>
                 <button
                   type="submit"
@@ -868,7 +866,7 @@ export default function WorkersPage() {
                   ) : (
                     <>
                       <Send className="w-4 h-4" />
-                      Gửi lời mời
+                      {tCommon("send")}
                     </>
                   )}
                 </button>
@@ -886,7 +884,7 @@ export default function WorkersPage() {
               <div>
                 <h3 className="text-lg font-semibold flex items-center gap-2">
                   <Shield className="w-5 h-5 text-purple-600" />
-                  Đổi quyền Worker
+                  {t("editRoleModal.title")}
                 </h3>
                 <p className="text-sm text-gray-500">{editingWorker.worker.full_name} (@{editingWorker.worker.username})</p>
               </div>
@@ -914,21 +912,21 @@ export default function WorkersPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Vai trò hiện tại: <span className="text-purple-600 font-semibold">{editingWorker.role}</span>
+                  {t("editRoleModal.currentRole")}: <span className="text-purple-600 font-semibold">{editingWorker.role}</span>
                 </label>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Chọn vai trò mới
+                  {t("editRoleModal.selectNewRole")}
                 </label>
                 <div className="grid grid-cols-1 gap-2">
                   {[
-                    { value: "DRIVER", label: "Tài xế", desc: "Xem và cập nhật đơn hàng được giao", icon: "🚛" },
-                    { value: "DISPATCHER", label: "Điều phối", desc: "Quản lý đơn hàng, tài xế, xe", icon: "📋" },
-                    { value: "MANAGER", label: "Quản lý", desc: "Full quyền TMS + Master data + Báo cáo", icon: "👔" },
-                    { value: "ACCOUNTANT", label: "Kế toán", desc: "Xem báo cáo, đơn hàng", icon: "💰" },
-                    { value: "WORKER", label: "Nhân viên", desc: "Xem công việc được giao", icon: "👷" },
+                    { value: "DRIVER", labelKey: "DRIVER", icon: "🚛" },
+                    { value: "DISPATCHER", labelKey: "DISPATCHER", icon: "📋" },
+                    { value: "MANAGER", labelKey: "MANAGER", icon: "👔" },
+                    { value: "ACCOUNTANT", labelKey: "ACCOUNTANT", icon: "💰" },
+                    { value: "WORKER", labelKey: "WORKER", icon: "👷" },
                   ].map((role) => (
                     <button
                       key={role.value}
@@ -943,8 +941,8 @@ export default function WorkersPage() {
                       <div className="flex items-center gap-3">
                         <span className="text-2xl">{role.icon}</span>
                         <div>
-                          <div className="font-medium text-gray-900">{role.label}</div>
-                          <div className="text-sm text-gray-500">{role.desc}</div>
+                          <div className="font-medium text-gray-900">{role.value}</div>
+                          <div className="text-sm text-gray-500">{t(`editRoleModal.roleDescriptions.${role.labelKey}` as any)}</div>
                         </div>
                         {editRoleForm.role === role.value && (
                           <CheckCircle className="w-5 h-5 text-purple-600 ml-auto" />
@@ -957,15 +955,11 @@ export default function WorkersPage() {
 
               {/* Permission preview */}
               <div className="p-3 bg-gray-50 rounded-lg">
-                <div className="text-sm font-medium text-gray-700 mb-2">Quyền sẽ được cấp:</div>
+                <div className="text-sm font-medium text-gray-700 mb-2">{t("editRoleModal.permissionsPreview")}</div>
                 <div className="flex flex-wrap gap-2">
                   {getRoleModules(editRoleForm.role).map((mod) => (
                     <span key={mod} className="px-2 py-1 bg-white border rounded text-xs text-gray-600">
-                      {mod === "tms" ? "TMS - Vận tải" :
-                       mod === "dispatch" ? "Điều phối" :
-                       mod === "masterdata" ? "Master Data" :
-                       mod === "reports" ? "Báo cáo" :
-                       mod === "workspace" ? "Workspace" : mod}
+                      {t(`editRoleModal.modules.${mod}` as any)}
                     </span>
                   ))}
                 </div>
@@ -977,7 +971,7 @@ export default function WorkersPage() {
                   onClick={() => setShowEditRoleModal(false)}
                   className="flex-1 px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50"
                 >
-                  Hủy
+                  {tCommon("cancel")}
                 </button>
                 <button
                   type="submit"
@@ -989,7 +983,7 @@ export default function WorkersPage() {
                   ) : (
                     <>
                       <Shield className="w-4 h-4" />
-                      Lưu thay đổi
+                      {tCommon("save")}
                     </>
                   )}
                 </button>

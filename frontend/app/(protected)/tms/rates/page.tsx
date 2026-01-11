@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo, useRef } from "react";
+import { useTranslations } from "next-intl";
 import { apiFetch } from "@/lib/api";
 import DataTable, { Column, TablePagination } from "@/components/DataTable";
 import { DollarSign, Plus, Search, MapPin, TrendingUp, CheckCircle, Clock, Copy, ChevronDown, X, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
@@ -95,7 +96,7 @@ type SearchableSelectProps = {
   placeholder?: string;
 };
 
-function SearchableSelect({ value, onChange, options, placeholder = "-- Chọn --" }: SearchableSelectProps) {
+function SearchableSelect({ value, onChange, options, placeholder, searchPlaceholder, noResultsText }: SearchableSelectProps & { searchPlaceholder?: string; noResultsText?: string }) {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
@@ -181,7 +182,7 @@ function SearchableSelect({ value, onChange, options, placeholder = "-- Chọn -
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Tìm kiếm..."
+                placeholder={searchPlaceholder || "Search..."}
                 className="w-full pl-8 pr-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-blue-400"
               />
             </div>
@@ -190,7 +191,7 @@ function SearchableSelect({ value, onChange, options, placeholder = "-- Chọn -
           {/* Options list */}
           <div className="max-h-44 overflow-y-auto">
             {filteredOptions.length === 0 ? (
-              <div className="px-3 py-4 text-sm text-gray-500 text-center">Không tìm thấy</div>
+              <div className="px-3 py-4 text-sm text-gray-500 text-center">{noResultsText || "No results found"}</div>
             ) : (
               filteredOptions.map((opt) => (
                 <div
@@ -214,6 +215,7 @@ function SearchableSelect({ value, onChange, options, placeholder = "-- Chọn -
 
 // ============ Main Component ============
 export default function RatesPage() {
+  const t = useTranslations("tms.ratesPage");
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState<Rate[]>([]);
   const [locations, setLocations] = useState<Location[]>([]);
@@ -433,7 +435,7 @@ export default function RatesPage() {
     setError(null);
     try {
       if (!form.pickup_location_id || !form.delivery_location_id) {
-        throw new Error("Điểm đi và Điểm đến là bắt buộc.");
+        throw new Error(t("errors.pickupDeliveryRequired"));
       }
 
       const payload: any = {
@@ -474,7 +476,7 @@ export default function RatesPage() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm("Bạn có chắc muốn xóa bảng giá này?")) return;
+    if (!confirm(t("confirmations.deleteRate"))) return;
 
     try {
       await apiFetch(`/api/v1/rates/${id}`, { method: "DELETE" });
@@ -511,15 +513,15 @@ export default function RatesPage() {
 
   // ============ Table Column Definitions ============
   const columnDefs = [
-    { key: "pickup", header: "Điểm đi", width: 160, sortable: true },
-    { key: "delivery", header: "Điểm đến", width: 160, sortable: true },
-    { key: "km", header: "Km", width: 60, sortable: true, align: "right" as const },
-    { key: "pricing_type", header: "Loại", width: 90, sortable: true },
-    { key: "prices", header: "Giá", width: 180, sortable: true },
-    { key: "customer", header: "Khách hàng", width: 120, sortable: true },
-    { key: "dates", header: "Hiệu lực", width: 130, sortable: true },
-    { key: "status", header: "TT", width: 80, sortable: true },
-    { key: "actions", header: "Thao tác", width: 100, sortable: false, align: "center" as const },
+    { key: "pickup", header: t("columns.pickup"), width: 160, sortable: true },
+    { key: "delivery", header: t("columns.delivery"), width: 160, sortable: true },
+    { key: "km", header: t("columns.km"), width: 60, sortable: true, align: "right" as const },
+    { key: "pricing_type", header: t("columns.type"), width: 90, sortable: true },
+    { key: "prices", header: t("columns.prices"), width: 180, sortable: true },
+    { key: "customer", header: t("columns.customer"), width: 120, sortable: true },
+    { key: "dates", header: t("columns.dates"), width: 130, sortable: true },
+    { key: "status", header: t("columns.status"), width: 80, sortable: true },
+    { key: "actions", header: t("columns.actions"), width: 100, sortable: false, align: "center" as const },
   ];
 
   function renderCell(row: Rate, key: string) {
@@ -547,7 +549,7 @@ export default function RatesPage() {
               row.pricing_type === "CONTAINER" ? "bg-blue-100 text-blue-800" : "bg-purple-100 text-purple-800"
             }`}
           >
-            {row.pricing_type === "CONTAINER" ? "Cont" : "Trip"}
+            {row.pricing_type === "CONTAINER" ? t("pricingTypes.container") : t("pricingTypes.trip")}
           </span>
         );
       case "prices":
@@ -577,11 +579,11 @@ export default function RatesPage() {
             {row.customer_codes || row.customer_names}
           </span>
         ) : (
-          <span className="text-xs px-2 py-0.5 bg-gray-100 rounded">Tất cả</span>
+          <span className="text-xs px-2 py-0.5 bg-gray-100 rounded">{t("customer.all")}</span>
         );
       case "dates": {
         const startDate = row.effective_date ? new Date(row.effective_date).toLocaleDateString("vi-VN") : "-";
-        const endDate = row.end_date ? new Date(row.end_date).toLocaleDateString("vi-VN") : "Không giới hạn";
+        const endDate = row.end_date ? new Date(row.end_date).toLocaleDateString("vi-VN") : t("dates.unlimited");
         return (
           <div className="text-xs">
             <div>{startDate}</div>
@@ -596,7 +598,7 @@ export default function RatesPage() {
               row.status === "ACTIVE" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
             }`}
           >
-            {row.status === "ACTIVE" ? "On" : "Off"}
+            {row.status === "ACTIVE" ? t("status.on") : t("status.off")}
           </span>
         );
       case "actions":
@@ -608,7 +610,7 @@ export default function RatesPage() {
                 openDuplicate(row);
               }}
               className="text-green-600 hover:text-green-800 text-sm font-medium"
-              title="Nhân bản"
+              title={t("actions.duplicate")}
             >
               <Copy className="w-4 h-4" />
             </button>
@@ -619,7 +621,7 @@ export default function RatesPage() {
               }}
               className="text-blue-600 hover:text-blue-800 text-sm font-medium"
             >
-              Sửa
+              {t("actions.edit")}
             </button>
             <button
               onClick={(e) => {
@@ -628,7 +630,7 @@ export default function RatesPage() {
               }}
               className="text-red-600 hover:text-red-800 text-sm font-medium"
             >
-              Xóa
+              {t("actions.delete")}
             </button>
           </div>
         );
@@ -641,7 +643,7 @@ export default function RatesPage() {
   const columns: Column<Rate>[] = [
     {
       key: "pickup",
-      header: "Điểm đi",
+      header: t("columns.pickup"),
       width: 160,
       render: (r) => (
         <div>
@@ -652,7 +654,7 @@ export default function RatesPage() {
     },
     {
       key: "delivery",
-      header: "Điểm đến",
+      header: t("columns.delivery"),
       width: 160,
       render: (r) => (
         <div>
@@ -663,14 +665,14 @@ export default function RatesPage() {
     },
     {
       key: "km",
-      header: "Km",
+      header: t("columns.km"),
       width: 60,
       align: "right",
       render: (r) => <span className="text-sm">{r.distance_km ?? "-"}</span>,
     },
     {
       key: "pricing_type",
-      header: "Loại",
+      header: t("columns.type"),
       width: 90,
       render: (r) => (
         <span
@@ -678,13 +680,13 @@ export default function RatesPage() {
             r.pricing_type === "CONTAINER" ? "bg-blue-100 text-blue-800" : "bg-purple-100 text-purple-800"
           }`}
         >
-          {r.pricing_type === "CONTAINER" ? "Cont" : "Trip"}
+          {r.pricing_type === "CONTAINER" ? t("pricingTypes.container") : t("pricingTypes.trip")}
         </span>
       ),
     },
     {
       key: "prices",
-      header: "Giá",
+      header: t("columns.prices"),
       width: 180,
       render: (r) => (
         <div className="text-sm">
@@ -709,7 +711,7 @@ export default function RatesPage() {
     },
     {
       key: "customer",
-      header: "Khách hàng",
+      header: t("columns.customer"),
       width: 120,
       render: (r) =>
         r.customer_names ? (
@@ -717,16 +719,16 @@ export default function RatesPage() {
             {r.customer_codes || r.customer_names}
           </span>
         ) : (
-          <span className="text-xs px-2 py-0.5 bg-gray-100 rounded">Tất cả</span>
+          <span className="text-xs px-2 py-0.5 bg-gray-100 rounded">{t("customer.all")}</span>
         ),
     },
     {
       key: "dates",
-      header: "Hiệu lực",
+      header: t("columns.dates"),
       width: 130,
       render: (r) => {
         const startDate = r.effective_date ? new Date(r.effective_date).toLocaleDateString("vi-VN") : "-";
-        const endDate = r.end_date ? new Date(r.end_date).toLocaleDateString("vi-VN") : "Không giới hạn";
+        const endDate = r.end_date ? new Date(r.end_date).toLocaleDateString("vi-VN") : t("dates.unlimited");
         return (
           <div className="text-xs">
             <div>{startDate}</div>
@@ -737,7 +739,7 @@ export default function RatesPage() {
     },
     {
       key: "status",
-      header: "TT",
+      header: t("columns.status"),
       width: 80,
       render: (r) => (
         <span
@@ -745,13 +747,13 @@ export default function RatesPage() {
             r.status === "ACTIVE" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
           }`}
         >
-          {r.status === "ACTIVE" ? "On" : "Off"}
+          {r.status === "ACTIVE" ? t("status.on") : t("status.off")}
         </span>
       ),
     },
     {
       key: "actions",
-      header: "Thao tác",
+      header: t("columns.actions"),
       width: 100,
       sortable: false,
       align: "center",
@@ -763,7 +765,7 @@ export default function RatesPage() {
               openDuplicate(r);
             }}
             className="text-green-600 hover:text-green-800 text-sm font-medium"
-            title="Nhân bản"
+            title={t("actions.duplicate")}
           >
             <Copy className="w-4 h-4" />
           </button>
@@ -774,7 +776,7 @@ export default function RatesPage() {
             }}
             className="text-blue-600 hover:text-blue-800 text-sm font-medium"
           >
-            Sửa
+            {t("actions.edit")}
           </button>
           <button
             onClick={(e) => {
@@ -783,7 +785,7 @@ export default function RatesPage() {
             }}
             className="text-red-600 hover:text-red-800 text-sm font-medium"
           >
-            Xóa
+            {t("actions.delete")}
           </button>
         </div>
       ),
@@ -797,8 +799,8 @@ export default function RatesPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Quản lý Bảng giá</h1>
-            <p className="text-sm text-gray-500 mt-1">Quản lý giá cước vận chuyển theo tuyến</p>
+            <h1 className="text-2xl font-bold text-gray-900">{t("title")}</h1>
+            <p className="text-sm text-gray-500 mt-1">{t("subtitle")}</p>
           </div>
 
           <button
@@ -806,17 +808,17 @@ export default function RatesPage() {
             className="rounded-xl bg-blue-600 text-white px-4 py-2 text-sm font-medium hover:bg-blue-700 flex items-center gap-2"
           >
             <Plus className="w-4 h-4" />
-            Thêm bảng giá
+            {t("addRate")}
           </button>
         </div>
 
         {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          <StatCard icon={DollarSign} label="Tổng bảng giá" value={stats.total} color="blue" />
-          <StatCard icon={CheckCircle} label="Đang áp dụng" value={stats.active} color="green" />
-          <StatCard icon={TrendingUp} label="Giá theo Cont" value={stats.container} color="blue" />
-          <StatCard icon={MapPin} label="Giá theo Trip" value={stats.trip} color="gray" />
-          <StatCard icon={Clock} label="Sắp hết hạn" value={stats.expiringSoon} color="yellow" />
+          <StatCard icon={DollarSign} label={t("stats.totalRates")} value={stats.total} color="blue" />
+          <StatCard icon={CheckCircle} label={t("stats.active")} value={stats.active} color="green" />
+          <StatCard icon={TrendingUp} label={t("stats.containerPricing")} value={stats.container} color="blue" />
+          <StatCard icon={MapPin} label={t("stats.tripPricing")} value={stats.trip} color="gray" />
+          <StatCard icon={Clock} label={t("stats.expiringSoon")} value={stats.expiringSoon} color="yellow" />
         </div>
       </div>
 
@@ -829,9 +831,9 @@ export default function RatesPage() {
               {/* Type Filter Tabs */}
               <div className="flex bg-gray-100 rounded-xl p-1">
                 {[
-                  { key: "ALL", label: "Tất cả" },
-                  { key: "CONTAINER", label: "Cont" },
-                  { key: "TRIP", label: "Trip" },
+                  { key: "ALL", labelKey: "filters.all" },
+                  { key: "CONTAINER", labelKey: "filters.container" },
+                  { key: "TRIP", labelKey: "filters.trip" },
                 ].map((tab) => (
                   <button
                     key={tab.key}
@@ -840,7 +842,7 @@ export default function RatesPage() {
                       filterType === tab.key ? "bg-white text-blue-600 shadow-sm" : "text-gray-600 hover:text-gray-900"
                     }`}
                   >
-                    {tab.label}
+                    {t(tab.labelKey)}
                   </button>
                 ))}
               </div>
@@ -851,13 +853,13 @@ export default function RatesPage() {
                 <input
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Tìm điểm đi, điểm đến, KH..."
+                  placeholder={t("search.placeholder")}
                   className="pl-10 pr-4 py-2 rounded-xl border border-gray-300 outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 text-sm w-72"
                 />
               </div>
             </div>
 
-            <div className="text-sm text-gray-500">{loading ? "Đang tải..." : `${filteredRows.length} bảng giá`}</div>
+            <div className="text-sm text-gray-500">{loading ? t("search.loading") : `${filteredRows.length} ${t("search.rates")}`}</div>
           </div>
 
           {/* Error */}
@@ -900,14 +902,14 @@ export default function RatesPage() {
                   <td colSpan={columnDefs.length} className="px-4 py-8 text-center text-gray-500">
                     <div className="flex items-center justify-center gap-2">
                       <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                      Đang tải...
+                      {t("table.loading")}
                     </div>
                   </td>
                 </tr>
               ) : paginatedRows.length === 0 ? (
                 <tr>
                   <td colSpan={columnDefs.length} className="px-4 py-8 text-center text-gray-500">
-                    Chưa có bảng giá nào
+                    {t("table.noData")}
                   </td>
                 </tr>
               ) : (
@@ -939,7 +941,7 @@ export default function RatesPage() {
           totalItems={filteredRows.length}
           onPageChange={setCurrentPage}
           onPageSizeChange={setPageSize}
-          itemName="bảng giá"
+          itemName={t("pagination.rates")}
         />
       </div>
 
@@ -948,7 +950,7 @@ export default function RatesPage() {
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
           <div className="w-full max-w-3xl rounded-2xl bg-white shadow-xl border border-gray-200 max-h-[90vh] overflow-y-auto">
             <div className="px-6 py-4 border-b flex items-center justify-between sticky top-0 bg-white z-10">
-              <div className="font-semibold text-lg">{mode === "create" ? "Thêm bảng giá mới" : "Chỉnh sửa bảng giá"}</div>
+              <div className="font-semibold text-lg">{mode === "create" ? t("modal.createTitle") : t("modal.editTitle")}</div>
               <button onClick={() => setOpen(false)} className="text-gray-500 hover:text-black text-xl">
                 &times;
               </button>
@@ -959,49 +961,53 @@ export default function RatesPage() {
               <div>
                 <h3 className="text-sm font-semibold mb-3 text-gray-800 flex items-center gap-2">
                   <div className="w-1 h-4 bg-blue-600 rounded"></div>
-                  Thông tin tuyến đường
+                  {t("modal.routeInfo")}
                 </h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs text-gray-600 mb-1">
-                      Điểm đi <span className="text-red-500">*</span>
+                      {t("modal.pickup")} <span className="text-red-500">*</span>
                     </label>
                     <SearchableSelect
                       value={form.pickup_location_id}
                       onChange={(val) => setForm((s) => ({ ...s, pickup_location_id: val }))}
                       options={locations}
-                      placeholder="-- Chọn điểm đi --"
+                      placeholder={t("modal.selectPickup")}
+                      searchPlaceholder={t("searchableSelect.search")}
+                      noResultsText={t("searchableSelect.noResults")}
                     />
                   </div>
                   <div>
                     <label className="block text-xs text-gray-600 mb-1">
-                      Điểm đến <span className="text-red-500">*</span>
+                      {t("modal.delivery")} <span className="text-red-500">*</span>
                     </label>
                     <SearchableSelect
                       value={form.delivery_location_id}
                       onChange={(val) => setForm((s) => ({ ...s, delivery_location_id: val }))}
                       options={locations}
-                      placeholder="-- Chọn điểm đến --"
+                      placeholder={t("modal.selectDelivery")}
+                      searchPlaceholder={t("searchableSelect.search")}
+                      noResultsText={t("searchableSelect.noResults")}
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-gray-600 mb-1">Khoảng cách (km)</label>
+                    <label className="block text-xs text-gray-600 mb-1">{t("modal.distanceKm")}</label>
                     <input
                       type="number"
                       value={form.distance_km}
                       onChange={(e) => setForm((s) => ({ ...s, distance_km: e.target.value }))}
                       className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-200"
-                      placeholder="VD: 50"
+                      placeholder={t("modal.distanceKmPlaceholder")}
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-gray-600 mb-1">Số trạm thu phí</label>
+                    <label className="block text-xs text-gray-600 mb-1">{t("modal.tollStations")}</label>
                     <input
                       type="number"
                       value={form.toll_stations}
                       onChange={(e) => setForm((s) => ({ ...s, toll_stations: e.target.value }))}
                       className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-200"
-                      placeholder="VD: 2"
+                      placeholder={t("modal.tollStationsPlaceholder")}
                     />
                   </div>
                 </div>
@@ -1011,24 +1017,24 @@ export default function RatesPage() {
               <div>
                 <h3 className="text-sm font-semibold mb-3 text-gray-800 flex items-center gap-2">
                   <div className="w-1 h-4 bg-green-600 rounded"></div>
-                  Thông tin giá
+                  {t("modal.pricingInfo")}
                 </h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs text-gray-600 mb-1">
-                      Loại giá <span className="text-red-500">*</span>
+                      {t("modal.pricingType")} <span className="text-red-500">*</span>
                     </label>
                     <select
                       value={form.pricing_type}
                       onChange={(e) => setForm((s) => ({ ...s, pricing_type: e.target.value }))}
                       className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-200"
                     >
-                      <option value="CONTAINER">Theo Container (20&apos;/40&apos;)</option>
-                      <option value="TRIP">Theo Chuyến (Trip)</option>
+                      <option value="CONTAINER">{t("modal.pricingTypeContainer")}</option>
+                      <option value="TRIP">{t("modal.pricingTypeTrip")}</option>
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs text-gray-600 mb-1">Trạng thái</label>
+                    <label className="block text-xs text-gray-600 mb-1">{t("modal.status")}</label>
                     <select
                       value={form.status}
                       onChange={(e) => setForm((s) => ({ ...s, status: e.target.value }))}
@@ -1042,35 +1048,35 @@ export default function RatesPage() {
                   {form.pricing_type === "CONTAINER" ? (
                     <>
                       <div>
-                        <label className="block text-xs text-gray-600 mb-1">Giá Container 20&apos;</label>
+                        <label className="block text-xs text-gray-600 mb-1">{t("modal.priceCont20")}</label>
                         <input
                           type="number"
                           value={form.price_cont_20}
                           onChange={(e) => setForm((s) => ({ ...s, price_cont_20: e.target.value }))}
                           className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-200"
-                          placeholder="VD: 3000000"
+                          placeholder={t("modal.priceCont20Placeholder")}
                         />
                       </div>
                       <div>
-                        <label className="block text-xs text-gray-600 mb-1">Giá Container 40&apos;</label>
+                        <label className="block text-xs text-gray-600 mb-1">{t("modal.priceCont40")}</label>
                         <input
                           type="number"
                           value={form.price_cont_40}
                           onChange={(e) => setForm((s) => ({ ...s, price_cont_40: e.target.value }))}
                           className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-200"
-                          placeholder="VD: 4500000"
+                          placeholder={t("modal.priceCont40Placeholder")}
                         />
                       </div>
                     </>
                   ) : (
                     <div className="col-span-2">
-                      <label className="block text-xs text-gray-600 mb-1">Giá theo chuyến</label>
+                      <label className="block text-xs text-gray-600 mb-1">{t("modal.pricePerTrip")}</label>
                       <input
                         type="number"
                         value={form.price_per_trip}
                         onChange={(e) => setForm((s) => ({ ...s, price_per_trip: e.target.value }))}
                         className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-200"
-                        placeholder="VD: 5000000"
+                        placeholder={t("modal.pricePerTripPlaceholder")}
                       />
                     </div>
                   )}
@@ -1081,12 +1087,12 @@ export default function RatesPage() {
               <div>
                 <h3 className="text-sm font-semibold mb-3 text-gray-800 flex items-center gap-2">
                   <div className="w-1 h-4 bg-orange-600 rounded"></div>
-                  Hiệu lực & Khách hàng
+                  {t("modal.validityCustomer")}
                 </h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs text-gray-600 mb-1">
-                      Ngày bắt đầu <span className="text-red-500">*</span>
+                      {t("modal.startDate")} <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="date"
@@ -1096,7 +1102,7 @@ export default function RatesPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-gray-600 mb-1">Ngày kết thúc</label>
+                    <label className="block text-xs text-gray-600 mb-1">{t("modal.endDate")}</label>
                     <input
                       type="date"
                       value={form.end_date}
@@ -1105,7 +1111,7 @@ export default function RatesPage() {
                     />
                   </div>
                   <div className="col-span-2">
-                    <label className="block text-xs text-gray-600 mb-1">Áp dụng cho khách hàng</label>
+                    <label className="block text-xs text-gray-600 mb-1">{t("modal.applyToCustomers")}</label>
                     <div className="border border-gray-300 rounded-xl p-3 max-h-36 overflow-y-auto">
                       <label className="flex items-center gap-2 mb-2 text-sm text-gray-600">
                         <input
@@ -1114,7 +1120,7 @@ export default function RatesPage() {
                           onChange={() => setForm((s) => ({ ...s, customer_ids: [] }))}
                           className="rounded"
                         />
-                        Tất cả khách hàng
+                        {t("modal.allCustomers")}
                       </label>
                       <div className="border-t pt-2 space-y-1">
                         {customers.map((cust) => (
@@ -1141,14 +1147,14 @@ export default function RatesPage() {
 
             <div className="px-6 py-4 border-t flex items-center justify-end gap-2 sticky bottom-0 bg-white">
               <button onClick={() => setOpen(false)} className="rounded-xl border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50">
-                Hủy
+                {t("modal.cancel")}
               </button>
               <button
                 onClick={onSave}
                 disabled={saving}
                 className="rounded-xl bg-blue-600 text-white px-4 py-2 text-sm font-medium disabled:opacity-60 hover:bg-blue-700"
               >
-                {saving ? "Đang lưu..." : "Lưu"}
+                {saving ? t("modal.saving") : t("modal.save")}
               </button>
             </div>
           </div>

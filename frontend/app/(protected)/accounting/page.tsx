@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import {
   Calculator,
   FileText,
@@ -30,59 +31,59 @@ interface DashboardData {
   overdue_ap: number;
 }
 
-const QUICK_LINKS = [
+const QUICK_LINKS_CONFIG = [
   {
-    title: "Hệ thống tài khoản",
-    description: "Quản lý hệ thống tài khoản kế toán theo VAS",
+    titleKey: "quickLinks.chartOfAccounts",
+    descKey: "quickLinks.chartOfAccountsDesc",
     href: "/accounting/chart-of-accounts",
     icon: Calculator,
     color: "bg-blue-500",
   },
   {
-    title: "Bút toán nhật ký",
-    description: "Tạo và quản lý các bút toán kế toán",
+    titleKey: "quickLinks.journalEntries",
+    descKey: "quickLinks.journalEntriesDesc",
     href: "/accounting/journal-entries",
     icon: FileText,
     color: "bg-purple-500",
   },
   {
-    title: "Công nợ phải thu",
-    description: "Quản lý hóa đơn và thu tiền khách hàng",
+    titleKey: "quickLinks.accountsReceivable",
+    descKey: "quickLinks.accountsReceivableDesc",
     href: "/accounting/accounts-receivable",
     icon: ArrowUpRight,
     color: "bg-green-500",
   },
   {
-    title: "Công nợ phải trả",
-    description: "Quản lý hóa đơn và thanh toán nhà cung cấp",
+    titleKey: "quickLinks.accountsPayable",
+    descKey: "quickLinks.accountsPayableDesc",
     href: "/accounting/accounts-payable",
     icon: ArrowDownRight,
     color: "bg-orange-500",
   },
   {
-    title: "Ngân hàng & Tiền mặt",
-    description: "Quản lý tài khoản ngân hàng và giao dịch",
+    titleKey: "quickLinks.banking",
+    descKey: "quickLinks.bankingDesc",
     href: "/accounting/banking",
     icon: Building2,
     color: "bg-cyan-500",
   },
   {
-    title: "Tài sản cố định",
-    description: "Quản lý tài sản và khấu hao",
+    titleKey: "quickLinks.fixedAssets",
+    descKey: "quickLinks.fixedAssetsDesc",
     href: "/accounting/fixed-assets",
     icon: Package,
     color: "bg-amber-500",
   },
   {
-    title: "Thuế",
-    description: "Quản lý VAT, TNCN, TNDN",
+    titleKey: "quickLinks.tax",
+    descKey: "quickLinks.taxDesc",
     href: "/accounting/tax",
     icon: Receipt,
     color: "bg-red-500",
   },
   {
-    title: "Báo cáo tài chính",
-    description: "Bảng cân đối, Kết quả kinh doanh, Lưu chuyển tiền tệ",
+    titleKey: "quickLinks.reports",
+    descKey: "quickLinks.reportsDesc",
     href: "/accounting/reports",
     icon: TrendingUp,
     color: "bg-indigo-500",
@@ -91,6 +92,7 @@ const QUICK_LINKS = [
 
 export default function AccountingDashboard() {
   const router = useRouter();
+  const t = useTranslations("accounting.dashboard");
   const [loading, setLoading] = useState(true);
   const [seeding, setSeeding] = useState(false);
   const [seedResult, setSeedResult] = useState<any>(null);
@@ -107,7 +109,7 @@ export default function AccountingDashboard() {
   }, [router]);
 
   const handleSeedData = async () => {
-    if (!confirm("Bạn có chắc muốn tạo dữ liệu mẫu cho Accounting?")) return;
+    if (!confirm(t("seedConfirm"))) return;
 
     setSeeding(true);
     setSeedResult(null);
@@ -116,10 +118,10 @@ export default function AccountingDashboard() {
         method: "POST",
       });
       setSeedResult(result);
-      alert("Tạo dữ liệu mẫu thành công! Vui lòng refresh trang.");
+      alert(t("seedSuccess"));
     } catch (error: any) {
       console.error("Seed error:", error);
-      alert("Lỗi: " + (error.message || "Không thể tạo dữ liệu mẫu"));
+      alert(t("seedError") + ": " + (error.message || ""));
     } finally {
       setSeeding(false);
     }
@@ -134,9 +136,9 @@ export default function AccountingDashboard() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Kế toán</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{t("title")}</h1>
           <p className="text-gray-600 mt-1">
-            Quản lý kế toán tài chính theo chuẩn VAS
+            {t("subtitle")}
           </p>
         </div>
         <button
@@ -149,7 +151,7 @@ export default function AccountingDashboard() {
           ) : (
             <Database className="w-4 h-4" />
           )}
-          {seeding ? "Đang tạo..." : "Tạo dữ liệu mẫu"}
+          {seeding ? t("seeding") : t("seedData")}
         </button>
       </div>
 
@@ -161,7 +163,7 @@ export default function AccountingDashboard() {
               <ArrowUpRight className="w-5 h-5 text-green-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Công nợ phải thu</p>
+              <p className="text-sm text-gray-500">{t("accountsReceivable")}</p>
               <p className="text-lg font-semibold text-gray-900">
                 {formatCurrency(0)}
               </p>
@@ -175,7 +177,7 @@ export default function AccountingDashboard() {
               <ArrowDownRight className="w-5 h-5 text-orange-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Công nợ phải trả</p>
+              <p className="text-sm text-gray-500">{t("accountsPayable")}</p>
               <p className="text-lg font-semibold text-gray-900">
                 {formatCurrency(0)}
               </p>
@@ -189,7 +191,7 @@ export default function AccountingDashboard() {
               <Building2 className="w-5 h-5 text-blue-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Số dư ngân hàng</p>
+              <p className="text-sm text-gray-500">{t("bankBalance")}</p>
               <p className="text-lg font-semibold text-gray-900">
                 {formatCurrency(0)}
               </p>
@@ -203,8 +205,8 @@ export default function AccountingDashboard() {
               <Package className="w-5 h-5 text-amber-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Tài sản cố định</p>
-              <p className="text-lg font-semibold text-gray-900">0 tài sản</p>
+              <p className="text-sm text-gray-500">{t("fixedAssetsCount")}</p>
+              <p className="text-lg font-semibold text-gray-900">0 {t("assets")}</p>
             </div>
           </div>
         </div>
@@ -212,7 +214,7 @@ export default function AccountingDashboard() {
 
       {/* Quick Links */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {QUICK_LINKS.map((link) => (
+        {QUICK_LINKS_CONFIG.map((link) => (
           <Link
             key={link.href}
             href={link.href}
@@ -227,9 +229,9 @@ export default function AccountingDashboard() {
               <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-gray-600 transition-colors" />
             </div>
             <h3 className="mt-3 font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
-              {link.title}
+              {t(link.titleKey)}
             </h3>
-            <p className="mt-1 text-sm text-gray-500">{link.description}</p>
+            <p className="mt-1 text-sm text-gray-500">{t(link.descKey)}</p>
           </Link>
         ))}
       </div>
@@ -239,7 +241,7 @@ export default function AccountingDashboard() {
         {/* Pending Tasks */}
         <div className="bg-white rounded-lg shadow border border-gray-200">
           <div className="px-4 py-3 border-b border-gray-200">
-            <h3 className="font-semibold text-gray-900">Công việc cần làm</h3>
+            <h3 className="font-semibold text-gray-900">{t("pendingTasks")}</h3>
           </div>
           <div className="p-4">
             <div className="space-y-3">
@@ -249,15 +251,15 @@ export default function AccountingDashboard() {
                 </div>
                 <div className="flex-1">
                   <p className="text-sm font-medium text-gray-900">
-                    Hóa đơn chờ duyệt
+                    {t("pendingInvoices")}
                   </p>
-                  <p className="text-xs text-gray-500">0 hóa đơn</p>
+                  <p className="text-xs text-gray-500">0 {t("invoices")}</p>
                 </div>
                 <Link
                   href="/accounting/accounts-receivable"
                   className="text-sm text-blue-600 hover:underline"
                 >
-                  Xem
+                  {t("view")}
                 </Link>
               </div>
 
@@ -267,7 +269,7 @@ export default function AccountingDashboard() {
                 </div>
                 <div className="flex-1">
                   <p className="text-sm font-medium text-gray-900">
-                    Công nợ quá hạn
+                    {t("overdueReceivable")}
                   </p>
                   <p className="text-xs text-gray-500">{formatCurrency(0)}</p>
                 </div>
@@ -275,7 +277,7 @@ export default function AccountingDashboard() {
                   href="/accounting/accounts-receivable?overdue=true"
                   className="text-sm text-blue-600 hover:underline"
                 >
-                  Xem
+                  {t("view")}
                 </Link>
               </div>
 
@@ -285,7 +287,7 @@ export default function AccountingDashboard() {
                 </div>
                 <div className="flex-1">
                   <p className="text-sm font-medium text-gray-900">
-                    Thanh toán đến hạn
+                    {t("paymentsDue")}
                   </p>
                   <p className="text-xs text-gray-500">{formatCurrency(0)}</p>
                 </div>
@@ -293,7 +295,7 @@ export default function AccountingDashboard() {
                   href="/accounting/accounts-payable"
                   className="text-sm text-blue-600 hover:underline"
                 >
-                  Xem
+                  {t("view")}
                 </Link>
               </div>
             </div>
@@ -303,7 +305,7 @@ export default function AccountingDashboard() {
         {/* Quick Actions */}
         <div className="bg-white rounded-lg shadow border border-gray-200">
           <div className="px-4 py-3 border-b border-gray-200">
-            <h3 className="font-semibold text-gray-900">Thao tác nhanh</h3>
+            <h3 className="font-semibold text-gray-900">{t("quickActions")}</h3>
           </div>
           <div className="p-4">
             <div className="grid grid-cols-2 gap-3">
@@ -313,7 +315,7 @@ export default function AccountingDashboard() {
               >
                 <FileText className="w-5 h-5 text-purple-500" />
                 <span className="text-sm font-medium text-gray-700">
-                  Tạo bút toán
+                  {t("createEntry")}
                 </span>
               </Link>
 
@@ -323,7 +325,7 @@ export default function AccountingDashboard() {
               >
                 <Receipt className="w-5 h-5 text-green-500" />
                 <span className="text-sm font-medium text-gray-700">
-                  Tạo hóa đơn
+                  {t("createInvoice")}
                 </span>
               </Link>
 
@@ -333,7 +335,7 @@ export default function AccountingDashboard() {
               >
                 <CreditCard className="w-5 h-5 text-blue-500" />
                 <span className="text-sm font-medium text-gray-700">
-                  Ghi nhận thu/chi
+                  {t("recordTransaction")}
                 </span>
               </Link>
 
@@ -343,7 +345,7 @@ export default function AccountingDashboard() {
               >
                 <DollarSign className="w-5 h-5 text-orange-500" />
                 <span className="text-sm font-medium text-gray-700">
-                  Tạo phiếu chi
+                  {t("createVoucher")}
                 </span>
               </Link>
             </div>

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import {
   Building2,
   Users,
@@ -68,15 +69,6 @@ interface RecentActivity {
   created_at: string;
 }
 
-const STAGE_LABELS: Record<string, string> = {
-  QUALIFICATION: "Đánh giá",
-  NEEDS_ANALYSIS: "Phân tích nhu cầu",
-  PROPOSAL: "Báo giá",
-  NEGOTIATION: "Đàm phán",
-  CLOSED_WON: "Thành công",
-  CLOSED_LOST: "Thất bại",
-};
-
 const STAGE_COLORS: Record<string, string> = {
   QUALIFICATION: "bg-gray-500",
   NEEDS_ANALYSIS: "bg-blue-500",
@@ -86,23 +78,33 @@ const STAGE_COLORS: Record<string, string> = {
   CLOSED_LOST: "bg-red-500",
 };
 
-const ACTIVITY_TYPE_LABELS: Record<string, string> = {
-  CALL: "Cuộc gọi",
-  EMAIL: "Email",
-  MEETING: "Cuộc họp",
-  TASK: "Công việc",
-  NOTE: "Ghi chú",
-  VISIT: "Thăm KH",
-  DEMO: "Demo",
-  FOLLOW_UP: "Theo dõi",
-};
-
 export default function CRMDashboardPage() {
   const router = useRouter();
+  const t = useTranslations("crm.dashboard");
   const [loading, setLoading] = useState(true);
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [pipeline, setPipeline] = useState<PipelineStage[]>([]);
   const [recentActivities, setRecentActivities] = useState<RecentActivity[]>([]);
+
+  const STAGE_LABELS: Record<string, string> = {
+    QUALIFICATION: t("stages.qualification"),
+    NEEDS_ANALYSIS: t("stages.needsAnalysis"),
+    PROPOSAL: t("stages.proposal"),
+    NEGOTIATION: t("stages.negotiation"),
+    CLOSED_WON: t("stages.closedWon"),
+    CLOSED_LOST: t("stages.closedLost"),
+  };
+
+  const ACTIVITY_TYPE_LABELS: Record<string, string> = {
+    CALL: t("activityTypes.call"),
+    EMAIL: t("activityTypes.email"),
+    MEETING: t("activityTypes.meeting"),
+    TASK: t("activityTypes.task"),
+    NOTE: t("activityTypes.note"),
+    VISIT: t("activityTypes.visit"),
+    DEMO: t("activityTypes.demo"),
+    FOLLOW_UP: t("activityTypes.followUp"),
+  };
 
   useEffect(() => {
     const token = localStorage.getItem("access_token");
@@ -157,8 +159,8 @@ export default function CRMDashboardPage() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">CRM Dashboard</h1>
-          <p className="text-gray-600 mt-1">Quản lý khách hàng và bán hàng</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t("title")}</h1>
+          <p className="text-gray-600 mt-1">{t("subtitle")}</p>
         </div>
         <div className="flex gap-2">
           <Link
@@ -166,14 +168,14 @@ export default function CRMDashboardPage() {
             className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
           >
             <UserPlus className="w-4 h-4" />
-            Lead mới
+            {t("newLead")}
           </Link>
           <Link
             href="/crm/accounts/new"
             className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           >
             <Building2 className="w-4 h-4" />
-            Khách hàng mới
+            {t("newCustomer")}
           </Link>
         </div>
       </div>
@@ -188,14 +190,14 @@ export default function CRMDashboardPage() {
                 <Building2 className="w-6 h-6 text-blue-600" />
               </div>
               <div>
-                <div className="text-sm text-gray-600">Khách hàng</div>
+                <div className="text-sm text-gray-600">{t("customers")}</div>
                 <div className="text-2xl font-bold text-gray-900">
                   {summary?.accounts.total || 0}
                 </div>
               </div>
             </div>
             <div className="mt-3 text-xs text-gray-500">
-              Đang hoạt động: {summary?.accounts.active || 0}
+              {t("activeCustomers")}: {summary?.accounts.active || 0}
             </div>
           </div>
         </Link>
@@ -208,15 +210,15 @@ export default function CRMDashboardPage() {
                 <UserPlus className="w-6 h-6 text-green-600" />
               </div>
               <div>
-                <div className="text-sm text-gray-600">Leads</div>
+                <div className="text-sm text-gray-600">{t("leadsCount")}</div>
                 <div className="text-2xl font-bold text-gray-900">
                   {summary?.leads.total || 0}
                 </div>
               </div>
             </div>
             <div className="mt-3 flex gap-4 text-xs text-gray-500">
-              <span>Mới: {summary?.leads.new || 0}</span>
-              <span>Qualified: {summary?.leads.qualified || 0}</span>
+              <span>{t("new")}: {summary?.leads.new || 0}</span>
+              <span>{t("qualified")}: {summary?.leads.qualified || 0}</span>
             </div>
           </div>
         </Link>
@@ -229,14 +231,14 @@ export default function CRMDashboardPage() {
                 <Target className="w-6 h-6 text-yellow-600" />
               </div>
               <div>
-                <div className="text-sm text-gray-600">Cơ hội đang mở</div>
+                <div className="text-sm text-gray-600">{t("openOpportunities")}</div>
                 <div className="text-2xl font-bold text-gray-900">
                   {summary?.opportunities.open || 0}
                 </div>
               </div>
             </div>
             <div className="mt-3 text-xs text-gray-500">
-              Giá trị: {formatCurrency(summary?.opportunities.pipeline_value || 0)}
+              {t("value")}: {formatCurrency(summary?.opportunities.pipeline_value || 0)}
             </div>
           </div>
         </Link>
@@ -248,7 +250,7 @@ export default function CRMDashboardPage() {
               <DollarSign className="w-6 h-6 text-purple-600" />
             </div>
             <div>
-              <div className="text-sm text-gray-600">Thành công tháng này</div>
+              <div className="text-sm text-gray-600">{t("wonThisMonth")}</div>
               <div className="text-2xl font-bold text-gray-900">
                 {summary?.opportunities.won_this_month || 0}
               </div>
@@ -265,9 +267,9 @@ export default function CRMDashboardPage() {
         {/* Sales Pipeline */}
         <div className="lg:col-span-2 bg-white p-5 rounded-lg shadow border border-gray-200">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold">Sales Pipeline</h2>
+            <h2 className="text-lg font-semibold">{t("salesPipeline")}</h2>
             <Link href="/crm/opportunities" className="text-sm text-blue-600 hover:underline">
-              Xem tất cả →
+              {t("viewAll")} →
             </Link>
           </div>
 
@@ -300,13 +302,13 @@ export default function CRMDashboardPage() {
 
               <div className="pt-4 border-t mt-4">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Tổng giá trị Pipeline</span>
+                  <span className="text-sm text-gray-600">{t("totalPipelineValue")}</span>
                   <span className="text-lg font-bold text-gray-900">
                     {formatFullCurrency(summary?.opportunities.pipeline_value || 0)}
                   </span>
                 </div>
                 <div className="flex justify-between items-center mt-1">
-                  <span className="text-sm text-gray-600">Giá trị gia quyền</span>
+                  <span className="text-sm text-gray-600">{t("weightedPipelineValue")}</span>
                   <span className="text-sm font-medium text-green-600">
                     {formatFullCurrency(summary?.opportunities.weighted_pipeline || 0)}
                   </span>
@@ -315,7 +317,7 @@ export default function CRMDashboardPage() {
             </div>
           ) : (
             <div className="text-center py-8 text-gray-500">
-              Chưa có dữ liệu pipeline
+              {t("noPipelineData")}
             </div>
           )}
         </div>
@@ -324,7 +326,7 @@ export default function CRMDashboardPage() {
         <div className="space-y-6">
           {/* Alerts */}
           <div className="bg-white p-5 rounded-lg shadow border border-gray-200">
-            <h2 className="text-lg font-semibold mb-4">Cần chú ý</h2>
+            <h2 className="text-lg font-semibold mb-4">{t("attentionNeeded")}</h2>
             <div className="space-y-3">
               {(summary?.activities.overdue || 0) > 0 && (
                 <Link
@@ -333,7 +335,7 @@ export default function CRMDashboardPage() {
                 >
                   <div className="flex items-center gap-2">
                     <AlertCircle className="w-4 h-4 text-red-500" />
-                    <span className="text-sm text-gray-700">Hoạt động quá hạn</span>
+                    <span className="text-sm text-gray-700">{t("overdueActivities")}</span>
                   </div>
                   <span className="text-lg font-bold text-red-600">
                     {summary?.activities.overdue}
@@ -348,7 +350,7 @@ export default function CRMDashboardPage() {
                 >
                   <div className="flex items-center gap-2">
                     <Clock className="w-4 h-4 text-yellow-500" />
-                    <span className="text-sm text-gray-700">Hoạt động hôm nay</span>
+                    <span className="text-sm text-gray-700">{t("activitiesToday")}</span>
                   </div>
                   <span className="text-lg font-bold text-yellow-600">
                     {summary?.activities.today}
@@ -363,7 +365,7 @@ export default function CRMDashboardPage() {
                 >
                   <div className="flex items-center gap-2">
                     <FileText className="w-4 h-4 text-blue-500" />
-                    <span className="text-sm text-gray-700">Báo giá chờ xử lý</span>
+                    <span className="text-sm text-gray-700">{t("pendingQuotes")}</span>
                   </div>
                   <span className="text-lg font-bold text-blue-600">
                     {summary?.quotes.pending}
@@ -376,7 +378,7 @@ export default function CRMDashboardPage() {
                (summary?.quotes.pending || 0) === 0 && (
                 <div className="flex items-center gap-2 text-gray-500 text-sm">
                   <CheckCircle className="w-4 h-4 text-green-500" />
-                  Không có mục cần chú ý
+                  {t("noAttentionNeeded")}
                 </div>
               )}
             </div>
@@ -384,42 +386,42 @@ export default function CRMDashboardPage() {
 
           {/* Quick Actions */}
           <div className="bg-white p-5 rounded-lg shadow border border-gray-200">
-            <h2 className="text-lg font-semibold mb-4">Thao tác nhanh</h2>
+            <h2 className="text-lg font-semibold mb-4">{t("quickActions")}</h2>
             <div className="grid grid-cols-2 gap-2">
               <QuickActionButton
                 href="/crm/accounts"
                 icon={Building2}
-                label="Khách hàng"
+                label={t("customers")}
                 color="bg-blue-50 text-blue-600 hover:bg-blue-100"
               />
               <QuickActionButton
                 href="/crm/contacts"
                 icon={Users}
-                label="Liên hệ"
+                label={t("contact")}
                 color="bg-green-50 text-green-600 hover:bg-green-100"
               />
               <QuickActionButton
                 href="/crm/leads"
                 icon={UserPlus}
-                label="Leads"
+                label={t("leadsCount")}
                 color="bg-yellow-50 text-yellow-600 hover:bg-yellow-100"
               />
               <QuickActionButton
                 href="/crm/opportunities"
                 icon={Target}
-                label="Cơ hội"
+                label={t("opportunity")}
                 color="bg-purple-50 text-purple-600 hover:bg-purple-100"
               />
               <QuickActionButton
                 href="/crm/quotes"
                 icon={FileText}
-                label="Báo giá"
+                label={t("quote")}
                 color="bg-pink-50 text-pink-600 hover:bg-pink-100"
               />
               <QuickActionButton
                 href="/crm/activities"
                 icon={Phone}
-                label="Hoạt động"
+                label={t("activity")}
                 color="bg-orange-50 text-orange-600 hover:bg-orange-100"
               />
             </div>
@@ -430,9 +432,9 @@ export default function CRMDashboardPage() {
       {/* Recent Activities */}
       <div className="bg-white p-5 rounded-lg shadow border border-gray-200">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold">Hoạt động gần đây</h2>
+          <h2 className="text-lg font-semibold">{t("recentActivities")}</h2>
           <Link href="/crm/activities" className="text-sm text-blue-600 hover:underline">
-            Xem tất cả →
+            {t("viewAll")} →
           </Link>
         </div>
 
@@ -454,8 +456,8 @@ export default function CRMDashboardPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(activity.status)}`}>
-                    {activity.status === "COMPLETED" ? "Hoàn thành" :
-                     activity.status === "PLANNED" ? "Đã lên kế hoạch" : activity.status}
+                    {activity.status === "COMPLETED" ? t("completed") :
+                     activity.status === "PLANNED" ? t("planned") : activity.status}
                   </span>
                 </div>
               </div>
@@ -463,7 +465,7 @@ export default function CRMDashboardPage() {
           </div>
         ) : (
           <div className="text-center py-8 text-gray-500">
-            Chưa có hoạt động nào
+            {t("noActivities")}
           </div>
         )}
       </div>

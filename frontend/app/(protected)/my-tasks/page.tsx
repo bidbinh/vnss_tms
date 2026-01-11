@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import {
   CheckCircle2,
   Clock,
@@ -74,56 +75,57 @@ interface ApiResponse {
   counts: TaskCounts;
 }
 
-// Constants
+// Constants - translation keys
 const TABS = [
-  { key: "active", label: "Cần làm", icon: Play },
-  { key: "pending", label: "Chưa bắt đầu", icon: Clock },
-  { key: "approval", label: "Cần duyệt", icon: CheckCircle2 },
-  { key: "watching", label: "Đang theo dõi", icon: Eye },
-  { key: "completed", label: "Đã xong", icon: Check },
-  { key: "all", label: "Tất cả", icon: null },
+  { key: "active", labelKey: "tabs.active", icon: Play },
+  { key: "pending", labelKey: "tabs.pending", icon: Clock },
+  { key: "approval", labelKey: "tabs.approval", icon: CheckCircle2 },
+  { key: "watching", labelKey: "tabs.watching", icon: Eye },
+  { key: "completed", labelKey: "tabs.completed", icon: Check },
+  { key: "all", labelKey: "tabs.all", icon: null },
 ];
 
 const SCOPES = [
-  { key: "all", label: "Tất cả", icon: null },
-  { key: "COMPANY", label: "Công ty", icon: Building2 },
-  { key: "PERSONAL", label: "Cá nhân", icon: UserCircle },
+  { key: "all", labelKey: "scopes.all", icon: null },
+  { key: "COMPANY", labelKey: "scopes.company", icon: Building2 },
+  { key: "PERSONAL", labelKey: "scopes.personal", icon: UserCircle },
 ];
 
 const PRIORITIES = {
-  URGENT: { label: "Khẩn cấp", color: "bg-red-100 text-red-700 border-red-200" },
-  HIGH: { label: "Cao", color: "bg-orange-100 text-orange-700 border-orange-200" },
-  NORMAL: { label: "Bình thường", color: "bg-blue-100 text-blue-700 border-blue-200" },
-  LOW: { label: "Thấp", color: "bg-gray-100 text-gray-600 border-gray-200" },
+  URGENT: { labelKey: "priorities.urgent", color: "bg-red-100 text-red-700 border-red-200" },
+  HIGH: { labelKey: "priorities.high", color: "bg-orange-100 text-orange-700 border-orange-200" },
+  NORMAL: { labelKey: "priorities.normal", color: "bg-blue-100 text-blue-700 border-blue-200" },
+  LOW: { labelKey: "priorities.low", color: "bg-gray-100 text-gray-600 border-gray-200" },
 };
 
 const STATUSES = {
-  PENDING: { label: "Chưa bắt đầu", color: "bg-yellow-100 text-yellow-700", icon: Clock },
-  IN_PROGRESS: { label: "Đang thực hiện", color: "bg-blue-100 text-blue-700", icon: Play },
-  COMPLETED: { label: "Hoàn thành", color: "bg-green-100 text-green-700", icon: CheckCircle2 },
-  CANCELLED: { label: "Đã hủy", color: "bg-gray-100 text-gray-500", icon: X },
+  PENDING: { labelKey: "statuses.pending", color: "bg-yellow-100 text-yellow-700", icon: Clock },
+  IN_PROGRESS: { labelKey: "statuses.inProgress", color: "bg-blue-100 text-blue-700", icon: Play },
+  COMPLETED: { labelKey: "statuses.completed", color: "bg-green-100 text-green-700", icon: CheckCircle2 },
+  CANCELLED: { labelKey: "statuses.cancelled", color: "bg-gray-100 text-gray-500", icon: X },
 };
 
 const TASK_TYPES = {
-  ACTION: { label: "Cần thực hiện", icon: Play },
-  APPROVAL: { label: "Cần phê duyệt", icon: CheckCircle2 },
-  REVIEW: { label: "Theo dõi", icon: Eye },
-  NOTIFICATION: { label: "Thông báo", icon: MessageSquare },
+  ACTION: { labelKey: "taskTypes.action", icon: Play },
+  APPROVAL: { labelKey: "taskTypes.approval", icon: CheckCircle2 },
+  REVIEW: { labelKey: "taskTypes.review", icon: Eye },
+  NOTIFICATION: { labelKey: "taskTypes.notification", icon: MessageSquare },
 };
 
 const SOURCE_MODULES = {
-  MANUAL: { label: "Tự tạo", color: "bg-gray-100 text-gray-600" },
-  TMS: { label: "TMS", color: "bg-blue-100 text-blue-600" },
-  HRM: { label: "HRM", color: "bg-purple-100 text-purple-600" },
-  CRM: { label: "CRM", color: "bg-green-100 text-green-600" },
-  ACCOUNTING: { label: "Accounting", color: "bg-yellow-100 text-yellow-600" },
-  WMS: { label: "WMS", color: "bg-orange-100 text-orange-600" },
-  PROJECT: { label: "Project", color: "bg-pink-100 text-pink-600" },
-  WORKFLOW: { label: "Workflow", color: "bg-indigo-100 text-indigo-600" },
-  SYSTEM: { label: "System", color: "bg-red-100 text-red-600" },
+  MANUAL: { labelKey: "sources.manual", color: "bg-gray-100 text-gray-600" },
+  TMS: { labelKey: "sources.tms", color: "bg-blue-100 text-blue-600" },
+  HRM: { labelKey: "sources.hrm", color: "bg-purple-100 text-purple-600" },
+  CRM: { labelKey: "sources.crm", color: "bg-green-100 text-green-600" },
+  ACCOUNTING: { labelKey: "sources.accounting", color: "bg-yellow-100 text-yellow-600" },
+  WMS: { labelKey: "sources.wms", color: "bg-orange-100 text-orange-600" },
+  PROJECT: { labelKey: "sources.project", color: "bg-pink-100 text-pink-600" },
+  WORKFLOW: { labelKey: "sources.workflow", color: "bg-indigo-100 text-indigo-600" },
+  SYSTEM: { labelKey: "sources.system", color: "bg-red-100 text-red-600" },
 };
 
 export default function MyTasksPage() {
+  const t = useTranslations("myTasks");
   const [tasks, setTasks] = useState<UserTask[]>([]);
   const [counts, setCounts] = useState<TaskCounts | null>(null);
   const [loading, setLoading] = useState(true);
@@ -160,7 +162,7 @@ export default function MyTasksPage() {
       setTasks(data.items || []);
       setCounts(data.counts || null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Có lỗi xảy ra");
+      setError(err instanceof Error ? err.message : t("toasts.error"));
     } finally {
       setLoading(false);
     }
@@ -176,10 +178,10 @@ export default function MyTasksPage() {
     try {
       setActionLoading(taskId);
       await apiFetch(`/my-tasks/${taskId}/start`, { method: "PATCH" });
-      toast.success("Đã bắt đầu task");
+      toast.success(t("toasts.taskStarted"));
       fetchTasks();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Lỗi");
+      toast.error(err instanceof Error ? err.message : t("toasts.error"));
     } finally {
       setActionLoading(null);
     }
@@ -193,10 +195,10 @@ export default function MyTasksPage() {
         method: "PATCH",
         body: JSON.stringify({}),
       });
-      toast.success("Đã hoàn thành task");
+      toast.success(t("toasts.taskCompleted"));
       fetchTasks();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Lỗi");
+      toast.error(err instanceof Error ? err.message : t("toasts.error"));
     } finally {
       setActionLoading(null);
     }
@@ -207,10 +209,10 @@ export default function MyTasksPage() {
     try {
       setActionLoading(taskId);
       await apiFetch(`/my-tasks/${taskId}/approve`, { method: "PATCH" });
-      toast.success("Đã phê duyệt");
+      toast.success(t("toasts.approved"));
       fetchTasks();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Lỗi");
+      toast.error(err instanceof Error ? err.message : t("toasts.error"));
     } finally {
       setActionLoading(null);
     }
@@ -218,16 +220,16 @@ export default function MyTasksPage() {
 
   const handleRejectTask = async (taskId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    const reason = prompt("Nhập lý do từ chối:");
+    const reason = prompt(t("actions.enterRejectReason"));
     if (!reason) return;
 
     try {
       setActionLoading(taskId);
       await apiFetch(`/my-tasks/${taskId}/reject?reason=${encodeURIComponent(reason)}`, { method: "PATCH" });
-      toast.success("Đã từ chối");
+      toast.success(t("toasts.rejected"));
       fetchTasks();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Lỗi");
+      toast.error(err instanceof Error ? err.message : t("toasts.error"));
     } finally {
       setActionLoading(null);
     }
@@ -244,17 +246,17 @@ export default function MyTasksPage() {
     const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
     const dueDateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
 
-    if (dueDateOnly.getTime() === today.getTime()) return "Hôm nay";
-    if (dueDateOnly.getTime() === tomorrow.getTime()) return "Ngày mai";
+    if (dueDateOnly.getTime() === today.getTime()) return t("dates.today");
+    if (dueDateOnly.getTime() === tomorrow.getTime()) return t("dates.tomorrow");
 
     // Calculate difference in days for past dates
     const diffTime = dueDateOnly.getTime() - today.getTime();
     const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
-    if (diffDays === -1) return "Hôm qua";
-    if (diffDays < -1) return `Quá hạn ${Math.abs(diffDays)} ngày`;
+    if (diffDays === -1) return t("dates.yesterday");
+    if (diffDays < -1) return t("dates.overdueDays", { days: Math.abs(diffDays) });
 
-    return date.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" });
+    return date.toLocaleDateString("en-US", { day: "2-digit", month: "2-digit" });
   };
 
   // Group tasks by date
@@ -338,12 +340,12 @@ export default function MyTasksPage() {
             {/* Header row */}
             <div className="flex items-center gap-2 flex-wrap mb-1">
               <span className="text-xs text-gray-400">{task.task_number}</span>
-              <span className={`text-xs px-1.5 py-0.5 rounded ${source.color}`}>{source.label}</span>
+              <span className={`text-xs px-1.5 py-0.5 rounded ${source.color}`}>{t(source.labelKey)}</span>
               {task.scope === "PERSONAL" && (
-                <span className="text-xs px-1.5 py-0.5 rounded bg-purple-100 text-purple-600">Cá nhân</span>
+                <span className="text-xs px-1.5 py-0.5 rounded bg-purple-100 text-purple-600">{t("badges.personal")}</span>
               )}
               {task.task_type === "APPROVAL" && (
-                <span className="text-xs px-1.5 py-0.5 rounded bg-orange-100 text-orange-600">Cần duyệt</span>
+                <span className="text-xs px-1.5 py-0.5 rounded bg-orange-100 text-orange-600">{t("badges.needApproval")}</span>
               )}
             </div>
 
@@ -401,7 +403,7 @@ export default function MyTasksPage() {
 
           {/* Priority & Actions */}
           <div className="flex flex-col items-end gap-2">
-            <span className={`text-xs px-2 py-0.5 rounded border ${priority.color}`}>{priority.label}</span>
+            <span className={`text-xs px-2 py-0.5 rounded border ${priority.color}`}>{t(priority.labelKey)}</span>
 
             {/* Quick Actions */}
             <div className="flex items-center gap-1">
@@ -413,7 +415,7 @@ export default function MyTasksPage() {
                     setEditTaskId(task.id);
                   }}
                   className="p-1.5 rounded-lg bg-gray-50 text-gray-600 hover:bg-gray-100"
-                  title="Chỉnh sửa"
+                  title={t("actions.edit")}
                 >
                   <Pencil className="w-4 h-4" />
                 </button>
@@ -425,7 +427,7 @@ export default function MyTasksPage() {
                     onClick={(e) => handleApproveTask(task.id, e)}
                     disabled={actionLoading === task.id}
                     className="p-1.5 rounded-lg bg-green-50 text-green-600 hover:bg-green-100 disabled:opacity-50"
-                    title="Phê duyệt"
+                    title={t("actions.approve")}
                   >
                     <Check className="w-4 h-4" />
                   </button>
@@ -433,7 +435,7 @@ export default function MyTasksPage() {
                     onClick={(e) => handleRejectTask(task.id, e)}
                     disabled={actionLoading === task.id}
                     className="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 disabled:opacity-50"
-                    title="Từ chối"
+                    title={t("actions.reject")}
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -445,7 +447,7 @@ export default function MyTasksPage() {
                   onClick={(e) => handleStartTask(task.id, e)}
                   disabled={actionLoading === task.id}
                   className="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 disabled:opacity-50"
-                  title="Bắt đầu"
+                  title={t("actions.start")}
                 >
                   <Play className="w-4 h-4" />
                 </button>
@@ -456,7 +458,7 @@ export default function MyTasksPage() {
                   onClick={(e) => handleCompleteTask(task.id, e)}
                   disabled={actionLoading === task.id}
                   className="p-1.5 rounded-lg bg-green-50 text-green-600 hover:bg-green-100 disabled:opacity-50"
-                  title="Hoàn thành"
+                  title={t("actions.complete")}
                 >
                   <Check className="w-4 h-4" />
                 </button>
@@ -499,14 +501,14 @@ export default function MyTasksPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Công việc của tôi</h1>
-          <p className="text-gray-500">Quản lý tất cả công việc cần xử lý</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t("title")}</h1>
+          <p className="text-gray-500">{t("subtitle")}</p>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={fetchTasks}
             className="p-2 border rounded-lg hover:bg-gray-50"
-            title="Làm mới"
+            title={t("refresh")}
           >
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
           </button>
@@ -515,7 +517,7 @@ export default function MyTasksPage() {
             className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           >
             <Plus className="w-4 h-4" />
-            Tạo task mới
+            {t("createTask")}
           </button>
         </div>
       </div>
@@ -525,31 +527,31 @@ export default function MyTasksPage() {
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 mb-6">
           <div className="bg-white rounded-xl border p-3">
             <div className="text-2xl font-bold text-gray-900">{counts.total_active}</div>
-            <div className="text-xs text-gray-500">Đang hoạt động</div>
+            <div className="text-xs text-gray-500">{t("counts.active")}</div>
           </div>
           <div className="bg-white rounded-xl border p-3">
             <div className="text-2xl font-bold text-yellow-600">{counts.pending}</div>
-            <div className="text-xs text-gray-500">Chưa bắt đầu</div>
+            <div className="text-xs text-gray-500">{t("counts.pending")}</div>
           </div>
           <div className="bg-white rounded-xl border p-3">
             <div className="text-2xl font-bold text-blue-600">{counts.in_progress}</div>
-            <div className="text-xs text-gray-500">Đang thực hiện</div>
+            <div className="text-xs text-gray-500">{t("counts.inProgress")}</div>
           </div>
           <div className="bg-white rounded-xl border p-3">
             <div className="text-2xl font-bold text-green-600">{counts.completed}</div>
-            <div className="text-xs text-gray-500">Đã xong</div>
+            <div className="text-xs text-gray-500">{t("counts.completed")}</div>
           </div>
           <div className="bg-white rounded-xl border p-3">
             <div className="text-2xl font-bold text-red-600">{counts.overdue}</div>
-            <div className="text-xs text-gray-500">Quá hạn</div>
+            <div className="text-xs text-gray-500">{t("counts.overdue")}</div>
           </div>
           <div className="bg-white rounded-xl border p-3">
             <div className="text-2xl font-bold text-orange-600">{counts.need_approval}</div>
-            <div className="text-xs text-gray-500">Cần duyệt</div>
+            <div className="text-xs text-gray-500">{t("counts.needApproval")}</div>
           </div>
           <div className="bg-white rounded-xl border p-3">
             <div className="text-2xl font-bold text-purple-600">{counts.watching}</div>
-            <div className="text-xs text-gray-500">Đang theo dõi</div>
+            <div className="text-xs text-gray-500">{t("counts.watching")}</div>
           </div>
         </div>
       )}
@@ -569,7 +571,7 @@ export default function MyTasksPage() {
               }`}
             >
               {Icon && <Icon className="w-4 h-4" />}
-              {scope.label}
+              {t(scope.labelKey)}
             </button>
           );
         })}
@@ -590,7 +592,7 @@ export default function MyTasksPage() {
               }`}
             >
               {Icon && <Icon className="w-4 h-4" />}
-              {tab.label}
+              {t(tab.labelKey)}
             </button>
           );
         })}
@@ -602,7 +604,7 @@ export default function MyTasksPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
             type="text"
-            placeholder="Tìm kiếm task..."
+            placeholder={t("searchPlaceholder")}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -614,11 +616,11 @@ export default function MyTasksPage() {
           onChange={(e) => setPriorityFilter(e.target.value || null)}
           className="px-3 py-2 border rounded-lg text-sm"
         >
-          <option value="">Tất cả độ ưu tiên</option>
-          <option value="URGENT">Khẩn cấp</option>
-          <option value="HIGH">Cao</option>
-          <option value="NORMAL">Bình thường</option>
-          <option value="LOW">Thấp</option>
+          <option value="">{t("allPriorities")}</option>
+          <option value="URGENT">{t("priorities.urgent")}</option>
+          <option value="HIGH">{t("priorities.high")}</option>
+          <option value="NORMAL">{t("priorities.normal")}</option>
+          <option value="LOW">{t("priorities.low")}</option>
         </select>
       </div>
 
@@ -630,7 +632,7 @@ export default function MyTasksPage() {
             onClick={fetchTasks}
             className="mt-2 text-sm text-red-700 underline"
           >
-            Thử lại
+            {t("retry")}
           </button>
         </div>
       )}
@@ -639,47 +641,47 @@ export default function MyTasksPage() {
       {tasks.length === 0 ? (
         <div className="text-center py-12">
           <CheckCircle2 className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-          <p className="text-gray-500">Không có task nào</p>
+          <p className="text-gray-500">{t("empty.noTasks")}</p>
           <button
             onClick={() => setShowCreateModal(true)}
             className="mt-4 text-blue-600 hover:underline"
           >
-            Tạo task mới
+            {t("empty.createNew")}
           </button>
         </div>
       ) : (
         <div>
           {renderGroupSection(
-            "Quá hạn",
+            t("groups.overdue"),
             groupedTasks.overdue,
             <AlertTriangle className="w-5 h-5 text-red-500" />,
             "text-red-600"
           )}
           {renderGroupSection(
-            "Hôm nay",
+            t("groups.today"),
             groupedTasks.today,
             <Calendar className="w-5 h-5 text-blue-500" />,
             "text-blue-600"
           )}
           {renderGroupSection(
-            "Ngày mai",
+            t("groups.tomorrow"),
             groupedTasks.tomorrow,
             <Calendar className="w-5 h-5 text-green-500" />,
             "text-green-600"
           )}
           {renderGroupSection(
-            "Tuần này",
+            t("groups.thisWeek"),
             groupedTasks.this_week,
             <Calendar className="w-5 h-5 text-purple-500" />,
             "text-purple-600"
           )}
           {renderGroupSection(
-            "Sau đó",
+            t("groups.later"),
             groupedTasks.later,
             <Calendar className="w-5 h-5 text-gray-400" />
           )}
           {renderGroupSection(
-            "Chưa có deadline",
+            t("groups.noDeadline"),
             groupedTasks.no_date,
             <Clock className="w-5 h-5 text-gray-400" />
           )}

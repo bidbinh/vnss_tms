@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import {
   DollarSign,
   Calendar,
@@ -29,15 +30,18 @@ interface PayrollPeriod {
   total_net_salary: number;
 }
 
-const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
-  DRAFT: { label: "Nháp", color: "bg-gray-100 text-gray-700" },
-  CALCULATED: { label: "Đã tính", color: "bg-blue-100 text-blue-700" },
-  APPROVED: { label: "Đã duyệt", color: "bg-green-100 text-green-700" },
-  PAID: { label: "Đã chi", color: "bg-purple-100 text-purple-700" },
-  CLOSED: { label: "Đã khóa", color: "bg-gray-100 text-gray-700" },
+const STATUS_COLORS: Record<string, string> = {
+  DRAFT: "bg-gray-100 text-gray-700",
+  CALCULATED: "bg-blue-100 text-blue-700",
+  APPROVED: "bg-green-100 text-green-700",
+  PAID: "bg-purple-100 text-purple-700",
+  CLOSED: "bg-gray-100 text-gray-700",
 };
 
 export default function PayrollPage() {
+  const t = useTranslations("hrm.payrollPage");
+  const tCommon = useTranslations("common");
+
   const [periods, setPeriods] = useState<PayrollPeriod[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
@@ -83,12 +87,12 @@ export default function PayrollPage() {
       fetchPeriods();
     } catch (error: any) {
       console.error("Failed to create period:", error);
-      alert(error.message || "Không thể tạo kỳ lương");
+      alert(error.message || t("errors.createFailed"));
     }
   };
 
   const handleCalculate = async (periodId: string) => {
-    if (!confirm("Bạn có chắc muốn tính lương cho kỳ này?")) return;
+    if (!confirm(t("confirmations.calculate"))) return;
 
     try {
       const result = await apiFetch<{ message: string; created: number; errors: string[] }>(
@@ -98,23 +102,23 @@ export default function PayrollPage() {
           body: JSON.stringify({}),
         }
       );
-      alert(`${result.message}\n${result.errors.length > 0 ? `Lỗi: ${result.errors.join(", ")}` : ""}`);
+      alert(`${result.message}\n${result.errors.length > 0 ? `Errors: ${result.errors.join(", ")}` : ""}`);
       fetchPeriods();
     } catch (error: any) {
       console.error("Failed to calculate payroll:", error);
-      alert(error.message || "Không thể tính lương");
+      alert(error.message || t("errors.calculateFailed"));
     }
   };
 
   const handleClose = async (periodId: string) => {
-    if (!confirm("Sau khi khóa sẽ không thể chỉnh sửa. Bạn có chắc?")) return;
+    if (!confirm(t("confirmations.close"))) return;
 
     try {
       await apiFetch(`/hrm/payroll/periods/${periodId}/close`, { method: "POST" });
       fetchPeriods();
     } catch (error: any) {
       console.error("Failed to close period:", error);
-      alert(error.message || "Không thể khóa kỳ lương");
+      alert(error.message || t("errors.closeFailed"));
     }
   };
 
@@ -151,8 +155,8 @@ export default function PayrollPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Quản lý lương</h1>
-          <p className="text-gray-600 mt-1">Tính toán và quản lý bảng lương</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t("title")}</h1>
+          <p className="text-gray-600 mt-1">{t("subtitle")}</p>
         </div>
         <div className="flex items-center gap-3">
           <select
@@ -162,7 +166,7 @@ export default function PayrollPage() {
           >
             {[2023, 2024, 2025, 2026].map((year) => (
               <option key={year} value={year}>
-                Năm {year}
+                {t("year")} {year}
               </option>
             ))}
           </select>
@@ -174,7 +178,7 @@ export default function PayrollPage() {
             className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           >
             <Plus className="w-4 h-4" />
-            Tạo kỳ lương
+            {t("createPeriod")}
           </button>
         </div>
       </div>
@@ -187,7 +191,7 @@ export default function PayrollPage() {
               <Calendar className="w-5 h-5 text-blue-600" />
             </div>
             <div>
-              <div className="text-sm text-gray-600">Số kỳ lương</div>
+              <div className="text-sm text-gray-600">{t("stats.totalPeriods")}</div>
               <div className="text-xl font-bold text-gray-900">{periods.length}</div>
             </div>
           </div>
@@ -198,7 +202,7 @@ export default function PayrollPage() {
               <Users className="w-5 h-5 text-green-600" />
             </div>
             <div>
-              <div className="text-sm text-gray-600">Tổng phiếu lương</div>
+              <div className="text-sm text-gray-600">{t("stats.totalPayslips")}</div>
               <div className="text-xl font-bold text-gray-900">{totalRecords}</div>
             </div>
           </div>
@@ -209,7 +213,7 @@ export default function PayrollPage() {
               <DollarSign className="w-5 h-5 text-purple-600" />
             </div>
             <div>
-              <div className="text-sm text-gray-600">Tổng lương năm {selectedYear}</div>
+              <div className="text-sm text-gray-600">{t("stats.totalSalary")} {selectedYear}</div>
               <div className="text-xl font-bold text-purple-600">{formatCurrency(totalNetSalary)}</div>
             </div>
           </div>
@@ -219,7 +223,7 @@ export default function PayrollPage() {
       {/* Periods List */}
       <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
         <div className="px-4 py-3 border-b border-gray-200">
-          <h2 className="font-semibold">Các kỳ lương năm {selectedYear}</h2>
+          <h2 className="font-semibold">{t("periodsList")} {selectedYear}</h2>
         </div>
 
         {loading ? (
@@ -228,12 +232,12 @@ export default function PayrollPage() {
           </div>
         ) : periods.length === 0 ? (
           <div className="text-center p-8 text-gray-500">
-            Chưa có kỳ lương nào cho năm {selectedYear}
+            {t("noPeriods")} {selectedYear}
           </div>
         ) : (
           <div className="divide-y divide-gray-200">
             {periods.map((period) => {
-              const statusConfig = STATUS_CONFIG[period.status] || STATUS_CONFIG.DRAFT;
+              const statusColor = STATUS_COLORS[period.status] || STATUS_COLORS.DRAFT;
 
               return (
                 <div key={period.id} className="p-4 hover:bg-gray-50">
@@ -252,21 +256,21 @@ export default function PayrollPage() {
 
                     <div className="flex items-center gap-6">
                       <div className="text-right">
-                        <div className="text-sm text-gray-500">Số phiếu</div>
+                        <div className="text-sm text-gray-500">{t("columns.payslipCount")}</div>
                         <div className="font-medium">{period.record_count}</div>
                       </div>
 
                       <div className="text-right">
-                        <div className="text-sm text-gray-500">Tổng lương</div>
+                        <div className="text-sm text-gray-500">{t("columns.totalSalary")}</div>
                         <div className="font-medium text-green-600">
                           {formatCurrency(period.total_net_salary)}
                         </div>
                       </div>
 
                       <span
-                        className={`px-3 py-1 text-sm font-medium rounded-full ${statusConfig.color}`}
+                        className={`px-3 py-1 text-sm font-medium rounded-full ${statusColor}`}
                       >
-                        {statusConfig.label}
+                        {t(`status.${period.status}`)}
                       </span>
 
                       <div className="flex items-center gap-2">
@@ -276,7 +280,7 @@ export default function PayrollPage() {
                             className="flex items-center gap-1 px-3 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
                           >
                             <Play className="w-4 h-4" />
-                            Tính lương
+                            {t("actions.calculate")}
                           </button>
                         )}
 
@@ -287,14 +291,14 @@ export default function PayrollPage() {
                               className="flex items-center gap-1 px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
                             >
                               <Eye className="w-4 h-4" />
-                              Xem
+                              {t("actions.view")}
                             </Link>
                             <button
                               onClick={() => handleClose(period.id)}
                               className="flex items-center gap-1 px-3 py-1.5 text-sm bg-orange-100 text-orange-700 rounded hover:bg-orange-200"
                             >
                               <Lock className="w-4 h-4" />
-                              Khóa
+                              {t("actions.close")}
                             </button>
                           </>
                         )}
@@ -305,7 +309,7 @@ export default function PayrollPage() {
                             className="flex items-center gap-1 px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
                           >
                             <Eye className="w-4 h-4" />
-                            Xem
+                            {t("actions.view")}
                           </Link>
                         )}
                       </div>
@@ -329,8 +333,8 @@ export default function PayrollPage() {
               <FileText className="w-5 h-5 text-blue-600" />
             </div>
             <div>
-              <div className="font-medium text-gray-900">Cơ cấu lương</div>
-              <div className="text-sm text-gray-500">Quản lý các khoản lương</div>
+              <div className="font-medium text-gray-900">{t("quickLinks.salaryStructure")}</div>
+              <div className="text-sm text-gray-500">{t("quickLinks.salaryStructureDesc")}</div>
             </div>
           </div>
           <ChevronRight className="w-5 h-5 text-gray-400" />
@@ -345,8 +349,8 @@ export default function PayrollPage() {
               <DollarSign className="w-5 h-5 text-purple-600" />
             </div>
             <div>
-              <div className="font-medium text-gray-900">Tạm ứng</div>
-              <div className="text-sm text-gray-500">Quản lý tạm ứng lương</div>
+              <div className="font-medium text-gray-900">{t("quickLinks.advances")}</div>
+              <div className="text-sm text-gray-500">{t("quickLinks.advancesDesc")}</div>
             </div>
           </div>
           <ChevronRight className="w-5 h-5 text-gray-400" />
@@ -361,8 +365,8 @@ export default function PayrollPage() {
               <Download className="w-5 h-5 text-green-600" />
             </div>
             <div>
-              <div className="font-medium text-gray-900">Báo cáo lương</div>
-              <div className="text-sm text-gray-500">Xuất báo cáo bảng lương</div>
+              <div className="font-medium text-gray-900">{t("quickLinks.reports")}</div>
+              <div className="text-sm text-gray-500">{t("quickLinks.reportsDesc")}</div>
             </div>
           </div>
           <ChevronRight className="w-5 h-5 text-gray-400" />
@@ -373,11 +377,11 @@ export default function PayrollPage() {
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
-            <h2 className="text-lg font-semibold mb-4">Tạo kỳ lương mới</h2>
+            <h2 className="text-lg font-semibold mb-4">{t("modal.createTitle")}</h2>
             <form onSubmit={handleCreatePeriod} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Tháng</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t("modal.month")}</label>
                   <select
                     value={formData.month}
                     onChange={(e) => updateDefaultDates(parseInt(e.target.value), formData.year)}
@@ -385,13 +389,13 @@ export default function PayrollPage() {
                   >
                     {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((m) => (
                       <option key={m} value={m}>
-                        Tháng {m}
+                        {t("modal.month")} {m}
                       </option>
                     ))}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Năm</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t("modal.year")}</label>
                   <select
                     value={formData.year}
                     onChange={(e) => updateDefaultDates(formData.month, parseInt(e.target.value))}
@@ -408,7 +412,7 @@ export default function PayrollPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Từ ngày</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t("modal.startDate")}</label>
                   <input
                     type="date"
                     value={formData.start_date}
@@ -418,7 +422,7 @@ export default function PayrollPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Đến ngày</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t("modal.endDate")}</label>
                   <input
                     type="date"
                     value={formData.end_date}
@@ -431,7 +435,7 @@ export default function PayrollPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Ngày chi lương
+                  {t("modal.paymentDate")}
                 </label>
                 <input
                   type="date"
@@ -447,13 +451,13 @@ export default function PayrollPage() {
                   onClick={() => setShowModal(false)}
                   className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
                 >
-                  Hủy
+                  {t("modal.cancel")}
                 </button>
                 <button
                   type="submit"
                   className="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700"
                 >
-                  Tạo kỳ lương
+                  {t("modal.create")}
                 </button>
               </div>
             </form>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
+import { useTranslations } from "next-intl";
 import { apiFetch } from "@/lib/api";
 import DataTable, { Column, TablePagination } from "@/components/DataTable";
 import { MapPin, Plus, Search, Building2, Anchor, Phone, RotateCcw, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
@@ -68,14 +69,21 @@ function StatCard({ icon: Icon, label, value, color }: { icon: any; label: strin
 }
 
 // ============ Type Label Config ============
-const SITE_TYPE_CONFIG: Record<string, { label: string; color: string }> = {
-  CUSTOMER: { label: "Khách hàng", color: "bg-blue-100 text-blue-800" },
-  PORT: { label: "Cảng", color: "bg-green-100 text-green-800" },
-  WAREHOUSE: { label: "Kho", color: "bg-purple-100 text-purple-800" },
+const SITE_TYPE_KEYS: Record<string, string> = {
+  CUSTOMER: "customer",
+  PORT: "port",
+  WAREHOUSE: "warehouse",
+};
+
+const SITE_TYPE_COLORS: Record<string, string> = {
+  CUSTOMER: "bg-blue-100 text-blue-800",
+  PORT: "bg-green-100 text-green-800",
+  WAREHOUSE: "bg-purple-100 text-purple-800",
 };
 
 // ============ Main Component ============
 export default function SitesPage() {
+  const t = useTranslations("tms.sitesPage");
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState<Site[]>([]);
   const [locations, setLocations] = useState<Location[]>([]);
@@ -121,7 +129,7 @@ export default function SitesPage() {
       setRows(sitesData);
       setLocations(locationsData);
     } catch (e: any) {
-      setError(e?.message || "Load failed");
+      setError(e?.message || t("errors.loadFailed"));
     } finally {
       setLoading(false);
     }
@@ -235,7 +243,7 @@ export default function SitesPage() {
     setError(null);
     try {
       if (!form.company_name.trim() || !form.location_id) {
-        throw new Error("Tên công ty và Location là bắt buộc.");
+        throw new Error(t("errors.companyLocationRequired"));
       }
 
       const payload = {
@@ -266,20 +274,20 @@ export default function SitesPage() {
       setOpen(false);
       await load();
     } catch (e: any) {
-      setError(e?.message || "Save failed");
+      setError(e?.message || t("errors.saveFailed"));
     } finally {
       setSaving(false);
     }
   }
 
   async function handleDelete(id: string) {
-    if (!confirm("Bạn có chắc muốn xóa site này?")) return;
+    if (!confirm(t("confirmations.deleteSite"))) return;
 
     try {
       await apiFetch(`/api/v1/sites/${id}`, { method: "DELETE" });
       await load();
     } catch (e: any) {
-      alert(e?.message || "Delete failed");
+      alert(e?.message || t("errors.deleteFailed"));
     }
   }
 
@@ -300,14 +308,14 @@ export default function SitesPage() {
 
   // ============ Table Column Definitions ============
   const columnDefs = [
-    { key: "code", header: "Mã", width: 100, sortable: true },
-    { key: "company_name", header: "Tên công ty", width: 200, sortable: true },
-    { key: "site_type", header: "Loại", width: 100, sortable: true },
-    { key: "location", header: "Location", width: 150, sortable: true },
-    { key: "detailed_address", header: "Địa chỉ", width: 200, sortable: true },
-    { key: "contact", header: "Liên hệ", width: 130, sortable: true },
-    { key: "status", header: "TT", width: 80, sortable: true },
-    { key: "actions", header: "Thao tác", width: 100, sortable: false },
+    { key: "code", header: t("columns.code"), width: 100, sortable: true },
+    { key: "company_name", header: t("columns.companyName"), width: 200, sortable: true },
+    { key: "site_type", header: t("columns.type"), width: 100, sortable: true },
+    { key: "location", header: t("columns.location"), width: 150, sortable: true },
+    { key: "detailed_address", header: t("columns.address"), width: 200, sortable: true },
+    { key: "contact", header: t("columns.contact"), width: 130, sortable: true },
+    { key: "status", header: t("columns.status"), width: 80, sortable: true },
+    { key: "actions", header: t("columns.actions"), width: 100, sortable: false },
   ];
 
   function renderCell(row: Site, key: string) {
@@ -317,8 +325,9 @@ export default function SitesPage() {
       case "company_name":
         return <span className="font-medium">{row.company_name}</span>;
       case "site_type": {
-        const config = SITE_TYPE_CONFIG[row.site_type] || { label: row.site_type, color: "bg-gray-100 text-gray-800" };
-        return <span className={`px-2 py-1 rounded-lg text-xs font-medium ${config.color}`}>{config.label}</span>;
+        const typeKey = SITE_TYPE_KEYS[row.site_type] || row.site_type.toLowerCase();
+        const color = SITE_TYPE_COLORS[row.site_type] || "bg-gray-100 text-gray-800";
+        return <span className={`px-2 py-1 rounded-lg text-xs font-medium ${color}`}>{t(`types.${typeKey}`)}</span>;
       }
       case "location":
         return (
@@ -350,7 +359,7 @@ export default function SitesPage() {
               row.status === "ACTIVE" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
             }`}
           >
-            {row.status === "ACTIVE" ? "On" : "Off"}
+            {row.status === "ACTIVE" ? t("status.on") : t("status.off")}
           </span>
         );
       case "actions":
@@ -363,7 +372,7 @@ export default function SitesPage() {
               }}
               className="text-blue-600 hover:text-blue-800 text-sm font-medium"
             >
-              Sửa
+              {t("actions.edit")}
             </button>
             <button
               onClick={(e) => {
@@ -372,7 +381,7 @@ export default function SitesPage() {
               }}
               className="text-red-600 hover:text-red-800 text-sm font-medium"
             >
-              Xóa
+              {t("actions.delete")}
             </button>
           </div>
         );
@@ -385,28 +394,29 @@ export default function SitesPage() {
   const columns: Column<Site>[] = [
     {
       key: "code",
-      header: "Mã",
+      header: t("columns.code"),
       width: 100,
       render: (r) => <span className="font-semibold text-gray-900">{r.code || "-"}</span>,
     },
     {
       key: "company_name",
-      header: "Tên công ty",
+      header: t("columns.companyName"),
       width: 200,
       render: (r) => <span className="font-medium">{r.company_name}</span>,
     },
     {
       key: "site_type",
-      header: "Loại",
+      header: t("columns.type"),
       width: 100,
       render: (r) => {
-        const config = SITE_TYPE_CONFIG[r.site_type] || { label: r.site_type, color: "bg-gray-100 text-gray-800" };
-        return <span className={`px-2 py-1 rounded-lg text-xs font-medium ${config.color}`}>{config.label}</span>;
+        const typeKey = SITE_TYPE_KEYS[r.site_type] || r.site_type.toLowerCase();
+        const color = SITE_TYPE_COLORS[r.site_type] || "bg-gray-100 text-gray-800";
+        return <span className={`px-2 py-1 rounded-lg text-xs font-medium ${color}`}>{t(`types.${typeKey}`)}</span>;
       },
     },
     {
       key: "location",
-      header: "Location",
+      header: t("columns.location"),
       width: 150,
       render: (r) => (
         <div>
@@ -417,13 +427,13 @@ export default function SitesPage() {
     },
     {
       key: "detailed_address",
-      header: "Địa chỉ",
+      header: t("columns.address"),
       width: 200,
       render: (r) => r.detailed_address || <span className="text-gray-400">-</span>,
     },
     {
       key: "contact",
-      header: "Liên hệ",
+      header: t("columns.contact"),
       width: 130,
       render: (r) =>
         r.contact_name ? (
@@ -442,7 +452,7 @@ export default function SitesPage() {
     },
     {
       key: "status",
-      header: "TT",
+      header: t("columns.status"),
       width: 80,
       render: (r) => (
         <span
@@ -450,13 +460,13 @@ export default function SitesPage() {
             r.status === "ACTIVE" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
           }`}
         >
-          {r.status === "ACTIVE" ? "On" : "Off"}
+          {r.status === "ACTIVE" ? t("status.on") : t("status.off")}
         </span>
       ),
     },
     {
       key: "actions",
-      header: "Thao tác",
+      header: t("columns.actions"),
       width: 100,
       sortable: false,
       align: "center",
@@ -469,7 +479,7 @@ export default function SitesPage() {
             }}
             className="text-blue-600 hover:text-blue-800 text-sm font-medium"
           >
-            Sửa
+            {t("actions.edit")}
           </button>
           <button
             onClick={(e) => {
@@ -478,7 +488,7 @@ export default function SitesPage() {
             }}
             className="text-red-600 hover:text-red-800 text-sm font-medium"
           >
-            Xóa
+            {t("actions.delete")}
           </button>
         </div>
       ),
@@ -492,8 +502,8 @@ export default function SitesPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Quản lý Sites</h1>
-            <p className="text-sm text-gray-500 mt-1">Quản lý các điểm giao/nhận hàng cụ thể</p>
+            <h1 className="text-2xl font-bold text-gray-900">{t("title")}</h1>
+            <p className="text-sm text-gray-500 mt-1">{t("subtitle")}</p>
           </div>
 
           <button
@@ -501,17 +511,17 @@ export default function SitesPage() {
             className="rounded-xl bg-blue-600 text-white px-4 py-2 text-sm font-medium hover:bg-blue-700 flex items-center gap-2"
           >
             <Plus className="w-4 h-4" />
-            Thêm Site
+            {t("addSite")}
           </button>
         </div>
 
         {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          <StatCard icon={MapPin} label="Tổng sites" value={stats.total} color="blue" />
-          <StatCard icon={MapPin} label="Đang hoạt động" value={stats.active} color="green" />
-          <StatCard icon={Building2} label="Khách hàng" value={stats.customers} color="purple" />
-          <StatCard icon={Anchor} label="Cảng" value={stats.ports} color="orange" />
-          <StatCard icon={Building2} label="Kho" value={stats.warehouses} color="gray" />
+          <StatCard icon={MapPin} label={t("stats.totalSites")} value={stats.total} color="blue" />
+          <StatCard icon={MapPin} label={t("stats.active")} value={stats.active} color="green" />
+          <StatCard icon={Building2} label={t("stats.customers")} value={stats.customers} color="purple" />
+          <StatCard icon={Anchor} label={t("stats.ports")} value={stats.ports} color="orange" />
+          <StatCard icon={Building2} label={t("stats.warehouses")} value={stats.warehouses} color="gray" />
         </div>
       </div>
 
@@ -524,10 +534,10 @@ export default function SitesPage() {
               {/* Type Filter Tabs */}
               <div className="flex bg-gray-100 rounded-xl p-1">
                 {[
-                  { key: "ALL", label: "Tất cả" },
-                  { key: "CUSTOMER", label: "KH" },
-                  { key: "PORT", label: "Cảng" },
-                  { key: "WAREHOUSE", label: "Kho" },
+                  { key: "ALL", labelKey: "filters.all" },
+                  { key: "CUSTOMER", labelKey: "filters.customer" },
+                  { key: "PORT", labelKey: "filters.port" },
+                  { key: "WAREHOUSE", labelKey: "filters.warehouse" },
                 ].map((tab) => (
                   <button
                     key={tab.key}
@@ -536,7 +546,7 @@ export default function SitesPage() {
                       filterType === tab.key ? "bg-white text-blue-600 shadow-sm" : "text-gray-600 hover:text-gray-900"
                     }`}
                   >
-                    {tab.label}
+                    {t(tab.labelKey)}
                   </button>
                 ))}
               </div>
@@ -547,13 +557,13 @@ export default function SitesPage() {
                 <input
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Tìm mã, tên, địa chỉ..."
+                  placeholder={t("search.placeholder")}
                   className="pl-10 pr-4 py-2 rounded-xl border border-gray-300 outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 text-sm w-64"
                 />
               </div>
             </div>
 
-            <div className="text-sm text-gray-500">{loading ? "Đang tải..." : `${filteredRows.length} sites`}</div>
+            <div className="text-sm text-gray-500">{loading ? t("search.loading") : `${filteredRows.length} ${t("search.sites")}`}</div>
           </div>
 
           {/* Error */}
@@ -596,14 +606,14 @@ export default function SitesPage() {
                   <td colSpan={columnDefs.length} className="px-4 py-8 text-center text-gray-500">
                     <div className="flex items-center justify-center gap-2">
                       <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                      Đang tải...
+                      {t("table.loading")}
                     </div>
                   </td>
                 </tr>
               ) : paginatedRows.length === 0 ? (
                 <tr>
                   <td colSpan={columnDefs.length} className="px-4 py-8 text-center text-gray-500">
-                    Chưa có site nào
+                    {t("table.noData")}
                   </td>
                 </tr>
               ) : (
@@ -635,7 +645,7 @@ export default function SitesPage() {
           totalItems={filteredRows.length}
           onPageChange={setCurrentPage}
           onPageSizeChange={setPageSize}
-          itemName="sites"
+          itemName={t("pagination.sites")}
         />
       </div>
 
@@ -645,7 +655,7 @@ export default function SitesPage() {
           <div className="w-full max-w-2xl rounded-2xl bg-white shadow-xl border border-gray-200 max-h-[90vh] overflow-y-auto">
             <div className="px-6 py-4 border-b flex items-center justify-between sticky top-0 bg-white z-10">
               <div className="font-semibold text-lg">
-                {mode === "create" ? "Thêm Site mới" : `Chỉnh sửa: ${editing?.company_name}`}
+                {mode === "create" ? t("modal.createTitle") : t("modal.editTitle", { name: editing?.company_name })}
               </div>
               <button onClick={() => setOpen(false)} className="text-gray-500 hover:text-black text-xl">
                 &times;
@@ -657,70 +667,70 @@ export default function SitesPage() {
               <div>
                 <h3 className="text-sm font-semibold mb-3 text-gray-800 flex items-center gap-2">
                   <div className="w-1 h-4 bg-blue-600 rounded"></div>
-                  Thông tin cơ bản
+                  {t("modal.basicInfo")}
                 </h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs text-gray-600 mb-1">
-                      Location <span className="text-red-500">*</span>
+                      {t("modal.location")} <span className="text-red-500">*</span>
                     </label>
                     <select
                       value={form.location_id}
                       onChange={(e) => setForm((s) => ({ ...s, location_id: e.target.value }))}
                       className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-200"
                     >
-                      <option value="">-- Chọn location --</option>
+                      <option value="">{t("modal.selectLocation")}</option>
                       {locations.map((loc) => (
                         <option key={loc.id} value={loc.id}>
                           {loc.code} - {loc.name}
                         </option>
                       ))}
                     </select>
-                    <p className="text-xs text-gray-400 mt-1">Location dùng để tính giá cước</p>
+                    <p className="text-xs text-gray-400 mt-1">{t("modal.locationNote")}</p>
                   </div>
                   <div>
-                    <label className="block text-xs text-gray-600 mb-1">Mã site</label>
+                    <label className="block text-xs text-gray-600 mb-1">{t("modal.siteCode")}</label>
                     <input
                       value={form.code}
                       onChange={(e) => setForm((s) => ({ ...s, code: e.target.value }))}
                       className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-200"
-                      placeholder="Tự động nếu để trống"
+                      placeholder={t("modal.siteCodePlaceholder")}
                     />
                   </div>
                   <div className="col-span-2">
                     <label className="block text-xs text-gray-600 mb-1">
-                      Tên công ty <span className="text-red-500">*</span>
+                      {t("modal.companyName")} <span className="text-red-500">*</span>
                     </label>
                     <input
                       value={form.company_name}
                       onChange={(e) => setForm((s) => ({ ...s, company_name: e.target.value }))}
                       className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-200"
-                      placeholder="VD: Công ty TNHH ABC"
+                      placeholder={t("modal.companyNamePlaceholder")}
                     />
                   </div>
                   <div>
                     <label className="block text-xs text-gray-600 mb-1">
-                      Phân loại <span className="text-red-500">*</span>
+                      {t("modal.classification")} <span className="text-red-500">*</span>
                     </label>
                     <select
                       value={form.site_type}
                       onChange={(e) => setForm((s) => ({ ...s, site_type: e.target.value }))}
                       className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-200"
                     >
-                      <option value="CUSTOMER">Khách hàng</option>
-                      <option value="PORT">Cảng</option>
-                      <option value="WAREHOUSE">Kho nội bộ</option>
+                      <option value="CUSTOMER">{t("modal.classificationCustomer")}</option>
+                      <option value="PORT">{t("modal.classificationPort")}</option>
+                      <option value="WAREHOUSE">{t("modal.classificationWarehouse")}</option>
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs text-gray-600 mb-1">Trạng thái</label>
+                    <label className="block text-xs text-gray-600 mb-1">{t("modal.status")}</label>
                     <select
                       value={form.status}
                       onChange={(e) => setForm((s) => ({ ...s, status: e.target.value }))}
                       className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-200"
                     >
-                      <option value="ACTIVE">ACTIVE</option>
-                      <option value="INACTIVE">INACTIVE</option>
+                      <option value="ACTIVE">{t("modal.statusActive")}</option>
+                      <option value="INACTIVE">{t("modal.statusInactive")}</option>
                     </select>
                   </div>
                 </div>
@@ -730,14 +740,14 @@ export default function SitesPage() {
               <div>
                 <h3 className="text-sm font-semibold mb-3 text-gray-800 flex items-center gap-2">
                   <div className="w-1 h-4 bg-green-600 rounded"></div>
-                  Địa chỉ chi tiết
+                  {t("modal.addressSection")}
                 </h3>
                 <textarea
                   value={form.detailed_address}
                   onChange={(e) => setForm((s) => ({ ...s, detailed_address: e.target.value }))}
                   rows={2}
                   className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-200"
-                  placeholder="VD: Số 123, Đường ABC, Phường XYZ, Quận ABC"
+                  placeholder={t("modal.addressPlaceholder")}
                 />
               </div>
 
@@ -745,25 +755,25 @@ export default function SitesPage() {
               <div>
                 <h3 className="text-sm font-semibold mb-3 text-gray-800 flex items-center gap-2">
                   <div className="w-1 h-4 bg-orange-600 rounded"></div>
-                  Thông tin liên hệ
+                  {t("modal.contactSection")}
                 </h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs text-gray-600 mb-1">Tên người liên hệ</label>
+                    <label className="block text-xs text-gray-600 mb-1">{t("modal.contactName")}</label>
                     <input
                       value={form.contact_name}
                       onChange={(e) => setForm((s) => ({ ...s, contact_name: e.target.value }))}
                       className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-200"
-                      placeholder="VD: Nguyễn Văn A"
+                      placeholder={t("modal.contactNamePlaceholder")}
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-gray-600 mb-1">Số điện thoại</label>
+                    <label className="block text-xs text-gray-600 mb-1">{t("modal.contactPhone")}</label>
                     <input
                       value={form.contact_phone}
                       onChange={(e) => setForm((s) => ({ ...s, contact_phone: e.target.value }))}
                       className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-200"
-                      placeholder="VD: 0909123456"
+                      placeholder={t("modal.contactPhonePlaceholder")}
                     />
                   </div>
                 </div>
@@ -773,14 +783,14 @@ export default function SitesPage() {
               <div>
                 <h3 className="text-sm font-semibold mb-3 text-gray-800 flex items-center gap-2">
                   <div className="w-1 h-4 bg-gray-600 rounded"></div>
-                  Ghi chú
+                  {t("modal.noteSection")}
                 </h3>
                 <textarea
                   value={form.note}
                   onChange={(e) => setForm((s) => ({ ...s, note: e.target.value }))}
                   rows={3}
                   className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-200"
-                  placeholder="Ghi chú thêm..."
+                  placeholder={t("modal.notePlaceholder")}
                 />
               </div>
 
@@ -791,14 +801,14 @@ export default function SitesPage() {
 
             <div className="px-6 py-4 border-t flex items-center justify-end gap-2 sticky bottom-0 bg-white">
               <button onClick={() => setOpen(false)} className="rounded-xl border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50">
-                Hủy
+                {t("modal.cancel")}
               </button>
               <button
                 onClick={onSave}
                 disabled={saving}
                 className="rounded-xl bg-blue-600 text-white px-4 py-2 text-sm font-medium disabled:opacity-60 hover:bg-blue-700"
               >
-                {saving ? "Đang lưu..." : "Lưu"}
+                {saving ? t("modal.saving") : t("modal.save")}
               </button>
             </div>
           </div>

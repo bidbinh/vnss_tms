@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   DollarSign,
   Plus,
@@ -40,27 +41,29 @@ interface SalaryStructure {
   components: SalaryComponent[];
 }
 
-const COMPONENT_TYPES = [
-  { value: "EARNING", label: "Thu nhập", color: "bg-green-100 text-green-700" },
-  { value: "DEDUCTION", label: "Khấu trừ", color: "bg-red-100 text-red-700" },
-  { value: "EMPLOYER_CONTRIBUTION", label: "Công ty đóng", color: "bg-blue-100 text-blue-700" },
+const COMPONENT_TYPES_CONFIG = [
+  { value: "EARNING", color: "bg-green-100 text-green-700" },
+  { value: "DEDUCTION", color: "bg-red-100 text-red-700" },
+  { value: "EMPLOYER_CONTRIBUTION", color: "bg-blue-100 text-blue-700" },
 ];
 
-const CALCULATION_TYPES = [
-  { value: "FIXED", label: "Cố định" },
-  { value: "PERCENT", label: "Phần trăm" },
-  { value: "FORMULA", label: "Công thức" },
+const CALCULATION_TYPES_CONFIG = [
+  { value: "FIXED" },
+  { value: "PERCENT" },
+  { value: "FORMULA" },
 ];
 
-const EMPLOYEE_TYPES = [
-  { value: "", label: "Tất cả" },
-  { value: "FULL_TIME", label: "Toàn thời gian" },
-  { value: "PART_TIME", label: "Bán thời gian" },
-  { value: "DRIVER", label: "Tài xế" },
-  { value: "CONTRACT", label: "Hợp đồng" },
+const EMPLOYEE_TYPES_CONFIG = [
+  { value: "" },
+  { value: "FULL_TIME" },
+  { value: "PART_TIME" },
+  { value: "DRIVER" },
+  { value: "CONTRACT" },
 ];
 
 export default function SalaryStructurePage() {
+  const t = useTranslations("hrm.salaryStructurePage");
+  const tCommon = useTranslations("common");
   const [structures, setStructures] = useState<SalaryStructure[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedStructure, setExpandedStructure] = useState<string | null>(null);
@@ -117,7 +120,7 @@ export default function SalaryStructurePage() {
       setStructureForm({ code: "", name: "", description: "", employee_type: "" });
       fetchStructures();
     } catch (error: any) {
-      alert(error?.message || "Tạo cơ cấu lương thất bại");
+      alert(error?.message || t("errors.createStructureFailed"));
     }
   };
 
@@ -145,7 +148,7 @@ export default function SalaryStructurePage() {
       });
       fetchStructures();
     } catch (error: any) {
-      alert(error?.message || "Thêm thành phần lương thất bại");
+      alert(error?.message || t("errors.createComponentFailed"));
     }
   };
 
@@ -158,7 +161,20 @@ export default function SalaryStructurePage() {
   };
 
   const getComponentTypeConfig = (type: string) => {
-    return COMPONENT_TYPES.find((t) => t.value === type) || COMPONENT_TYPES[0];
+    const config = COMPONENT_TYPES_CONFIG.find((t) => t.value === type) || COMPONENT_TYPES_CONFIG[0];
+    return {
+      ...config,
+      label: t(`componentTypes.${type}` as any) || type
+    };
+  };
+
+  const getCalculationTypeLabel = (type: string) => {
+    return t(`calculationTypes.${type}` as any) || type;
+  };
+
+  const getEmployeeTypeLabel = (type: string) => {
+    if (!type) return t("employeeTypes.ALL");
+    return t(`employeeTypes.${type}` as any) || type;
   };
 
   const toggleExpand = (structureId: string) => {
@@ -204,8 +220,8 @@ export default function SalaryStructurePage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Cơ cấu lương</h1>
-          <p className="text-gray-600 mt-1">Quản lý các mẫu cơ cấu lương và thành phần lương</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t("title")}</h1>
+          <p className="text-gray-600 mt-1">{t("subtitle")}</p>
         </div>
         <button
           onClick={() => {
@@ -216,7 +232,7 @@ export default function SalaryStructurePage() {
           className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
         >
           <Plus className="w-4 h-4" />
-          Thêm cơ cấu lương
+          {t("addStructure")}
         </button>
       </div>
 
@@ -228,7 +244,7 @@ export default function SalaryStructurePage() {
               <Layers className="w-5 h-5 text-blue-600" />
             </div>
             <div>
-              <div className="text-sm text-gray-600">Tổng cơ cấu</div>
+              <div className="text-sm text-gray-600">{t("stats.totalStructures")}</div>
               <div className="text-2xl font-bold text-gray-900">{structures.length}</div>
             </div>
           </div>
@@ -239,7 +255,7 @@ export default function SalaryStructurePage() {
               <CheckCircle className="w-5 h-5 text-green-600" />
             </div>
             <div>
-              <div className="text-sm text-gray-600">Đang hoạt động</div>
+              <div className="text-sm text-gray-600">{t("stats.active")}</div>
               <div className="text-2xl font-bold text-green-600">
                 {structures.filter((s) => s.is_active).length}
               </div>
@@ -252,7 +268,7 @@ export default function SalaryStructurePage() {
               <Calculator className="w-5 h-5 text-purple-600" />
             </div>
             <div>
-              <div className="text-sm text-gray-600">Tổng thành phần</div>
+              <div className="text-sm text-gray-600">{t("stats.totalComponents")}</div>
               <div className="text-2xl font-bold text-purple-600">
                 {structures.reduce((sum, s) => sum + s.components.length, 0)}
               </div>
@@ -265,7 +281,7 @@ export default function SalaryStructurePage() {
               <Settings className="w-5 h-5 text-yellow-600" />
             </div>
             <div>
-              <div className="text-sm text-gray-600">Mặc định</div>
+              <div className="text-sm text-gray-600">{t("stats.default")}</div>
               <div className="text-2xl font-bold text-yellow-600">
                 {structures.filter((s) => s.is_default).length}
               </div>
@@ -282,13 +298,13 @@ export default function SalaryStructurePage() {
       ) : structures.length === 0 ? (
         <div className="bg-white rounded-lg shadow border border-gray-200 p-12 text-center">
           <Layers className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Chưa có cơ cấu lương</h3>
-          <p className="text-gray-500 mb-4">Tạo cơ cấu lương đầu tiên để bắt đầu</p>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">{t("noStructures")}</h3>
+          <p className="text-gray-500 mb-4">{t("noStructuresDesc")}</p>
           <button
             onClick={() => setShowStructureModal(true)}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           >
-            Thêm cơ cấu lương
+            {t("addStructure")}
           </button>
         </div>
       ) : (
@@ -296,7 +312,7 @@ export default function SalaryStructurePage() {
           {structures.map((structure) => {
             const isExpanded = expandedStructure === structure.id;
             const totals = calculateTotals(structure.components);
-            const employeeType = EMPLOYEE_TYPES.find((t) => t.value === structure.employee_type);
+            const employeeTypeLabel = getEmployeeTypeLabel(structure.employee_type || "");
 
             return (
               <div
@@ -323,37 +339,37 @@ export default function SalaryStructurePage() {
                         <span className="text-sm text-gray-500">({structure.code})</span>
                         {structure.is_default && (
                           <span className="px-2 py-0.5 text-xs bg-yellow-100 text-yellow-700 rounded">
-                            Mặc định
+                            {t("labels.default")}
                           </span>
                         )}
                         {!structure.is_active && (
                           <span className="px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded">
-                            Không hoạt động
+                            {t("labels.inactive")}
                           </span>
                         )}
                       </div>
                       <div className="text-sm text-gray-500">
-                        {structure.description || "Không có mô tả"}
-                        {employeeType && employeeType.value && (
-                          <span className="ml-2 text-blue-600">• {employeeType.label}</span>
+                        {structure.description || t("labels.noDescription")}
+                        {structure.employee_type && (
+                          <span className="ml-2 text-blue-600">• {employeeTypeLabel}</span>
                         )}
                       </div>
                     </div>
                   </div>
                   <div className="flex items-center gap-6">
                     <div className="text-right">
-                      <div className="text-sm text-gray-500">Thu nhập</div>
+                      <div className="text-sm text-gray-500">{t("labels.earnings")}</div>
                       <div className="font-medium text-green-600">{formatCurrency(totals.earnings)}</div>
                     </div>
                     <div className="text-right">
-                      <div className="text-sm text-gray-500">Khấu trừ</div>
+                      <div className="text-sm text-gray-500">{t("labels.deductions")}</div>
                       <div className="font-medium text-red-600">{formatCurrency(totals.deductions)}</div>
                     </div>
                     <div className="text-right">
-                      <div className="text-sm text-gray-500">Thực lĩnh</div>
+                      <div className="text-sm text-gray-500">{t("labels.netPay")}</div>
                       <div className="font-bold text-blue-600">{formatCurrency(totals.net)}</div>
                     </div>
-                    <div className="text-sm text-gray-500">{structure.components.length} thành phần</div>
+                    <div className="text-sm text-gray-500">{structure.components.length} {t("labels.components")}</div>
                   </div>
                 </div>
 
@@ -361,7 +377,7 @@ export default function SalaryStructurePage() {
                 {isExpanded && (
                   <div className="border-t border-gray-200">
                     <div className="px-4 py-2 bg-gray-50 flex items-center justify-between">
-                      <span className="text-sm font-medium text-gray-700">Thành phần lương</span>
+                      <span className="text-sm font-medium text-gray-700">{t("labels.salaryComponents")}</span>
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -370,50 +386,48 @@ export default function SalaryStructurePage() {
                         className="flex items-center gap-1 px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
                       >
                         <Plus className="w-3 h-3" />
-                        Thêm
+                        {t("labels.add")}
                       </button>
                     </div>
 
                     {structure.components.length === 0 ? (
                       <div className="p-8 text-center text-gray-500">
-                        Chưa có thành phần lương. Nhấn "Thêm" để tạo mới.
+                        {t("noComponentsYet")}
                       </div>
                     ) : (
                       <table className="w-full">
                         <thead className="bg-gray-50">
                           <tr>
                             <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                              Mã
+                              {t("columns.code")}
                             </th>
                             <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                              Tên
+                              {t("columns.name")}
                             </th>
                             <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                              Loại
+                              {t("columns.type")}
                             </th>
                             <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                              Cách tính
+                              {t("columns.calculation")}
                             </th>
                             <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">
-                              Số tiền
+                              {t("columns.amount")}
                             </th>
                             <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase">
-                              Thuế
+                              {t("columns.tax")}
                             </th>
                             <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase">
-                              Đóng BH
+                              {t("columns.insurance")}
                             </th>
                             <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase">
-                              Trạng thái
+                              {t("columns.status")}
                             </th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
                           {structure.components.map((comp) => {
                             const typeConfig = getComponentTypeConfig(comp.component_type);
-                            const calcType = CALCULATION_TYPES.find(
-                              (t) => t.value === comp.calculation_type
-                            );
+                            const calcTypeLabel = getCalculationTypeLabel(comp.calculation_type);
 
                             return (
                               <tr key={comp.id} className="hover:bg-gray-50">
@@ -431,7 +445,7 @@ export default function SalaryStructurePage() {
                                   </span>
                                 </td>
                                 <td className="px-4 py-3 text-sm text-gray-600">
-                                  {calcType?.label || comp.calculation_type}
+                                  {calcTypeLabel}
                                 </td>
                                 <td className="px-4 py-3 text-sm text-right font-medium">
                                   {comp.calculation_type === "PERCENT"
@@ -455,11 +469,11 @@ export default function SalaryStructurePage() {
                                 <td className="px-4 py-3 text-center">
                                   {comp.is_active ? (
                                     <span className="px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded">
-                                      Hoạt động
+                                      {t("labels.active")}
                                     </span>
                                   ) : (
                                     <span className="px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded">
-                                      Tắt
+                                      {t("labels.disabled")}
                                     </span>
                                   )}
                                 </td>
@@ -483,54 +497,54 @@ export default function SalaryStructurePage() {
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
             <div className="px-4 py-3 border-b border-gray-200">
               <h3 className="text-lg font-semibold">
-                {editingStructure ? "Sửa cơ cấu lương" : "Thêm cơ cấu lương"}
+                {editingStructure ? t("structureModal.editTitle") : t("structureModal.createTitle")}
               </h3>
             </div>
             <div className="p-4 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Mã cơ cấu <span className="text-red-500">*</span>
+                  {t("structureModal.structureCode")} <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
                   value={structureForm.code}
                   onChange={(e) => setStructureForm({ ...structureForm, code: e.target.value })}
-                  placeholder="SALARY-OFFICE"
+                  placeholder={t("structureModal.structureCodePlaceholder")}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Tên cơ cấu <span className="text-red-500">*</span>
+                  {t("structureModal.structureName")} <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
                   value={structureForm.name}
                   onChange={(e) => setStructureForm({ ...structureForm, name: e.target.value })}
-                  placeholder="Cơ cấu lương văn phòng"
+                  placeholder={t("structureModal.structureNamePlaceholder")}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Loại nhân viên</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t("structureModal.employeeType")}</label>
                 <select
                   value={structureForm.employee_type}
                   onChange={(e) => setStructureForm({ ...structureForm, employee_type: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 >
-                  {EMPLOYEE_TYPES.map((type) => (
+                  {EMPLOYEE_TYPES_CONFIG.map((type) => (
                     <option key={type.value} value={type.value}>
-                      {type.label}
+                      {getEmployeeTypeLabel(type.value)}
                     </option>
                   ))}
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Mô tả</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t("structureModal.description")}</label>
                 <textarea
                   value={structureForm.description}
                   onChange={(e) => setStructureForm({ ...structureForm, description: e.target.value })}
-                  placeholder="Mô tả cơ cấu lương..."
+                  placeholder={t("structureModal.descriptionPlaceholder")}
                   rows={3}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
@@ -541,14 +555,14 @@ export default function SalaryStructurePage() {
                 onClick={() => setShowStructureModal(false)}
                 className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg"
               >
-                Hủy
+                {tCommon("cancel")}
               </button>
               <button
                 onClick={handleCreateStructure}
                 disabled={!structureForm.code || !structureForm.name}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
               >
-                {editingStructure ? "Cập nhật" : "Tạo mới"}
+                {editingStructure ? tCommon("update") : tCommon("create")}
               </button>
             </div>
           </div>
@@ -561,32 +575,32 @@ export default function SalaryStructurePage() {
           <div className="bg-white rounded-lg shadow-xl w-full max-w-lg mx-4">
             <div className="px-4 py-3 border-b border-gray-200">
               <h3 className="text-lg font-semibold">
-                {editingComponent ? "Sửa thành phần lương" : "Thêm thành phần lương"}
+                {editingComponent ? t("componentModal.editTitle") : t("componentModal.createTitle")}
               </h3>
             </div>
             <div className="p-4 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Mã thành phần <span className="text-red-500">*</span>
+                    {t("componentModal.componentCode")} <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
                     value={componentForm.code}
                     onChange={(e) => setComponentForm({ ...componentForm, code: e.target.value })}
-                    placeholder="BASIC, MEAL, OT..."
+                    placeholder={t("componentModal.componentCodePlaceholder")}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Tên thành phần <span className="text-red-500">*</span>
+                    {t("componentModal.componentName")} <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
                     value={componentForm.name}
                     onChange={(e) => setComponentForm({ ...componentForm, name: e.target.value })}
-                    placeholder="Lương cơ bản, Phụ cấp ăn..."
+                    placeholder={t("componentModal.componentNamePlaceholder")}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
@@ -594,7 +608,7 @@ export default function SalaryStructurePage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Loại</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t("componentModal.type")}</label>
                   <select
                     value={componentForm.component_type}
                     onChange={(e) =>
@@ -602,15 +616,15 @@ export default function SalaryStructurePage() {
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   >
-                    {COMPONENT_TYPES.map((type) => (
+                    {COMPONENT_TYPES_CONFIG.map((type) => (
                       <option key={type.value} value={type.value}>
-                        {type.label}
+                        {t(`componentTypes.${type.value}` as any)}
                       </option>
                     ))}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Cách tính</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t("componentModal.calculation")}</label>
                   <select
                     value={componentForm.calculation_type}
                     onChange={(e) =>
@@ -618,9 +632,9 @@ export default function SalaryStructurePage() {
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   >
-                    {CALCULATION_TYPES.map((type) => (
+                    {CALCULATION_TYPES_CONFIG.map((type) => (
                       <option key={type.value} value={type.value}>
-                        {type.label}
+                        {t(`calculationTypes.${type.value}` as any)}
                       </option>
                     ))}
                   </select>
@@ -629,7 +643,7 @@ export default function SalaryStructurePage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Số tiền mặc định
+                  {t("componentModal.defaultAmount")}
                 </label>
                 <input
                   type="number"
@@ -642,7 +656,7 @@ export default function SalaryStructurePage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Thứ tự hiển thị</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t("componentModal.sortOrder")}</label>
                 <input
                   type="number"
                   value={componentForm.sort_order}
@@ -663,7 +677,7 @@ export default function SalaryStructurePage() {
                     }
                     className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                   />
-                  <span className="text-sm text-gray-700">Tính thuế TNCN</span>
+                  <span className="text-sm text-gray-700">{t("componentModal.taxable")}</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -674,7 +688,7 @@ export default function SalaryStructurePage() {
                     }
                     className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                   />
-                  <span className="text-sm text-gray-700">Tính vào lương đóng BH</span>
+                  <span className="text-sm text-gray-700">{t("componentModal.insuranceBase")}</span>
                 </label>
               </div>
             </div>
@@ -683,14 +697,14 @@ export default function SalaryStructurePage() {
                 onClick={() => setShowComponentModal(false)}
                 className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg"
               >
-                Hủy
+                {tCommon("cancel")}
               </button>
               <button
                 onClick={handleCreateComponent}
                 disabled={!componentForm.code || !componentForm.name}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
               >
-                {editingComponent ? "Cập nhật" : "Thêm"}
+                {editingComponent ? tCommon("update") : tCommon("add")}
               </button>
             </div>
           </div>
@@ -699,13 +713,13 @@ export default function SalaryStructurePage() {
 
       {/* Instructions */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <h3 className="font-medium text-blue-800 mb-2">Hướng dẫn</h3>
+        <h3 className="font-medium text-blue-800 mb-2">{t("instructions.title")}</h3>
         <ul className="text-sm text-blue-700 space-y-1">
-          <li>- <strong>Cơ cấu lương</strong>: Template định nghĩa các thành phần lương cho nhóm nhân viên</li>
-          <li>- <strong>Thành phần lương</strong>: Các khoản thu nhập hoặc khấu trừ trong cơ cấu</li>
-          <li>- Khi gán cơ cấu lương cho nhân viên, có thể override số tiền từng thành phần</li>
-          <li>- Thành phần "Tính thuế" sẽ được tính vào thu nhập chịu thuế TNCN</li>
-          <li>- Thành phần "Đóng BH" sẽ được tính vào mức lương đóng bảo hiểm</li>
+          <li>- {t("instructions.structureDesc")}</li>
+          <li>- {t("instructions.componentDesc")}</li>
+          <li>- {t("instructions.overrideDesc")}</li>
+          <li>- {t("instructions.taxDesc")}</li>
+          <li>- {t("instructions.insuranceDesc")}</li>
         </ul>
       </div>
     </div>

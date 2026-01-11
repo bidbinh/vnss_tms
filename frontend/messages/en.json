@@ -384,77 +384,6 @@
       "activeEmployees": "Active Employees",
       "newThisMonth": "New This Month"
     },
-    "departments": {
-      "title": "Departments",
-      "list": "Department List",
-      "add": "Add Department",
-      "edit": "Edit Department",
-      "code": "Department Code",
-      "name": "Department Name",
-      "description": "Description",
-      "parent": "Parent Department",
-      "manager": "Department Head",
-      "employeeCount": "Employee Count"
-    },
-    "positions": {
-      "title": "Positions",
-      "list": "Position List",
-      "add": "Add Position",
-      "edit": "Edit Position",
-      "code": "Position Code",
-      "name": "Position Name",
-      "level": "Level",
-      "description": "Description"
-    },
-    "branches": {
-      "title": "Branches",
-      "list": "Branch List",
-      "add": "Add Branch",
-      "edit": "Edit Branch",
-      "code": "Branch Code",
-      "name": "Branch Name",
-      "address": "Address",
-      "phone": "Phone",
-      "email": "Email"
-    },
-    "attendance": {
-      "title": "Attendance",
-      "checkIn": "Check In",
-      "checkOut": "Check Out",
-      "workHours": "Work Hours",
-      "overtime": "Overtime",
-      "late": "Late",
-      "early": "Early Leave",
-      "absent": "Absent",
-      "present": "Present"
-    },
-    "leave": {
-      "title": "Leave",
-      "request": "Leave Request",
-      "approve": "Approve Leave",
-      "reject": "Reject",
-      "leaveType": "Leave Type",
-      "annual": "Annual Leave",
-      "sick": "Sick Leave",
-      "personal": "Personal Leave",
-      "maternity": "Maternity Leave",
-      "unpaid": "Unpaid Leave",
-      "startDate": "Start Date",
-      "endDate": "End Date",
-      "days": "Days",
-      "reason": "Reason",
-      "balance": "Balance"
-    },
-    "payroll": {
-      "title": "Payroll",
-      "salary": "Salary",
-      "baseSalary": "Base Salary",
-      "allowance": "Allowance",
-      "bonus": "Bonus",
-      "deduction": "Deduction",
-      "netSalary": "Net Salary",
-      "payslip": "Payslip"
-    },
     "userAccount": {
       "title": "Login Account",
       "createAccount": "Create login account for this employee",
@@ -470,6 +399,1071 @@
       "generatedPassword": "Generated Password",
       "savePassword": "Please save this password to provide to the employee.",
       "accountNote": "Account will be created with phone or email as username. If password is not provided, system will auto-generate."
+    },
+    "employeesPage": {
+      "title": "Employee List",
+      "subtitle": "Manage employee information",
+      "addEmployee": "Add Employee",
+      "columns": {
+        "employee": "EMPLOYEE",
+        "contact": "CONTACT",
+        "department": "DEPARTMENT",
+        "position": "POSITION",
+        "type": "TYPE",
+        "status": "STATUS",
+        "joinDate": "JOIN DATE",
+        "actions": "ACTIONS"
+      },
+      "filters": {
+        "searchPlaceholder": "Search by name, code, phone, email...",
+        "allStatus": "All Status",
+        "allTypes": "All Types",
+        "active": "Active",
+        "probation": "Probation",
+        "onLeave": "On Leave",
+        "suspended": "Suspended",
+        "resigned": "Resigned"
+      },
+      "types": {
+        "FULL_TIME": "Full-time",
+        "PART_TIME": "Part-time",
+        "CONTRACT": "Contract",
+        "INTERN": "Intern",
+        "FREELANCER": "Freelancer",
+        "DRIVER": "Driver"
+      },
+      "status": {
+        "ACTIVE": "Active",
+        "PROBATION": "Probation",
+        "ON_LEAVE": "On Leave",
+        "SUSPENDED": "Suspended",
+        "RESIGNED": "Resigned",
+        "TERMINATED": "Terminated"
+      },
+      "actions": {
+        "view": "View Details",
+        "edit": "Edit",
+        "delete": "Delete"
+      },
+      "confirmDelete": "Are you sure you want to delete this employee?",
+      "deleteError": "Cannot delete employee",
+      "totalEmployees": "Total",
+      "noData": "No employees found",
+      "employees": "employees",
+      "noEmployees": "No employees found"
+    },
+    "departmentsPage": {
+      "title": "Departments",
+      "subtitle": "Manage organizational structure",
+      "addDepartment": "Add Department",
+      "addSubDepartment": "Add Sub-department",
+      "viewModes": {
+        "list": "List",
+        "tree": "Tree"
+      },
+      "stats": {
+        "totalDepartments": "Total Departments",
+        "level1Departments": "Level 1 Departments",
+        "totalEmployees": "Total Employees"
+      },
+      "columns": {
+        "code": "Code",
+        "name": "Department Name",
+        "parent": "Parent Department",
+        "manager": "Department Head",
+        "employeeCount": "Employees",
+        "actions": "Actions"
+      },
+      "modal": {
+        "createTitle": "Add New Department",
+        "editTitle": "Edit Department",
+        "code": "Department Code",
+        "name": "Department Name",
+        "parent": "Parent Department",
+        "noParent": "-- None --",
+        "notes": "Notes",
+        "cancel": "Cancel",
+        "save": "Save",
+        "update": "Update"
+      },
+      "actions": {
+        "edit": "Edit",
+        "delete": "Delete"
+      },
+      "confirmDelete": "Are you sure you want to delete this department?",
+      "deleteError": "Cannot delete department",
+      "saveError": "Cannot save department",
+      "noData": "No departments yet"
+    },
+    "payrollPage": {
+      "title": "Payroll Management",
+      "subtitle": "Calculate and manage payroll",
+      "createPeriod": "Create Payroll Period",
+      "year": "Year",
+      "stats": {
+        "totalPeriods": "Total Periods",
+        "totalPayslips": "Total Payslips",
+        "totalSalary": "Total Salary"
+      },
+      "periodsList": "Payroll Periods",
+      "columns": {
+        "period": "Period",
+        "dateRange": "Date Range",
+        "payslipCount": "Payslips",
+        "totalSalary": "Total Salary",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "status": {
+        "DRAFT": "Draft",
+        "CALCULATED": "Calculated",
+        "APPROVED": "Approved",
+        "PAID": "Paid",
+        "CLOSED": "Closed"
+      },
+      "actions": {
+        "calculate": "Calculate",
+        "view": "View",
+        "close": "Close",
+        "export": "Export"
+      },
+      "modal": {
+        "createTitle": "Create New Payroll Period",
+        "month": "Month",
+        "year": "Year",
+        "startDate": "Start Date",
+        "endDate": "End Date",
+        "paymentDate": "Payment Date",
+        "cancel": "Cancel",
+        "create": "Create Period"
+      },
+      "confirmations": {
+        "calculate": "Are you sure you want to calculate payroll for this period?",
+        "close": "Once closed, it cannot be edited. Are you sure?"
+      },
+      "errors": {
+        "createFailed": "Cannot create payroll period",
+        "calculateFailed": "Cannot calculate payroll",
+        "closeFailed": "Cannot close payroll period"
+      },
+      "quickLinks": {
+        "salaryStructure": "Salary Structure",
+        "salaryStructureDesc": "Manage salary components",
+        "advances": "Advances",
+        "advancesDesc": "Manage salary advances",
+        "reports": "Payroll Reports",
+        "reportsDesc": "Export payroll reports"
+      },
+      "noPeriods": "No payroll periods for year"
+    },
+    "leavesPage": {
+      "title": "Leave Management",
+      "subtitle": "Approve and track leave requests",
+      "createRequest": "Create Leave Request",
+      "stats": {
+        "pending": "Pending",
+        "approved": "Approved",
+        "rejected": "Rejected",
+        "total": "Total Requests"
+      },
+      "filters": {
+        "allStatus": "All Status",
+        "pending": "Pending",
+        "approved": "Approved",
+        "rejected": "Rejected",
+        "cancelled": "Cancelled",
+        "allTypes": "All Leave Types"
+      },
+      "columns": {
+        "employee": "Employee",
+        "leaveType": "Leave Type",
+        "duration": "Duration",
+        "days": "Days",
+        "reason": "Reason",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "status": {
+        "PENDING": "Pending",
+        "APPROVED": "Approved",
+        "REJECTED": "Rejected",
+        "CANCELLED": "Cancelled"
+      },
+      "halfDay": "Half Day",
+      "morning": "Morning",
+      "afternoon": "Afternoon",
+      "daysUnit": "days",
+      "actions": {
+        "approve": "Approve"
+      },
+      "approveModal": {
+        "title": "Approve Leave Request",
+        "employee": "Employee",
+        "leaveType": "Leave Type",
+        "duration": "Duration",
+        "days": "Days",
+        "reason": "Reason",
+        "approveNotes": "Notes (if approving)",
+        "approveNotesPlaceholder": "Notes when approving...",
+        "rejectReason": "Reason (if rejecting)",
+        "rejectReasonPlaceholder": "Reason for rejection...",
+        "close": "Close",
+        "reject": "Reject",
+        "approve": "Approve"
+      },
+      "createModal": {
+        "title": "Create Leave Request",
+        "leaveType": "Leave Type",
+        "selectLeaveType": "Select leave type",
+        "startDate": "Start Date",
+        "endDate": "End Date",
+        "halfDay": "Half day",
+        "morningSession": "Morning",
+        "afternoonSession": "Afternoon",
+        "reason": "Reason",
+        "reasonPlaceholder": "Enter reason for leave...",
+        "cancel": "Cancel",
+        "submit": "Submit Request"
+      },
+      "errors": {
+        "fillRequired": "Please fill in all required fields",
+        "approveFailed": "Cannot approve request",
+        "rejectFailed": "Cannot reject request",
+        "createFailed": "Cannot create leave request"
+      },
+      "pagination": {
+        "page": "Page",
+        "of": "of"
+      },
+      "noData": "No leave requests"
+    },
+    "attendancePage": {
+      "title": "Attendance",
+      "subtitle": "Track employee attendance",
+      "checkIn": "Check In",
+      "checkOut": "Check Out",
+      "exportExcel": "Export Excel",
+      "stats": {
+        "totalEmployees": "Total Employees",
+        "present": "Present",
+        "late": "Late",
+        "absent": "Absent",
+        "rate": "Rate"
+      },
+      "tableTitle": "Attendance for",
+      "totalRecords": "Total: {count} records",
+      "columns": {
+        "employee": "Employee",
+        "shift": "Shift",
+        "checkIn": "In",
+        "checkOut": "Out",
+        "hours": "Hours",
+        "source": "Source",
+        "status": "Status"
+      },
+      "status": {
+        "PRESENT": "Present",
+        "LATE": "Late",
+        "ABSENT": "Absent",
+        "ON_LEAVE": "On Leave",
+        "HALF_DAY": "Half Day"
+      },
+      "source": {
+        "MOBILE": "App",
+        "FINGERPRINT": "Fingerprint",
+        "MANUAL": "Manual"
+      },
+      "noShift": "No shift",
+      "noData": "No attendance data for this date",
+      "dailyOverview": "Daily Overview",
+      "onLeave": "On Leave"
+    },
+    "contractsPage": {
+      "title": "Employment Contracts",
+      "subtitle": "Manage employee contracts",
+      "createContract": "Create Contract",
+      "searchPlaceholder": "Search by contract number, employee name...",
+      "filters": {
+        "allStatus": "All Status",
+        "active": "Active",
+        "expired": "Expired",
+        "draft": "Draft",
+        "terminated": "Terminated"
+      },
+      "totalContracts": "contracts",
+      "columns": {
+        "contractNumber": "CONTRACT NO",
+        "employee": "EMPLOYEE",
+        "contractType": "CONTRACT TYPE",
+        "duration": "DURATION",
+        "basicSalary": "BASIC SALARY",
+        "status": "STATUS",
+        "actions": "ACTIONS"
+      },
+      "contractTypes": {
+        "PROBATION": "Probation",
+        "DEFINITE_1Y": "1 Year Fixed-term",
+        "DEFINITE_2Y": "2 Year Fixed-term",
+        "DEFINITE_3Y": "3 Year Fixed-term",
+        "INDEFINITE": "Indefinite",
+        "SEASONAL": "Seasonal",
+        "PART_TIME": "Part-time"
+      },
+      "status": {
+        "DRAFT": "Draft",
+        "ACTIVE": "Active",
+        "EXPIRED": "Expired",
+        "TERMINATED": "Terminated",
+        "RENEWED": "Renewed"
+      },
+      "expiringSoon": "Expiring Soon",
+      "modal": {
+        "createTitle": "Create New Contract",
+        "editTitle": "Edit Contract",
+        "employee": "Employee",
+        "selectEmployee": "-- Select employee --",
+        "contractType": "Contract Type",
+        "basicSalary": "Basic Salary",
+        "startDate": "Start Date",
+        "endDate": "End Date",
+        "insuranceSalary": "Insurance Salary",
+        "allowances": "Allowances",
+        "probationPercent": "Probation Salary %",
+        "workLocation": "Work Location (Branch)",
+        "selectBranch": "-- Select branch --",
+        "jobDescription": "Job Description",
+        "notes": "Notes"
+      },
+      "errors": {
+        "saveFailed": "Cannot save contract"
+      },
+      "noData": "No contracts found"
+    },
+    "advancesPage": {
+      "title": "Salary Advances",
+      "subtitle": "Manage salary advance requests",
+      "createRequest": "Create Request",
+      "searchPlaceholder": "Search by request code, employee name...",
+      "requests": "requests",
+      "approved": "Approved",
+      "noData": "No advance requests found",
+      "filters": {
+        "allStatus": "All Status"
+      },
+      "columns": {
+        "requestNumber": "REQUEST NO",
+        "employee": "EMPLOYEE",
+        "type": "TYPE",
+        "amount": "AMOUNT",
+        "remaining": "REMAINING",
+        "requestDate": "REQUEST DATE",
+        "status": "STATUS"
+      },
+      "status": {
+        "PENDING": "Pending",
+        "APPROVED": "Approved",
+        "REJECTED": "Rejected",
+        "PAID": "Paid",
+        "PARTIALLY_REPAID": "Partially Repaid",
+        "FULLY_REPAID": "Fully Repaid",
+        "CANCELLED": "Cancelled"
+      },
+      "types": {
+        "SALARY": "Salary",
+        "TRIP": "Trip",
+        "OTHER": "Other"
+      },
+      "actions": {
+        "approve": "Approve",
+        "reject": "Reject",
+        "disburse": "Record Payment"
+      },
+      "modal": {
+        "createTitle": "Create Advance Request",
+        "employee": "Employee",
+        "selectEmployee": "-- Select employee --",
+        "requestedAmount": "Requested Amount",
+        "advanceType": "Advance Type",
+        "purpose": "Purpose",
+        "purposePlaceholder": "Describe reason...",
+        "neededDate": "Needed Date",
+        "repaymentMethod": "Repayment Method"
+      },
+      "approvalModal": {
+        "title": "Approve Advance",
+        "employee": "Employee",
+        "requestedAmount": "Requested Amount",
+        "approvedAmount": "Approved Amount",
+        "notes": "Notes"
+      },
+      "repaymentMethods": {
+        "SALARY_DEDUCTION": "Salary Deduction",
+        "CASH": "Cash",
+        "TRANSFER": "Transfer"
+      },
+      "prompts": {
+        "rejectReason": "Reason for rejection:"
+      },
+      "confirmations": {
+        "disburse": "Confirm payment of {amount}?"
+      },
+      "errors": {
+        "createFailed": "Cannot create advance request",
+        "approveFailed": "Cannot approve request",
+        "rejectFailed": "Cannot reject request",
+        "disburseFailed": "Cannot record payment"
+      }
+    },
+    "positionsPage": {
+      "title": "Positions",
+      "subtitle": "Manage job positions in the company",
+      "addPosition": "Add Position",
+      "searchPlaceholder": "Search by name or code...",
+      "stats": {
+        "totalPositions": "Total Positions",
+        "totalEmployees": "Employees"
+      },
+      "columns": {
+        "code": "Code",
+        "name": "Position Name",
+        "level": "Level",
+        "department": "Department",
+        "salaryRange": "Salary Range",
+        "employees": "Employees",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "levels": {
+        "staff": "Staff",
+        "specialist": "Specialist",
+        "teamLead": "Team Lead",
+        "deputyManager": "Deputy Manager",
+        "manager": "Manager",
+        "deputyDirector": "Deputy Director",
+        "director": "Director",
+        "ceo": "CEO"
+      },
+      "modal": {
+        "createTitle": "Add New Position",
+        "editTitle": "Edit Position",
+        "code": "Position Code",
+        "codePlaceholder": "E.g: CEO, MGR, TL...",
+        "name": "Position Name",
+        "namePlaceholder": "E.g: Chief Executive Officer",
+        "level": "Level",
+        "department": "Department",
+        "allDepartments": "-- All Departments --",
+        "minSalary": "Min Salary",
+        "maxSalary": "Max Salary",
+        "description": "Description",
+        "descriptionPlaceholder": "Job description, responsibilities..."
+      },
+      "noData": "No positions found",
+      "confirmDelete": "Are you sure you want to delete position \"{name}\"?",
+      "cannotDelete": "Cannot delete position \"{name}\" because it has {count} employees",
+      "deleteError": "Cannot delete position",
+      "saveError": "Cannot save position"
+    },
+    "branchesPage": {
+      "title": "Branches",
+      "subtitle": "Manage company branches and offices",
+      "addBranch": "Add Branch",
+      "searchPlaceholder": "Search by name or code...",
+      "headquarters": "Headquarters",
+      "employees": "employees",
+      "columns": {
+        "code": "Code",
+        "name": "Branch Name",
+        "address": "Address",
+        "phone": "Phone",
+        "email": "Email",
+        "manager": "Manager",
+        "employees": "Employees",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "modal": {
+        "createTitle": "Add New Branch",
+        "editTitle": "Edit Branch",
+        "code": "Branch Code",
+        "codePlaceholder": "E.g: HCM, HN...",
+        "name": "Branch Name",
+        "namePlaceholder": "E.g: Ho Chi Minh Branch",
+        "isHeadquarters": "Headquarters",
+        "address": "Address",
+        "addressPlaceholder": "Street, number...",
+        "city": "City",
+        "cityPlaceholder": "E.g: Ho Chi Minh",
+        "province": "Province",
+        "provincePlaceholder": "E.g: HCMC",
+        "phone": "Phone",
+        "phonePlaceholder": "0901234567",
+        "email": "Email",
+        "emailPlaceholder": "email@company.com"
+      },
+      "noData": "No branches found",
+      "confirmDelete": "Are you sure you want to delete branch \"{name}\"?",
+      "cannotDelete": "Cannot delete branch \"{name}\" because it has {count} employees",
+      "deleteError": "Cannot delete branch",
+      "saveError": "Cannot save branch"
+    },
+    "teamsPage": {
+      "title": "Teams",
+      "subtitle": "Manage work teams",
+      "addTeam": "Add Team",
+      "searchPlaceholder": "Search by name or code...",
+      "teamLead": "Team Lead",
+      "members": "members",
+      "columns": {
+        "code": "Code",
+        "name": "Team Name",
+        "department": "Department",
+        "leader": "Team Lead",
+        "members": "Members",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "modal": {
+        "createTitle": "Add New Team",
+        "editTitle": "Edit Team",
+        "code": "Team Code",
+        "codePlaceholder": "E.g: TEAM-01",
+        "name": "Team Name",
+        "namePlaceholder": "E.g: South Delivery Team",
+        "department": "Department",
+        "selectDepartment": "-- Select Department --",
+        "leader": "Team Lead",
+        "selectLeader": "-- Select Team Lead --",
+        "description": "Description",
+        "descriptionPlaceholder": "Team description..."
+      },
+      "noData": "No teams found",
+      "confirmDelete": "Are you sure you want to delete team \"{name}\"?",
+      "cannotDelete": "Cannot delete team \"{name}\" because it has {count} members",
+      "deleteError": "Cannot delete team",
+      "saveError": "Cannot save team"
+    },
+    "orgChartPage": {
+      "title": "Organization Chart",
+      "subtitle": "Company organizational structure",
+      "stats": {
+        "branches": "Branches",
+        "departments": "Departments",
+        "totalEmployees": "Total Employees"
+      },
+      "noEmployees": "No employees yet.",
+      "noEmployeesDesc": "Add employees and set up management relationships to display the chart.",
+      "tooltip": {
+        "noPosition": "No position",
+        "branch": "Branch",
+        "joinDate": "Join Date",
+        "notUpdated": "Not updated"
+      },
+      "legend": {
+        "title": "Legend",
+        "ceo": "CEO",
+        "branchManager": "Branch Manager",
+        "deptHead": "Department Head",
+        "teamLead": "Team Leader",
+        "staff": "Staff"
+      },
+      "hint": "Click on a node to expand/collapse. Hover to see details."
+    },
+    "overtimePage": {
+      "title": "Overtime Management",
+      "subtitle": "Register and approve overtime",
+      "registerOT": "Register Overtime",
+      "noData": "No overtime requests yet",
+      "stats": {
+        "pending": "Pending",
+        "approved": "Approved",
+        "rejected": "Rejected",
+        "totalOTHours": "Total OT Hours (approved)"
+      },
+      "filters": {
+        "month": "Month",
+        "status": "Status"
+      },
+      "columns": {
+        "employee": "Employee",
+        "date": "Date",
+        "time": "Time",
+        "hours": "Hours",
+        "otType": "OT Type",
+        "reason": "Reason",
+        "status": "Status"
+      },
+      "status": {
+        "PENDING": "Pending",
+        "APPROVED": "Approved",
+        "REJECTED": "Rejected",
+        "CANCELLED": "Cancelled"
+      },
+      "otTypes": {
+        "WEEKDAY": "Weekday",
+        "WEEKEND": "Weekend",
+        "HOLIDAY": "Holiday",
+        "NIGHT": "Night Shift"
+      },
+      "actions": {
+        "approve": "Approve",
+        "reject": "Reject"
+      },
+      "modal": {
+        "createTitle": "Register Overtime",
+        "employee": "Employee",
+        "selectEmployee": "-- Select employee --",
+        "overtimeDate": "Overtime Date",
+        "from": "From",
+        "to": "To",
+        "otType": "OT Type",
+        "reason": "Reason",
+        "reasonPlaceholder": "Describe work to be done..."
+      },
+      "approveModal": {
+        "title": "Approve Overtime Request",
+        "employee": "Employee",
+        "date": "Date",
+        "time": "Time",
+        "otType": "OT Type",
+        "reason": "Reason"
+      },
+      "errors": {
+        "fillRequired": "Please fill in all required fields",
+        "createFailed": "Cannot create overtime request",
+        "approveFailed": "Cannot approve request",
+        "rejectFailed": "Cannot reject request"
+      }
+    },
+    "bonusesPage": {
+      "title": "Bonus Management",
+      "subtitle": "Performance, project, holiday and other bonuses",
+      "addBonus": "Add Bonus",
+      "searchPlaceholder": "Search by name, employee code, reason...",
+      "noData": "No bonus data yet",
+      "stats": {
+        "totalBonus": "Total Bonus",
+        "count": "Count",
+        "pending": "Pending",
+        "employees": "Employees"
+      },
+      "filters": {
+        "allTypes": "All Types",
+        "allStatus": "All Status"
+      },
+      "columns": {
+        "employee": "Employee",
+        "bonusType": "Bonus Type",
+        "reason": "Reason",
+        "amount": "Amount",
+        "effectiveDate": "Effective Date",
+        "status": "Status"
+      },
+      "bonusTypes": {
+        "PERFORMANCE": "Performance",
+        "PROJECT": "Project",
+        "HOLIDAY": "Holiday",
+        "REFERRAL": "Referral",
+        "ATTENDANCE": "Attendance",
+        "OTHER": "Other"
+      },
+      "status": {
+        "PENDING": "Pending",
+        "APPROVED": "Approved",
+        "REJECTED": "Rejected",
+        "PAID": "Paid"
+      },
+      "actions": {
+        "approve": "Approve",
+        "reject": "Reject"
+      },
+      "modal": {
+        "title": "Add Bonus",
+        "employee": "Employee",
+        "selectEmployee": "-- Select employee --",
+        "bonusType": "Bonus Type",
+        "amount": "Amount",
+        "effectiveDate": "Effective Date",
+        "reason": "Reason",
+        "reasonPlaceholder": "Reason for bonus...",
+        "notes": "Notes"
+      },
+      "confirmations": {
+        "approve": "Confirm approve this bonus?",
+        "reject": "Confirm reject this bonus?",
+        "delete": "Confirm delete this bonus?"
+      },
+      "errors": {
+        "fillRequired": "Please fill in all required fields",
+        "createFailed": "Cannot create bonus",
+        "approveFailed": "Cannot approve bonus",
+        "rejectFailed": "Cannot reject bonus",
+        "deleteFailed": "Cannot delete bonus"
+      }
+    },
+    "deductionsPage": {
+      "title": "Deduction Management",
+      "subtitle": "Advances, loans, penalties and other deductions",
+      "addDeduction": "Add Deduction",
+      "searchPlaceholder": "Search by name, employee code, description...",
+      "noData": "No deduction data yet",
+      "stats": {
+        "remaining": "Outstanding",
+        "monthlyDeduction": "Monthly Deduction",
+        "active": "Active",
+        "total": "Total"
+      },
+      "filters": {
+        "allTypes": "All Types",
+        "allStatus": "All Status",
+        "active": "Active",
+        "completed": "Completed"
+      },
+      "columns": {
+        "employee": "Employee",
+        "type": "Type",
+        "description": "Description",
+        "totalAmount": "Total Amount",
+        "remaining": "Remaining",
+        "monthlyDeduction": "Monthly",
+        "status": "Status"
+      },
+      "deductionTypes": {
+        "INSURANCE_EMPLOYEE": "Insurance",
+        "TAX": "Income Tax",
+        "ADVANCE": "Advance",
+        "LOAN": "Loan",
+        "PENALTY": "Penalty",
+        "OTHER": "Other"
+      },
+      "status": {
+        "active": "Deducting",
+        "completed": "Completed"
+      },
+      "actions": {
+        "deactivate": "Deactivate"
+      },
+      "modal": {
+        "title": "Add Deduction",
+        "employee": "Employee",
+        "selectEmployee": "-- Select employee --",
+        "deductionType": "Deduction Type",
+        "startDate": "Start Date",
+        "totalAmount": "Total Amount",
+        "monthlyDeduction": "Monthly Deduction",
+        "description": "Description",
+        "descriptionPlaceholder": "Describe the deduction...",
+        "notes": "Notes"
+      },
+      "confirmations": {
+        "deactivate": "Confirm deactivate this deduction?",
+        "delete": "Confirm delete this deduction?"
+      },
+      "errors": {
+        "fillRequired": "Please fill in all required fields",
+        "createFailed": "Cannot create deduction",
+        "deactivateFailed": "Cannot deactivate deduction",
+        "deleteFailed": "Cannot delete deduction"
+      }
+    },
+    "salaryStructurePage": {
+      "title": "Salary Structure",
+      "subtitle": "Manage salary structure templates and salary components",
+      "addStructure": "Add Salary Structure",
+      "stats": {
+        "totalStructures": "Total Structures",
+        "active": "Active",
+        "totalComponents": "Total Components",
+        "default": "Default"
+      },
+      "noStructures": "No salary structures yet",
+      "noStructuresDesc": "Create the first salary structure to get started",
+      "componentTypes": {
+        "EARNING": "Earning",
+        "DEDUCTION": "Deduction",
+        "EMPLOYER_CONTRIBUTION": "Employer Contribution"
+      },
+      "calculationTypes": {
+        "FIXED": "Fixed",
+        "PERCENT": "Percentage",
+        "FORMULA": "Formula"
+      },
+      "employeeTypes": {
+        "ALL": "All",
+        "FULL_TIME": "Full-time",
+        "PART_TIME": "Part-time",
+        "DRIVER": "Driver",
+        "CONTRACT": "Contract"
+      },
+      "columns": {
+        "code": "Code",
+        "name": "Name",
+        "type": "Type",
+        "calculation": "Calculation",
+        "amount": "Amount",
+        "tax": "Tax",
+        "insurance": "Insurance",
+        "status": "Status"
+      },
+      "labels": {
+        "earnings": "Earnings",
+        "deductions": "Deductions",
+        "netPay": "Net Pay",
+        "components": "components",
+        "default": "Default",
+        "inactive": "Inactive",
+        "active": "Active",
+        "disabled": "Disabled",
+        "noDescription": "No description",
+        "salaryComponents": "Salary Components",
+        "add": "Add"
+      },
+      "structureModal": {
+        "createTitle": "Add Salary Structure",
+        "editTitle": "Edit Salary Structure",
+        "structureCode": "Structure Code",
+        "structureCodePlaceholder": "SALARY-OFFICE",
+        "structureName": "Structure Name",
+        "structureNamePlaceholder": "Office Salary Structure",
+        "employeeType": "Employee Type",
+        "description": "Description",
+        "descriptionPlaceholder": "Describe the salary structure..."
+      },
+      "componentModal": {
+        "createTitle": "Add Salary Component",
+        "editTitle": "Edit Salary Component",
+        "componentCode": "Component Code",
+        "componentCodePlaceholder": "BASIC, MEAL, OT...",
+        "componentName": "Component Name",
+        "componentNamePlaceholder": "Basic Salary, Meal Allowance...",
+        "type": "Type",
+        "calculation": "Calculation",
+        "defaultAmount": "Default Amount",
+        "sortOrder": "Sort Order",
+        "taxable": "Taxable (PIT)",
+        "insuranceBase": "Include in Insurance Base"
+      },
+      "noComponentsYet": "No salary components yet. Click \"Add\" to create.",
+      "errors": {
+        "createStructureFailed": "Failed to create salary structure",
+        "createComponentFailed": "Failed to add salary component"
+      },
+      "instructions": {
+        "title": "Instructions",
+        "structureDesc": "Salary Structure: Template defining salary components for employee groups",
+        "componentDesc": "Salary Component: Earnings or deductions in the structure",
+        "overrideDesc": "When assigning salary structure to an employee, you can override each component amount",
+        "taxDesc": "Taxable components will be included in taxable income (PIT)",
+        "insuranceDesc": "Insurance Base components will be included in insurance contribution calculation"
+      }
+    },
+    "incomeTaxSettingsPage": {
+      "title": "Income Tax Settings",
+      "subtitle": "Configure personal income tax calculation",
+      "addSetting": "Add New Setting",
+      "loading": "Loading...",
+      "noSettings": "No settings yet. Click \"Add New Setting\" to create.",
+      "columns": {
+        "effectiveFrom": "Effective From",
+        "effectiveTo": "Effective To",
+        "personalDeduction": "Personal Deduction",
+        "dependentDeduction": "Dependent Deduction",
+        "totalInsurance": "Total Insurance",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "status": {
+        "ACTIVE": "Active",
+        "INACTIVE": "Inactive"
+      },
+      "modal": {
+        "createTitle": "Add New Tax Setting",
+        "editTitle": "Edit Tax Setting",
+        "effectiveFrom": "Effective From",
+        "effectiveTo": "Effective To",
+        "deductionSection": "Deductions",
+        "personalDeduction": "Personal Deduction (VND)",
+        "dependentDeduction": "Dependent Deduction (VND)",
+        "insuranceSection": "Insurance Rates",
+        "socialInsurance": "Social Insurance (%)",
+        "healthInsurance": "Health Insurance (%)",
+        "unemploymentInsurance": "Unemployment Insurance (%)",
+        "taxBracketsSection": "Personal Income Tax Brackets",
+        "bracket": "Bracket",
+        "bracket7Label": "Bracket 7 (Over 80 million)",
+        "maxIncome": "Max Income (VND)",
+        "taxRate": "Tax Rate (%)",
+        "quickDeduction": "Quick Deduction (VND)",
+        "statusLabel": "Status"
+      },
+      "errors": {
+        "saveFailed": "Cannot save setting",
+        "deleteFailed": "Cannot delete setting"
+      },
+      "confirmDelete": "Are you sure you want to delete this setting?"
+    },
+    "recruitmentPage": {
+      "title": "Recruitment",
+      "subtitle": "Manage recruitment process"
+    },
+    "jobsPage": {
+      "title": "Job Postings",
+      "subtitle": "Manage job openings"
+    },
+    "candidatesPage": {
+      "title": "Candidates",
+      "subtitle": "Manage job applicants"
+    },
+    "interviewsPage": {
+      "title": "Interviews",
+      "subtitle": "Schedule and track interviews"
+    },
+    "onboardingPage": {
+      "title": "Onboarding",
+      "subtitle": "New employee onboarding"
+    },
+    "trainingPage": {
+      "title": "Training Programs",
+      "subtitle": "Manage training programs"
+    },
+    "certificationsPage": {
+      "title": "Certifications",
+      "subtitle": "Track employee certifications"
+    },
+    "skillsPage": {
+      "title": "Skills Matrix",
+      "subtitle": "Manage employee skills"
+    },
+    "timeTrackingPage": {
+      "title": "Time Tracking",
+      "subtitle": "Track working hours"
+    },
+    "workersPage": {
+      "title": "Workers",
+      "subtitle": "Manage workers from Personal Workspace",
+      "inviteWorker": "Invite Worker",
+      "stats": {
+        "connectedWorkers": "Connected Workers",
+        "readyToWork": "Ready to Work",
+        "pendingInvitations": "Pending Invitations",
+        "totalTasksCompleted": "Total Tasks Completed"
+      },
+      "tabs": {
+        "connected": "Connected Workers",
+        "invitations": "Invitations"
+      },
+      "searchPlaceholder": "Search worker...",
+      "noWorkers": "No workers yet",
+      "inviteFirst": "Invite the first worker",
+      "noInvitations": "No invitations yet",
+      "workerStatus": {
+        "available": "Available",
+        "unavailable": "Unavailable"
+      },
+      "labels": {
+        "license": "License",
+        "role": "Role",
+        "tasks": "tasks",
+        "sentAt": "Sent at",
+        "assignTask": "Assign Task",
+        "changeRole": "Change Role",
+        "viewWorkspace": "View Workspace",
+        "disconnect": "Disconnect"
+      },
+      "invitationStatus": {
+        "PENDING": "Pending",
+        "ACCEPTED": "Accepted",
+        "DECLINED": "Declined"
+      },
+      "assignTaskModal": {
+        "title": "Assign Task to Worker",
+        "taskType": "Task Type",
+        "taskTypes": {
+          "ORDER": "Order",
+          "TRIP": "Trip",
+          "DELIVERY": "Delivery"
+        },
+        "taskTitle": "Task Title",
+        "taskTitlePlaceholder": "E.g: Deliver to Company ABC",
+        "refId": "Reference ID",
+        "refIdPlaceholder": "Order/Trip ID",
+        "taskCode": "Task Code",
+        "taskCodePlaceholder": "E.g: TASK-001",
+        "description": "Detailed Description",
+        "descriptionPlaceholder": "Describe the task details...",
+        "startTime": "Start Time",
+        "endTime": "End Time",
+        "paymentAmount": "Payment Amount (VND)"
+      },
+      "inviteModal": {
+        "title": "Invite Worker",
+        "emailOrUsername": "Email or Username",
+        "emailOrUsernamePlaceholder": "email@example.com or username",
+        "emailHint": "Enter email to invite or username of existing account",
+        "role": "Role",
+        "roles": {
+          "DRIVER": "Driver - View and update assigned orders",
+          "DISPATCHER": "Dispatcher - Manage orders, drivers, vehicles",
+          "MANAGER": "Manager - Full TMS + Master data access",
+          "ACCOUNTANT": "Accountant - View reports, orders",
+          "WORKER": "Worker - View assigned tasks",
+          "FREELANCER": "Freelancer - Take project-based tasks",
+          "CONTRACTOR": "Contractor - Take contract-based tasks"
+        },
+        "roleHint": "Permissions can be customized after worker accepts the invitation",
+        "message": "Message (optional)",
+        "messagePlaceholder": "Write a message for the worker..."
+      },
+      "editRoleModal": {
+        "title": "Change Worker Role",
+        "currentRole": "Current Role",
+        "selectNewRole": "Select New Role",
+        "roleDescriptions": {
+          "DRIVER": "View and update assigned orders",
+          "DISPATCHER": "Manage orders, drivers, vehicles",
+          "MANAGER": "Full TMS + Master data + Reports",
+          "ACCOUNTANT": "View reports, orders",
+          "WORKER": "View assigned tasks"
+        },
+        "permissionsPreview": "Permissions to be granted:",
+        "modules": {
+          "tms": "TMS - Transport",
+          "dispatch": "Dispatch",
+          "masterdata": "Master Data",
+          "reports": "Reports",
+          "workspace": "Workspace"
+        }
+      },
+      "confirmations": {
+        "revokeInvitation": "Are you sure you want to cancel this invitation?",
+        "disconnect": "Are you sure you want to disconnect {name}?\n\nWorker will no longer receive tasks from the company."
+      },
+      "errors": {
+        "inviteFailed": "Failed to send invitation",
+        "disconnectFailed": "Cannot disconnect. Please try again.",
+        "assignFailed": "Failed to assign task",
+        "updateRoleFailed": "Failed to update"
+      },
+      "success": {
+        "inviteSent": "Invitation sent successfully!",
+        "taskAssigned": "Task assigned successfully!",
+        "roleUpdated": "Permissions updated successfully!"
+      }
+    },
+    "reportsPage": {
+      "title": "HR Reports",
+      "attendanceReport": {
+        "title": "Attendance Report"
+      },
+      "payrollReport": {
+        "title": "Payroll Report"
+      },
+      "turnoverReport": {
+        "title": "Turnover Report"
+      },
+      "headcountReport": {
+        "title": "Headcount Report"
+      }
     }
   },
   "tms": {
@@ -1014,6 +2008,1567 @@
       "address": "Address",
       "coordinates": "Coordinates",
       "contact": "Contact"
+    },
+    "vehiclesPage": {
+      "title": "Vehicle Management",
+      "subtitle": "Manage tractors and trailers",
+      "addVehicle": "Add Vehicle",
+      "pairing": "Pairing",
+      "stats": {
+        "totalVehicles": "Total Vehicles",
+        "tractors": "Tractors",
+        "trailers": "Trailers",
+        "active": "Active",
+        "disposed": "Disposed",
+        "expiringRegistration": "Expiring Registration"
+      },
+      "filters": {
+        "all": "All",
+        "tractor": "Tractor",
+        "trailer": "Trailer",
+        "searchPlaceholder": "Search plate, brand...",
+        "loading": "Loading...",
+        "vehicles": "vehicles"
+      },
+      "columns": {
+        "code": "Code",
+        "plateNo": "Plate No.",
+        "type": "Type",
+        "manufacturer": "Brand",
+        "model": "Model",
+        "yearOfManufacture": "Year",
+        "registrationExpiry": "Registration",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "types": {
+        "tractor": "Tractor",
+        "trailer": "Trailer"
+      },
+      "status": {
+        "active": "Active",
+        "maintenance": "Maintenance",
+        "inactive": "Inactive",
+        "disposed": "Disposed"
+      },
+      "statusOptions": {
+        "active": "ACTIVE - Active",
+        "inactive": "INACTIVE - Inactive",
+        "maintenance": "MAINTENANCE - Maintenance",
+        "disposed": "DISPOSED - Disposed"
+      },
+      "typeOptions": {
+        "tractor": "TRACTOR (Tractor)",
+        "trailer": "TRAILER (Trailer)"
+      },
+      "actions": {
+        "edit": "Edit",
+        "duplicate": "Duplicate",
+        "delete": "Delete"
+      },
+      "table": {
+        "loading": "Loading...",
+        "noData": "No vehicles yet"
+      },
+      "pagination": {
+        "vehicles": "vehicles"
+      },
+      "modal": {
+        "createTitle": "Add New Vehicle",
+        "editTitle": "Edit: {plateNo}",
+        "basicInfo": "Basic Information",
+        "vehicleCode": "Vehicle Code",
+        "vehicleCodePlaceholder": "R01, T01, etc.",
+        "plateNo": "Plate Number",
+        "plateNoPlaceholder": "51C-12345",
+        "plateNoRequired": "Plate number is required.",
+        "type": "Type",
+        "typeRequired": "required",
+        "vehicleTypeName": "Vehicle Type Name",
+        "vehicleTypeNamePlaceholder": "Trailer, Tractor",
+        "manufacturerInfo": "Manufacturer Information",
+        "manufacturer": "Brand",
+        "manufacturerPlaceholder": "Hyundai",
+        "model": "Model",
+        "modelPlaceholder": "HD700",
+        "countryOfOrigin": "Country of Origin",
+        "countryOfOriginPlaceholder": "VN, KR",
+        "yearOfManufacture": "Year of Manufacture",
+        "yearOfManufacturePlaceholder": "2015",
+        "technicalSpecs": "Technical Specifications",
+        "chassisNumber": "Chassis Number",
+        "chassisNumberPlaceholder": "RPUF403V2F3000004",
+        "engineNumber": "Engine Number",
+        "engineNumberPlaceholder": "D6ACF1279583",
+        "curbWeight": "Curb Weight (kg)",
+        "curbWeightPlaceholder": "7020",
+        "payloadCapacity": "Payload Capacity (kg)",
+        "payloadCapacityPlaceholder": "32790",
+        "grossWeight": "Gross Weight (kg)",
+        "grossWeightPlaceholder": "39810",
+        "dimensions": "Dimensions (mm)",
+        "dimensionsPlaceholder": "12310x2500x1490",
+        "registrationStatus": "Registration & Status",
+        "registrationExpiry": "Registration Expiry",
+        "status": "Status",
+        "inactiveReason": "Inactive Reason",
+        "inactiveReasonPlaceholder": "Enter reason...",
+        "cancel": "Cancel",
+        "save": "Save",
+        "saving": "Saving..."
+      },
+      "pairingModal": {
+        "title": "Tractor - Trailer Pairing",
+        "createNew": "Create New Pairing",
+        "tractor": "Tractor",
+        "trailer": "Trailer",
+        "selectTractor": "-- Select tractor --",
+        "selectTrailer": "-- Select trailer --",
+        "effectiveDate": "Effective Date",
+        "endDate": "End Date (leave empty if unknown)",
+        "notes": "Notes",
+        "notesPlaceholder": "Notes (optional)",
+        "createPairing": "Create Pairing",
+        "saving": "Saving...",
+        "pairingList": "Pairing List",
+        "loading": "Loading...",
+        "noPairings": "No pairings yet",
+        "columns": {
+          "tractor": "Tractor",
+          "trailer": "Trailer",
+          "effectiveDate": "Effective Date",
+          "endDate": "End Date",
+          "status": "Status",
+          "actions": "Actions"
+        },
+        "status": {
+          "active": "Active",
+          "ended": "Ended"
+        },
+        "actions": {
+          "endPairing": "End Pairing",
+          "delete": "Delete"
+        },
+        "close": "Close"
+      },
+      "confirmations": {
+        "deleteVehicle": "Are you sure you want to delete this vehicle?",
+        "endPairing": "Are you sure you want to end this pairing?",
+        "deletePairing": "Are you sure you want to delete this pairing?"
+      },
+      "errors": {
+        "deleteFailed": "Delete failed: ",
+        "selectTractorTrailer": "Please select tractor and trailer",
+        "selectEffectiveDate": "Please select effective date",
+        "createPairingFailed": "Error: Unable to create pairing",
+        "endPairingFailed": "Error: Unable to end pairing",
+        "deletePairingFailed": "Error: Unable to delete pairing"
+      }
+    },
+    "ordersPage": {
+      "docTypes": {
+        "containerReceipt": "Container Receipt",
+        "do": "DO (Delivery Order)",
+        "handoverReport": "Handover Report",
+        "sealPhoto": "Seal Photo",
+        "other": "Other"
+      },
+      "shifts": {
+        "morning": "morning",
+        "afternoon": "afternoon",
+        "evening": "evening"
+      },
+      "confirmations": {
+        "deleteDocument": "Are you sure you want to delete this document?"
+      },
+      "placeholders": {
+        "selectDepot": "Select depot...",
+        "cargoNote": "e.g., Fragile goods, handle with care"
+      }
+    },
+    "sitesPage": {
+      "title": "Sites Management",
+      "subtitle": "Manage delivery/pickup points",
+      "addSite": "Add Site",
+      "stats": {
+        "totalSites": "Total Sites",
+        "active": "Active",
+        "customers": "Customers",
+        "ports": "Ports",
+        "warehouses": "Warehouses"
+      },
+      "filters": {
+        "all": "All",
+        "customer": "Customer",
+        "port": "Port",
+        "warehouse": "Warehouse"
+      },
+      "search": {
+        "placeholder": "Search code, name, address...",
+        "loading": "Loading...",
+        "sites": "sites"
+      },
+      "columns": {
+        "code": "Code",
+        "companyName": "Company Name",
+        "type": "Type",
+        "location": "Location",
+        "address": "Address",
+        "contact": "Contact",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "types": {
+        "customer": "Customer",
+        "port": "Port",
+        "warehouse": "Warehouse"
+      },
+      "status": {
+        "on": "On",
+        "off": "Off"
+      },
+      "actions": {
+        "edit": "Edit",
+        "delete": "Delete"
+      },
+      "table": {
+        "loading": "Loading...",
+        "noData": "No sites yet"
+      },
+      "pagination": {
+        "sites": "sites"
+      },
+      "modal": {
+        "createTitle": "Add New Site",
+        "editTitle": "Edit: {name}",
+        "basicInfo": "Basic Information",
+        "location": "Location",
+        "locationRequired": "required",
+        "selectLocation": "-- Select location --",
+        "locationNote": "Location is used for rate calculation",
+        "siteCode": "Site Code",
+        "siteCodePlaceholder": "Auto-generated if empty",
+        "companyName": "Company Name",
+        "companyNameRequired": "required",
+        "companyNamePlaceholder": "e.g., ABC Company Ltd.",
+        "classification": "Classification",
+        "classificationRequired": "required",
+        "classificationCustomer": "Customer",
+        "classificationPort": "Port",
+        "classificationWarehouse": "Internal Warehouse",
+        "status": "Status",
+        "statusActive": "ACTIVE",
+        "statusInactive": "INACTIVE",
+        "addressSection": "Detailed Address",
+        "addressPlaceholder": "e.g., 123 ABC Street, XYZ Ward, ABC District",
+        "contactSection": "Contact Information",
+        "contactName": "Contact Name",
+        "contactNamePlaceholder": "e.g., John Smith",
+        "contactPhone": "Phone Number",
+        "contactPhonePlaceholder": "e.g., 0909123456",
+        "noteSection": "Notes",
+        "notePlaceholder": "Additional notes...",
+        "cancel": "Cancel",
+        "save": "Save",
+        "saving": "Saving..."
+      },
+      "confirmations": {
+        "deleteSite": "Are you sure you want to delete this site?"
+      },
+      "errors": {
+        "loadFailed": "Load failed",
+        "saveFailed": "Save failed",
+        "deleteFailed": "Delete failed",
+        "companyLocationRequired": "Company name and Location are required."
+      }
+    },
+    "locationsPage": {
+      "title": "Location Management",
+      "subtitle": "Manage transportation areas/zones",
+      "addLocation": "Add Location",
+      "stats": {
+        "totalLocations": "Total Locations",
+        "active": "Active",
+        "industrialZone": "Industrial Zone",
+        "port": "Port",
+        "icd": "ICD"
+      },
+      "filters": {
+        "all": "All",
+        "industrialZone": "Industrial Zone",
+        "port": "Port",
+        "icd": "ICD",
+        "depot": "Depot"
+      },
+      "search": {
+        "placeholder": "Search code, name, province...",
+        "loading": "Loading...",
+        "locations": "locations",
+        "showDeleted": "Show deleted"
+      },
+      "columns": {
+        "code": "Code",
+        "name": "Name",
+        "type": "Type",
+        "ward": "Ward/Commune",
+        "district": "District",
+        "province": "Province/City",
+        "actions": "Actions"
+      },
+      "types": {
+        "industrialZone": "Industrial Zone",
+        "ward": "Ward/Commune",
+        "port": "Port",
+        "icd": "ICD",
+        "depot": "Depot",
+        "warehouse": "Warehouse"
+      },
+      "status": {
+        "deleted": "Deleted"
+      },
+      "actions": {
+        "edit": "Edit",
+        "delete": "Delete",
+        "restore": "Restore"
+      },
+      "table": {
+        "loading": "Loading...",
+        "noData": "No locations yet"
+      },
+      "pagination": {
+        "locations": "locations"
+      },
+      "modal": {
+        "createTitle": "Add New Location",
+        "editTitle": "Edit: {code}",
+        "basicInfo": "Basic Information",
+        "code": "Code",
+        "codeRequired": "required",
+        "codePlaceholder": "E.g.: KCN_TB, PH_12_TB",
+        "type": "Type",
+        "typeRequired": "required",
+        "name": "Name",
+        "nameRequired": "required",
+        "namePlaceholder": "E.g.: Tan Binh Industrial Zone, Ward 12",
+        "geographicInfo": "Geographic Information",
+        "ward": "Ward/Commune",
+        "wardPlaceholder": "E.g.: Ward 12",
+        "district": "District",
+        "districtPlaceholder": "E.g.: Tan Binh District",
+        "province": "Province/City",
+        "provincePlaceholder": "E.g.: Ho Chi Minh City",
+        "noteSection": "Notes",
+        "notePlaceholder": "Additional notes...",
+        "cancel": "Cancel",
+        "save": "Save",
+        "saving": "Saving..."
+      },
+      "confirmations": {
+        "deleteLocation": "Are you sure you want to delete this location?"
+      },
+      "errors": {
+        "loadFailed": "Load failed",
+        "saveFailed": "Save failed",
+        "deleteFailed": "Delete failed",
+        "restoreFailed": "Restore failed",
+        "codeAndNameRequired": "Code and Name are required."
+      }
+    },
+    "ratesPage": {
+      "title": "Rate Management",
+      "subtitle": "Manage transport rates by route",
+      "addRate": "Add Rate",
+      "stats": {
+        "totalRates": "Total Rates",
+        "active": "Active",
+        "containerPricing": "Container Pricing",
+        "tripPricing": "Trip Pricing",
+        "expiringSoon": "Expiring Soon"
+      },
+      "filters": {
+        "all": "All",
+        "container": "Cont",
+        "trip": "Trip"
+      },
+      "search": {
+        "placeholder": "Search pickup, delivery, customer...",
+        "loading": "Loading...",
+        "rates": "rates"
+      },
+      "columns": {
+        "pickup": "Pickup",
+        "delivery": "Delivery",
+        "km": "Km",
+        "type": "Type",
+        "prices": "Price",
+        "customer": "Customer",
+        "dates": "Effective",
+        "status": "ST",
+        "actions": "Actions"
+      },
+      "pricingTypes": {
+        "container": "Cont",
+        "trip": "Trip"
+      },
+      "customer": {
+        "all": "All"
+      },
+      "dates": {
+        "unlimited": "Unlimited"
+      },
+      "status": {
+        "on": "On",
+        "off": "Off"
+      },
+      "actions": {
+        "duplicate": "Duplicate",
+        "edit": "Edit",
+        "delete": "Delete"
+      },
+      "table": {
+        "loading": "Loading...",
+        "noData": "No rates yet"
+      },
+      "pagination": {
+        "rates": "rates"
+      },
+      "modal": {
+        "createTitle": "Add New Rate",
+        "editTitle": "Edit Rate",
+        "routeInfo": "Route Information",
+        "pickup": "Pickup",
+        "pickupRequired": "required",
+        "selectPickup": "-- Select pickup --",
+        "delivery": "Delivery",
+        "deliveryRequired": "required",
+        "selectDelivery": "-- Select delivery --",
+        "distanceKm": "Distance (km)",
+        "distanceKmPlaceholder": "E.g.: 50",
+        "tollStations": "Toll Stations",
+        "tollStationsPlaceholder": "E.g.: 2",
+        "pricingInfo": "Pricing Information",
+        "pricingType": "Pricing Type",
+        "pricingTypeRequired": "required",
+        "pricingTypeContainer": "By Container (20'/40')",
+        "pricingTypeTrip": "By Trip",
+        "status": "Status",
+        "priceCont20": "Container 20' Price",
+        "priceCont20Placeholder": "E.g.: 3000000",
+        "priceCont40": "Container 40' Price",
+        "priceCont40Placeholder": "E.g.: 4500000",
+        "pricePerTrip": "Price per Trip",
+        "pricePerTripPlaceholder": "E.g.: 5000000",
+        "validityCustomer": "Validity & Customer",
+        "startDate": "Start Date",
+        "startDateRequired": "required",
+        "endDate": "End Date",
+        "applyToCustomers": "Apply to Customers",
+        "allCustomers": "All Customers",
+        "cancel": "Cancel",
+        "save": "Save",
+        "saving": "Saving..."
+      },
+      "searchableSelect": {
+        "select": "-- Select --",
+        "search": "Search...",
+        "noResults": "No results found"
+      },
+      "confirmations": {
+        "deleteRate": "Are you sure you want to delete this rate?"
+      },
+      "errors": {
+        "loadFailed": "Load failed",
+        "saveFailed": "Save failed",
+        "deleteFailed": "Delete failed",
+        "pickupDeliveryRequired": "Pickup and Delivery are required."
+      }
+    },
+    "fuelLogsPage": {
+      "title": "Fuel Tracking",
+      "addButton": "Add",
+      "closeButton": "Close",
+      "downloadTemplate": "Download template",
+      "uploadImage": "Upload Image",
+      "import": "Import",
+      "importing": "Importing...",
+      "filters": {
+        "vehicle": "Vehicle",
+        "driver": "Driver",
+        "paymentStatus": "Payment Status",
+        "fromDate": "From date",
+        "toDate": "To date",
+        "all": "All",
+        "unpaid": "Unpaid",
+        "paid": "Paid"
+      },
+      "form": {
+        "title": "Add new record",
+        "editTitle": "Edit record",
+        "date": "Date",
+        "vehicle": "Vehicle",
+        "selectVehicle": "-- Select vehicle --",
+        "driver": "Driver",
+        "selectDriver": "-- Select driver --",
+        "odometer": "Odometer Km",
+        "actualLiters": "Actual fuel (liters)",
+        "gpsLiters": "GPS fuel (liters)",
+        "unitPrice": "Unit price (VND/liter)",
+        "discountPrice": "Discount price (VND/liter)",
+        "totalAmount": "Total (VND)",
+        "stationName": "Station name",
+        "stationLocation": "Station location",
+        "paymentStatus": "Payment status",
+        "unpaid": "Unpaid",
+        "paid": "Paid",
+        "note": "Note",
+        "create": "Create",
+        "update": "Update",
+        "cancel": "Cancel"
+      },
+      "columns": {
+        "date": "Date",
+        "vehicle": "Vehicle",
+        "driver": "Driver",
+        "odometer": "Km",
+        "liters": "Liters",
+        "gps": "GPS",
+        "difference": "Diff",
+        "unitPrice": "U.Price",
+        "total": "Total",
+        "payment": "Pmt"
+      },
+      "imageUpload": {
+        "title": "Create record from image",
+        "selectImages": "Select fuel images",
+        "uploadHint": "Upload 1-5 images (pump, plate, odometer...)",
+        "addMore": "Add",
+        "analyze": "AI Analyze",
+        "analyzing": "Analyzing...",
+        "analyzeSuccess": "Analysis successful! Please check and fill missing info.",
+        "createRecord": "Create record",
+        "uploading": "Uploading...",
+        "maxImages": "Maximum 5 images",
+        "notImage": "is not an image file",
+        "tooLarge": "is too large (max 10MB)"
+      },
+      "confirmations": {
+        "delete": "Delete this fuel record?"
+      },
+      "errors": {
+        "selectVehicleDriver": "Please select vehicle and driver",
+        "fillRequired": "Please fill all required info: Km, Liters, Unit price",
+        "selectImage": "Please select at least 1 image",
+        "selectExcelFile": "Please select an Excel file (.xlsx or .xls)"
+      },
+      "importResult": {
+        "success": "Import successful!",
+        "imported": "Imported: {count} rows",
+        "skipped": "Skipped: {count} rows",
+        "errors": "Errors"
+      },
+      "pagination": {
+        "records": "records"
+      }
+    },
+    "tripsPage": {
+      "title": "Trips",
+      "subtitle": "Trip list (assign stops, vehicle/driver)",
+      "addTrip": "New Trip",
+      "search": {
+        "placeholder": "Search by trip/shipment/type/status/route..."
+      },
+      "loading": "Loading...",
+      "rows": "rows",
+      "noData": "No data",
+      "columns": {
+        "trip": "Trip",
+        "shipment": "Shipment",
+        "type": "Type",
+        "vehicleDriver": "Vehicle/Driver",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "actions": {
+        "assignVD": "Assign V/D",
+        "shipments": "Shipments"
+      },
+      "tripTypes": {
+        "import": "IMPORT",
+        "export": "EXPORT",
+        "roundtrip": "ROUNDTRIP"
+      },
+      "modal": {
+        "createTitle": "New Trip",
+        "shipmentId": "Shipment ID",
+        "shipmentIdPlaceholder": "paste shipment_id...",
+        "tripType": "Trip type",
+        "routeCode": "Route code",
+        "routeCodePlaceholder": "HP-HY",
+        "distance": "Distance (km)",
+        "distancePlaceholder": "120",
+        "cancel": "Cancel",
+        "create": "Create",
+        "creating": "Creating..."
+      },
+      "assignModal": {
+        "title": "Assign Vehicle & Driver",
+        "tripInfo": "Trip:",
+        "vehicle": "Vehicle",
+        "selectVehicle": "-- Select vehicle --",
+        "driver": "Driver",
+        "selectDriver": "-- Select driver --",
+        "trailer": "Trailer (optional)",
+        "trailerPlaceholder": "Trailer ID or plate",
+        "cancel": "Cancel",
+        "save": "Save",
+        "saving": "Saving..."
+      },
+      "errors": {
+        "loadFailed": "Load failed",
+        "createFailed": "Create failed",
+        "assignFailed": "Assign failed",
+        "shipmentRequired": "shipment_id is required.",
+        "invalidDistance": "distance_km is not valid"
+      }
+    },
+    "shipmentsPage": {
+      "title": "Shipments",
+      "subtitle": "Manage shipments, containers & stops",
+      "addShipment": "New Shipment",
+      "search": {
+        "placeholder": "Search by booking/BL/order..."
+      },
+      "loading": "Loading...",
+      "loadingDetails": "Loading details...",
+      "rows": "rows",
+      "noData": "No data",
+      "columns": {
+        "bookingNo": "Booking No",
+        "blNo": "BL No",
+        "vessel": "Vessel",
+        "fromPort": "From Port",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "status": {
+        "draft": "Draft",
+        "booked": "Booked",
+        "shipped": "Shipped",
+        "delivered": "Delivered"
+      },
+      "actions": {
+        "view": "View"
+      },
+      "modal": {
+        "createTitle": "New Shipment",
+        "shipmentData": "Shipment Data",
+        "formatHint": "Format: ORDER_CODE BOOKING_NO [BL_NO] [VESSEL] [from_port] [requires_empty_return] [free_time]",
+        "placeholder": "TH-ADG-2512-001 BK123456 BL987654 MAERSK true false 14",
+        "cancel": "Cancel",
+        "create": "Create",
+        "creating": "Creating..."
+      },
+      "detailModal": {
+        "title": "Shipment:",
+        "bookingNo": "Booking No",
+        "blNo": "BL No",
+        "vessel": "Vessel",
+        "status": "Status",
+        "fromPort": "From Port",
+        "requiresEmptyReturn": "Requires Empty Return",
+        "freeTimeDays": "Free Time (days)",
+        "yes": "Yes",
+        "no": "No",
+        "containers": "Containers",
+        "noContainers": "No containers",
+        "containerNo": "Container No",
+        "size": "Size",
+        "type": "Type",
+        "sealNo": "Seal No",
+        "stops": "Stops",
+        "noStops": "No stops",
+        "stopType": "Type",
+        "locationId": "Location ID",
+        "plannedTime": "Planned Time",
+        "actualTime": "Actual Time",
+        "close": "Close"
+      },
+      "errors": {
+        "loadFailed": "Load failed",
+        "createFailed": "Create failed",
+        "loadDetailsFailed": "Failed to load shipment details",
+        "enterData": "Please enter shipment data",
+        "formatError": "Format: ORDER_CODE BOOKING_NO [BL_NO] [VESSEL] [from_port] [requires_empty_return] [free_time]",
+        "orderNotFound": "Order code \"{orderCode}\" not found"
+      },
+      "success": {
+        "created": "Shipment created successfully"
+      }
+    },
+    "dispatchPage": {
+      "title": "AI Dispatch Center",
+      "loading": "Loading dispatch data...",
+      "autoMode": "Auto-mode",
+      "errors": {
+        "cannotConnect": "Cannot Connect Backend",
+        "noData": "No Data",
+        "checkBackend": "Please check:",
+        "backendRunning": "1. Backend is running (uvicorn or python -m uvicorn app.main:app)",
+        "databaseMigrated": "2. Database migrated (alembic upgrade head)",
+        "noDispatchData": "No dispatch data yet. You can create sample data to test.",
+        "cannotLoadData": "Cannot load dispatch data",
+        "cannotSeedData": "Cannot create sample data",
+        "cannotSyncGPS": "Cannot sync GPS"
+      },
+      "buttons": {
+        "seedData": "Create sample",
+        "reload": "Reload",
+        "syncAll": "Sync All"
+      },
+      "gps": {
+        "title": "GPS Providers",
+        "notConfigured": "GPS Provider not configured",
+        "configureNow": "Configure now",
+        "manageSettings": "Manage GPS Settings",
+        "vehicles": "vehicles",
+        "notSynced": "Not synced"
+      },
+      "commandBar": {
+        "placeholder": "Enter AI command: 'Find vehicles near District 7', 'Optimize route for vehicle 51C-123', 'Assign order ADG-100 to most available vehicle'...",
+        "execute": "Execute",
+        "processing": "Processing..."
+      },
+      "stats": {
+        "activeVehicles": "Active vehicles",
+        "onTrip": "On trip",
+        "available": "Available",
+        "pendingOrders": "Pending orders",
+        "inTransit": "In transit",
+        "deliveredToday": "Delivered today",
+        "alerts": "Alerts",
+        "aiAutoRate": "AI Auto Rate"
+      },
+      "workStatus": {
+        "onTrip": "On trip",
+        "available": "Available",
+        "loading": "Loading",
+        "unloading": "Unloading",
+        "returning": "Returning",
+        "maintenance": "Maintenance",
+        "offDuty": "Off duty"
+      },
+      "alerts": {
+        "title": "Alerts",
+        "noAlerts": "No alerts",
+        "resolve": "Mark resolved",
+        "vehicle": "Vehicle:"
+      },
+      "unassignedOrders": {
+        "title": "Unassigned",
+        "allAssigned": "All orders assigned",
+        "deadline": "Deadline:"
+      },
+      "vehicleList": {
+        "title": "Vehicle list",
+        "searchPlaceholder": "Search plate, driver...",
+        "noGPSData": "No GPS data yet",
+        "columns": {
+          "status": "Status",
+          "plate": "Plate No",
+          "driver": "Driver",
+          "location": "Location",
+          "speed": "Speed",
+          "updated": "Updated"
+        }
+      },
+      "liveMap": {
+        "title": "Live Map",
+        "integrationHint": "Integrate with Mapbox/Google Maps",
+        "legend": "Legend",
+        "onTrip": "On trip",
+        "available": "Available",
+        "offline": "Off/Offline",
+        "liveOperations": "Live Operations"
+      },
+      "aiActivity": {
+        "title": "AI Activity",
+        "live": "Live",
+        "noActivity": "No activity yet",
+        "autoRate": "AI Auto Rate",
+        "autoRateDesc": "AI automatically handles {rate}% of dispatch decisions"
+      },
+      "aiDecisions": {
+        "title": "AI Decisions",
+        "pendingApproval": "pending approval",
+        "noPending": "No pending decisions",
+        "approve": "Approve",
+        "reject": "Reject",
+        "approved": "approved",
+        "rejected": "rejected"
+      },
+      "time": {
+        "justNow": "Just now",
+        "minutesAgo": "{count} minutes ago",
+        "hoursAgo": "{count} hours ago"
+      }
+    },
+    "customersPage": {
+      "title": "Customer Management",
+      "subtitle": "Manage transport customer list (Master Data)",
+      "addCustomer": "Add Customer",
+      "stats": {
+        "totalCustomers": "Total Customers",
+        "withTaxCode": "With Tax Code",
+        "linkedCRM": "Linked CRM",
+        "active": "Active"
+      },
+      "search": {
+        "placeholder": "Search by code, name, tax code, phone, province/city...",
+        "loading": "Loading...",
+        "customers": "customers"
+      },
+      "columns": {
+        "code": "Code",
+        "name": "Customer Name",
+        "taxCode": "Tax Code",
+        "contact": "Contact",
+        "city": "Province/City",
+        "status": "Status",
+        "updatedAt": "Updated",
+        "actions": "Actions"
+      },
+      "status": {
+        "active": "Active",
+        "inactive": "Inactive",
+        "crm": "CRM"
+      },
+      "actions": {
+        "viewDetails": "View Details",
+        "edit": "Edit"
+      },
+      "table": {
+        "loading": "Loading...",
+        "noData": "No customers yet"
+      },
+      "pagination": {
+        "customers": "customers"
+      },
+      "modal": {
+        "createTitle": "Add New Customer",
+        "editTitle": "Edit: {code}",
+        "quickNote": "This is a quick create form. For full information, please create from CRM or edit later.",
+        "customerCode": "Customer Code",
+        "customerCodePlaceholder": "ADG",
+        "customerCodeRequired": "required",
+        "taxCode": "Tax Code",
+        "taxCodePlaceholder": "010...",
+        "customerName": "Customer Name",
+        "customerNamePlaceholder": "An Duong Group",
+        "customerNameRequired": "required",
+        "cancel": "Cancel",
+        "save": "Save",
+        "saving": "Saving..."
+      },
+      "errors": {
+        "loadFailed": "Load failed",
+        "saveFailed": "Save failed",
+        "codeAndNameRequired": "Code and Name are required."
+      }
+    },
+    "reportsPage": {
+      "title": "Reports Overview",
+      "subtitle": "View detailed reports about business operations",
+      "loading": "Loading...",
+      "tabs": {
+        "fuel": "Fuel Report",
+        "revenue": "Transport Revenue Report",
+        "driverSalary": "Driver Salary Report",
+        "maintenance": "Maintenance Report"
+      },
+      "fuel": {
+        "filters": {
+          "vehicle": "Vehicle",
+          "allVehicles": "All vehicles",
+          "fromDate": "From date",
+          "toDate": "To date"
+        },
+        "summary": {
+          "title": "Fleet Overview",
+          "totalVehicles": "Total Vehicles",
+          "totalDistance": "Total Distance (km)",
+          "totalFuel": "Total Fuel (liters)",
+          "totalCost": "Total Cost (VND)",
+          "avgConsumption": "Avg Consumption (L/100km)",
+          "avgCostPerKm": "Avg Cost (VND/km)"
+        },
+        "details": {
+          "title": "Vehicle Details",
+          "plateNumber": "Plate Number",
+          "distance": "Distance (km)",
+          "fuel": "Fuel (liters)",
+          "cost": "Cost (VND)",
+          "consumption": "Consumption (L/100km)",
+          "costPerKm": "Cost (VND/km)",
+          "refuelCount": "Refuel Count"
+        },
+        "legend": {
+          "good": "Good",
+          "average": "Average",
+          "needsCheck": "Needs Check"
+        },
+        "noData": "No data in this time period"
+      },
+      "revenue": {
+        "title": "Transport Revenue Report",
+        "description": "Revenue statistics from trips, analyzed by route, customer, cargo type",
+        "totalRevenue": "Total Revenue",
+        "tripCount": "Trip Count",
+        "avgRevenuePerTrip": "Avg Revenue/Trip",
+        "developing": "Feature under development",
+        "developingNote": "Will include: Monthly revenue, by route, by customer, trend analysis"
+      },
+      "driverSalary": {
+        "title": "Driver Salary Report",
+        "description": "Monthly driver salary statistics, including base salary, allowances, bonuses, trip count",
+        "totalSalary": "Total Salary",
+        "driverCount": "Driver Count",
+        "avgSalary": "Avg Salary",
+        "bonusAllowance": "Bonus & Allowance",
+        "developing": "Feature under development",
+        "developingNote": "Will include: Base salary, fuel allowance, performance bonus, total income, detailed payroll"
+      },
+      "maintenance": {
+        "title": "Maintenance Report",
+        "description": "Statistics on maintenance costs, periodic maintenance, emergency repairs by vehicle",
+        "totalCost": "Total Cost",
+        "periodicMaintenance": "Periodic Maintenance",
+        "emergencyRepair": "Emergency Repair",
+        "avgCostPerVehicle": "Avg Cost/Vehicle",
+        "developing": "Feature under development",
+        "developingNote": "Will include: Cost by vehicle, by month, maintenance type, supplier, maintenance forecast"
+      }
+    },
+    "maintenanceSchedulesPage": {
+      "title": "Periodic Maintenance Schedule",
+      "subtitle": "Manage maintenance schedules by km and time",
+      "addSchedule": "Add Maintenance Schedule",
+      "columns": {
+        "vehicle": "Vehicle",
+        "maintenanceType": "Maintenance Type",
+        "cycle": "Cycle",
+        "lastService": "Last Service",
+        "nextService": "Next Service",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "maintenanceTypes": {
+        "OIL_CHANGE": "Oil Change",
+        "PERIODIC": "Periodic Maintenance",
+        "TIRE_REPLACEMENT": "Tire Replacement",
+        "BRAKE_SERVICE": "Brake Inspection",
+        "BATTERY_CHECK": "Battery Check",
+        "AIR_FILTER": "Air Filter Replacement",
+        "INSPECTION": "Inspection",
+        "OTHER": "Other"
+      },
+      "intervalTypes": {
+        "MILEAGE": "By km",
+        "TIME": "By time",
+        "BOTH": "Both"
+      },
+      "statusOptions": {
+        "ACTIVE": "Active",
+        "INACTIVE": "Paused"
+      },
+      "alertStatus": {
+        "OK": "Normal",
+        "DUE_SOON": "Due Soon",
+        "OVERDUE": "Overdue"
+      },
+      "modal": {
+        "createTitle": "Add New Maintenance Schedule",
+        "editTitle": "Update Maintenance Schedule",
+        "vehicle": "Vehicle",
+        "selectVehicle": "-- Select vehicle --",
+        "maintenanceType": "Maintenance Type",
+        "cycleBy": "Cycle By",
+        "cycleKm": "Cycle (km)",
+        "cycleDays": "Cycle (days)",
+        "lastServiceDate": "Last Service Date",
+        "lastServiceMileage": "Last Service Mileage",
+        "alertBeforeDays": "Alert Before (days)",
+        "alertBeforeKm": "Alert Before (km)",
+        "description": "Description",
+        "descriptionPlaceholder": "Additional notes...",
+        "status": "Status",
+        "cancel": "Cancel",
+        "saving": "Saving...",
+        "update": "Update",
+        "create": "Create"
+      },
+      "units": {
+        "km": "km",
+        "days": "days"
+      },
+      "noData": "No maintenance schedules yet",
+      "confirmDelete": "Are you sure you want to delete this maintenance schedule?",
+      "errors": {
+        "saveFailed": "Error saving maintenance schedule",
+        "deleteFailed": "Error deleting maintenance schedule"
+      },
+      "tooltips": {
+        "edit": "Edit",
+        "delete": "Delete"
+      }
+    },
+    "maintenanceRecordsPage": {
+      "title": "Maintenance History",
+      "subtitle": "Manage completed maintenance records",
+      "addRecord": "Add Maintenance Record",
+      "searchPlaceholder": "Search plate number, garage, description...",
+      "columns": {
+        "date": "Date",
+        "vehicle": "Vehicle",
+        "maintenanceType": "Maintenance Type",
+        "mileage": "Km",
+        "garage": "Garage",
+        "cost": "Cost",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "maintenanceTypes": {
+        "OIL_CHANGE": "Oil Change",
+        "PERIODIC": "Periodic Maintenance",
+        "TIRE_REPLACEMENT": "Tire Replacement",
+        "BRAKE_SERVICE": "Brake Inspection",
+        "BATTERY_CHECK": "Battery Check",
+        "AIR_FILTER": "Air Filter Replacement",
+        "INSPECTION": "Inspection",
+        "EMERGENCY_REPAIR": "Emergency Repair",
+        "OTHER": "Other"
+      },
+      "itemTypes": {
+        "PARTS": "Parts",
+        "LABOR": "Labor",
+        "MATERIAL": "Material",
+        "OTHER": "Other"
+      },
+      "statusOptions": {
+        "COMPLETED": "Completed",
+        "IN_PROGRESS": "In Progress",
+        "SCHEDULED": "Scheduled"
+      },
+      "itemsCount": "{count} items",
+      "mechanic": "Mechanic: {name}",
+      "modal": {
+        "createTitle": "Add New Maintenance Record",
+        "editTitle": "Update Maintenance Record",
+        "vehicle": "Vehicle",
+        "selectVehicle": "-- Select vehicle --",
+        "linkSchedule": "Link to Schedule",
+        "noLink": "-- No link --",
+        "maintenanceType": "Maintenance Type",
+        "serviceDate": "Service Date",
+        "currentMileage": "Current Mileage",
+        "workDescription": "Work Description",
+        "workDescriptionPlaceholder": "Detailed description of work performed...",
+        "garageInfo": "Garage Information",
+        "garageName": "Garage Name",
+        "garageNamePlaceholder": "Repair facility name",
+        "mechanicName": "Mechanic Name",
+        "mechanicNamePlaceholder": "Technician name",
+        "driverName": "Driver Name",
+        "driverNamePlaceholder": "Driver who brought vehicle",
+        "garageAddress": "Address",
+        "garageAddressPlaceholder": "Garage address",
+        "garagePhone": "Phone",
+        "garagePhonePlaceholder": "Contact phone",
+        "costDetails": "Cost Details",
+        "addItem": "Add Item",
+        "itemType": "Type",
+        "itemName": "Item Name",
+        "itemNamePlaceholder": "Item name",
+        "quantity": "Qty",
+        "unit": "Unit",
+        "unitPrice": "Unit Price",
+        "totalPrice": "Total",
+        "supplier": "Supplier",
+        "supplierPlaceholder": "Supplier name",
+        "partNumber": "Part Number",
+        "partNumberPlaceholder": "Part code",
+        "warrantyMonths": "Warranty (months)",
+        "totalCost": "Total Cost",
+        "notes": "Notes",
+        "notesPlaceholder": "Additional notes...",
+        "status": "Status",
+        "cancel": "Cancel",
+        "saving": "Saving...",
+        "update": "Update",
+        "create": "Create"
+      },
+      "detail": {
+        "title": "Maintenance Record Details",
+        "vehicle": "Vehicle",
+        "serviceDate": "Service Date",
+        "maintenanceType": "Maintenance Type",
+        "mileage": "Mileage",
+        "workDescription": "Work Description",
+        "garageInfo": "Garage Information",
+        "garage": "Garage",
+        "mechanic": "Mechanic",
+        "address": "Address",
+        "phone": "Phone",
+        "costDetails": "Cost Details",
+        "type": "Type",
+        "itemName": "Item Name",
+        "qty": "Qty",
+        "unitPrice": "Unit Price",
+        "total": "Total",
+        "grandTotal": "Grand Total:",
+        "notes": "Notes",
+        "close": "Close"
+      },
+      "noData": "No maintenance records yet",
+      "noSearchResults": "No matching maintenance records found",
+      "confirmDelete": "Are you sure you want to delete this maintenance record?",
+      "errors": {
+        "saveFailed": "Error saving maintenance record",
+        "deleteFailed": "Error deleting maintenance record"
+      },
+      "tooltips": {
+        "view": "View details",
+        "edit": "Edit",
+        "delete": "Delete"
+      }
+    },
+    "gpsSettingsPage": {
+      "title": "GPS Settings",
+      "subtitle": "Configure GPS tracking providers for vehicles",
+      "addProvider": "Add GPS Provider",
+      "searchPlaceholder": "Search providers...",
+      "columns": {
+        "providerName": "Provider Name",
+        "apiEndpoint": "API Endpoint",
+        "status": "Status",
+        "vehicleCount": "Vehicles",
+        "lastSync": "Last Sync",
+        "actions": "Actions"
+      },
+      "status": {
+        "active": "Active",
+        "inactive": "Inactive",
+        "error": "Connection Error"
+      },
+      "providerModal": {
+        "createTitle": "Add New GPS Provider",
+        "editTitle": "Edit GPS Provider",
+        "providerName": "Provider Name",
+        "providerNamePlaceholder": "e.g., Vietmap, Gtrack...",
+        "apiEndpoint": "API Endpoint",
+        "apiEndpointPlaceholder": "https://api.provider.com/v1",
+        "apiKey": "API Key",
+        "apiKeyPlaceholder": "Enter API key",
+        "apiSecret": "API Secret",
+        "apiSecretPlaceholder": "Enter API secret (optional)",
+        "refreshInterval": "Refresh Interval (seconds)",
+        "isActive": "Active",
+        "description": "Description",
+        "descriptionPlaceholder": "Provider description...",
+        "cancel": "Cancel",
+        "saving": "Saving...",
+        "save": "Save",
+        "update": "Update"
+      },
+      "vehicleMappingModal": {
+        "title": "Manage Vehicle Mappings",
+        "subtitle": "for provider",
+        "addMapping": "Add Vehicle Mapping",
+        "columns": {
+          "vehicle": "Vehicle",
+          "deviceId": "Device ID",
+          "simNumber": "SIM Number",
+          "status": "Status",
+          "actions": "Actions"
+        },
+        "addMappingForm": {
+          "title": "Add New Vehicle Mapping",
+          "vehicle": "Select Vehicle",
+          "vehiclePlaceholder": "-- Select vehicle --",
+          "deviceId": "Device ID",
+          "deviceIdPlaceholder": "GPS device identifier",
+          "simNumber": "SIM Number",
+          "simNumberPlaceholder": "SIM card number (optional)",
+          "cancel": "Cancel",
+          "adding": "Adding...",
+          "add": "Add"
+        },
+        "noMappings": "No vehicle mappings for this provider",
+        "close": "Close"
+      },
+      "vehicleStatus": {
+        "connected": "Connected",
+        "disconnected": "Disconnected",
+        "noSignal": "No Signal"
+      },
+      "actions": {
+        "edit": "Edit",
+        "delete": "Delete",
+        "manageVehicles": "Manage Vehicles",
+        "testConnection": "Test Connection",
+        "syncNow": "Sync Now"
+      },
+      "confirmations": {
+        "deleteProvider": "Are you sure you want to delete this GPS provider? This will also remove all vehicle mappings.",
+        "deleteMapping": "Are you sure you want to remove this vehicle mapping?"
+      },
+      "messages": {
+        "providerCreated": "GPS provider added successfully!",
+        "providerUpdated": "GPS provider updated successfully!",
+        "providerDeleted": "GPS provider deleted successfully!",
+        "mappingCreated": "Vehicle mapping added successfully!",
+        "mappingDeleted": "Vehicle mapping removed successfully!",
+        "connectionSuccess": "Connection test successful!",
+        "connectionFailed": "Connection test failed",
+        "syncSuccess": "Sync completed successfully!",
+        "syncFailed": "Sync failed"
+      },
+      "errors": {
+        "loadFailed": "Failed to load GPS providers",
+        "saveFailed": "Failed to save GPS provider",
+        "deleteFailed": "Failed to delete GPS provider",
+        "mappingFailed": "Failed to save vehicle mapping"
+      },
+      "noData": "No GPS providers configured",
+      "summary": {
+        "totalProviders": "Total Providers",
+        "activeProviders": "Active",
+        "totalVehicles": "Tracked Vehicles",
+        "lastUpdated": "Last Updated"
+      }
+    },
+    "driverSalarySettingsPage": {
+      "title": "Driver Salary Settings",
+      "subtitle": "Configure salary calculation rules for drivers",
+      "tabs": {
+        "distanceBrackets": "Distance Brackets",
+        "tripBonuses": "Trip Bonuses",
+        "deductions": "Deductions",
+        "allowances": "Allowances"
+      },
+      "distanceBrackets": {
+        "title": "Salary by Distance (km)",
+        "description": "Set salary rates based on distance traveled",
+        "addBracket": "Add Bracket",
+        "columns": {
+          "fromKm": "From (km)",
+          "toKm": "To (km)",
+          "ratePerKm": "Rate/km (VND)",
+          "fixedAmount": "Fixed Amount",
+          "actions": "Actions"
+        },
+        "modal": {
+          "createTitle": "Add Distance Bracket",
+          "editTitle": "Edit Distance Bracket",
+          "fromKm": "From (km)",
+          "toKm": "To (km)",
+          "toKmHint": "Leave empty for unlimited",
+          "ratePerKm": "Rate per km (VND)",
+          "fixedAmount": "Fixed Amount (VND)",
+          "fixedAmountHint": "Additional fixed amount for this bracket",
+          "cancel": "Cancel",
+          "save": "Save"
+        },
+        "unlimited": "Unlimited",
+        "noBrackets": "No distance brackets configured"
+      },
+      "tripBonuses": {
+        "title": "Trip Bonuses",
+        "description": "Configure bonuses for completed trips",
+        "addBonus": "Add Bonus Rule",
+        "columns": {
+          "tripType": "Trip Type",
+          "routeType": "Route Type",
+          "bonusAmount": "Bonus Amount",
+          "conditions": "Conditions",
+          "actions": "Actions"
+        },
+        "tripTypes": {
+          "LOCAL": "Local",
+          "LONG_DISTANCE": "Long Distance",
+          "OVERNIGHT": "Overnight",
+          "ROUND_TRIP": "Round Trip"
+        },
+        "routeTypes": {
+          "INTRA_CITY": "Intra-city",
+          "INTER_CITY": "Inter-city",
+          "INTER_PROVINCE": "Inter-province"
+        },
+        "modal": {
+          "createTitle": "Add Trip Bonus",
+          "editTitle": "Edit Trip Bonus",
+          "tripType": "Trip Type",
+          "routeType": "Route Type",
+          "bonusAmount": "Bonus Amount (VND)",
+          "minDistance": "Minimum Distance (km)",
+          "minDistanceHint": "Optional: Minimum distance to qualify",
+          "cancel": "Cancel",
+          "save": "Save"
+        },
+        "noBonuses": "No trip bonuses configured"
+      },
+      "deductions": {
+        "title": "Deductions",
+        "description": "Configure automatic deductions",
+        "addDeduction": "Add Deduction Rule",
+        "columns": {
+          "name": "Deduction Name",
+          "type": "Type",
+          "amount": "Amount",
+          "frequency": "Frequency",
+          "actions": "Actions"
+        },
+        "types": {
+          "FIXED": "Fixed Amount",
+          "PERCENTAGE": "Percentage"
+        },
+        "frequencies": {
+          "PER_TRIP": "Per Trip",
+          "MONTHLY": "Monthly",
+          "PER_INCIDENT": "Per Incident"
+        },
+        "noDeductions": "No deduction rules configured"
+      },
+      "allowances": {
+        "title": "Allowances",
+        "description": "Configure additional allowances",
+        "addAllowance": "Add Allowance",
+        "columns": {
+          "name": "Allowance Name",
+          "type": "Type",
+          "amount": "Amount",
+          "conditions": "Conditions",
+          "actions": "Actions"
+        },
+        "types": {
+          "MEAL": "Meal Allowance",
+          "ACCOMMODATION": "Accommodation",
+          "FUEL": "Fuel Allowance",
+          "PHONE": "Phone Allowance",
+          "OTHER": "Other"
+        },
+        "noAllowances": "No allowances configured"
+      },
+      "actions": {
+        "edit": "Edit",
+        "delete": "Delete"
+      },
+      "confirmations": {
+        "deleteBracket": "Are you sure you want to delete this distance bracket?",
+        "deleteBonus": "Are you sure you want to delete this bonus rule?",
+        "deleteDeduction": "Are you sure you want to delete this deduction rule?",
+        "deleteAllowance": "Are you sure you want to delete this allowance?"
+      },
+      "messages": {
+        "saved": "Settings saved successfully!",
+        "deleted": "Deleted successfully!"
+      },
+      "errors": {
+        "loadFailed": "Failed to load salary settings",
+        "saveFailed": "Failed to save settings",
+        "deleteFailed": "Failed to delete"
+      }
+    },
+    "vehicleCostsPage": {
+      "title": "Vehicle Operating Costs",
+      "subtitle": "Track and manage vehicle expenses",
+      "addCost": "Add Cost",
+      "filters": {
+        "vehicle": "Vehicle",
+        "allVehicles": "All Vehicles",
+        "costType": "Cost Type",
+        "allTypes": "All Types",
+        "year": "Year",
+        "month": "Month",
+        "allMonths": "All Months",
+        "paymentStatus": "Payment Status",
+        "allStatuses": "All Statuses"
+      },
+      "months": {
+        "1": "January",
+        "2": "February",
+        "3": "March",
+        "4": "April",
+        "5": "May",
+        "6": "June",
+        "7": "July",
+        "8": "August",
+        "9": "September",
+        "10": "October",
+        "11": "November",
+        "12": "December"
+      },
+      "costTypes": {
+        "FUEL": "Fuel",
+        "MAINTENANCE": "Maintenance",
+        "REPAIR": "Repair",
+        "INSURANCE": "Insurance",
+        "REGISTRATION": "Registration",
+        "TOLL": "Toll Fees",
+        "PARKING": "Parking",
+        "WASHING": "Washing",
+        "TIRE": "Tires",
+        "BATTERY": "Battery",
+        "OTHER": "Other"
+      },
+      "paymentStatuses": {
+        "PAID": "Paid",
+        "PENDING": "Pending",
+        "OVERDUE": "Overdue",
+        "PARTIAL": "Partial"
+      },
+      "columns": {
+        "vehicle": "Vehicle",
+        "costType": "Type",
+        "description": "Description",
+        "amount": "Amount",
+        "date": "Date",
+        "paymentStatus": "Status",
+        "paidDate": "Paid Date",
+        "monthlyAllocation": "Monthly Allocation",
+        "vendor": "Vendor",
+        "actions": "Actions"
+      },
+      "summary": {
+        "title": "Cost Summary",
+        "totalCosts": "Total Costs",
+        "paidAmount": "Paid",
+        "pendingAmount": "Pending",
+        "monthlyAverage": "Monthly Average",
+        "byType": "By Type",
+        "byVehicle": "By Vehicle"
+      },
+      "modal": {
+        "createTitle": "Add New Cost",
+        "editTitle": "Edit Cost",
+        "vehicle": "Vehicle",
+        "vehiclePlaceholder": "-- Select vehicle --",
+        "costType": "Cost Type",
+        "costTypePlaceholder": "-- Select type --",
+        "amount": "Amount (VND)",
+        "date": "Date",
+        "description": "Description",
+        "descriptionPlaceholder": "Cost description...",
+        "vendor": "Vendor/Supplier",
+        "vendorPlaceholder": "Vendor name",
+        "invoiceNumber": "Invoice Number",
+        "invoiceNumberPlaceholder": "Invoice/Receipt number",
+        "paymentStatus": "Payment Status",
+        "paidDate": "Paid Date",
+        "monthlyAllocation": "Monthly Allocation",
+        "monthlyAllocationHint": "Spread cost over multiple months",
+        "allocationMonths": "Number of Months",
+        "notes": "Notes",
+        "notesPlaceholder": "Additional notes...",
+        "attachments": "Attachments",
+        "uploadAttachment": "Upload Files",
+        "cancel": "Cancel",
+        "saving": "Saving...",
+        "save": "Save",
+        "update": "Update"
+      },
+      "actions": {
+        "edit": "Edit",
+        "delete": "Delete",
+        "markPaid": "Mark as Paid",
+        "viewDetails": "View Details",
+        "downloadInvoice": "Download Invoice"
+      },
+      "confirmations": {
+        "delete": "Are you sure you want to delete this cost record?",
+        "markPaid": "Mark this cost as paid?"
+      },
+      "messages": {
+        "created": "Cost record added successfully!",
+        "updated": "Cost record updated successfully!",
+        "deleted": "Cost record deleted successfully!",
+        "markedPaid": "Marked as paid!"
+      },
+      "errors": {
+        "loadFailed": "Failed to load cost records",
+        "saveFailed": "Failed to save cost record",
+        "deleteFailed": "Failed to delete cost record"
+      },
+      "noData": "No cost records found",
+      "noSearchResults": "No matching cost records found"
+    },
+    "advancePaymentsPage": {
+      "title": "Advance Payment Management",
+      "subtitle": "Track driver advance payments and deductions",
+      "addPayment": "Add Advance Payment",
+      "filters": {
+        "driver": "Driver",
+        "allDrivers": "All Drivers",
+        "year": "Year",
+        "month": "Month",
+        "allMonths": "All Months",
+        "status": "Status",
+        "allStatuses": "All",
+        "notDeducted": "Not Deducted",
+        "deducted": "Deducted"
+      },
+      "columns": {
+        "driver": "Driver",
+        "amount": "Amount",
+        "paymentDate": "Payment Date",
+        "note": "Note",
+        "status": "Status",
+        "deductedPeriod": "Deducted Period",
+        "actions": "Actions"
+      },
+      "status": {
+        "deducted": "Deducted",
+        "notDeducted": "Not Deducted"
+      },
+      "summary": {
+        "totalAdvance": "Total Advances",
+        "totalDeducted": "Total Deducted",
+        "totalPending": "Pending Deduction"
+      },
+      "modal": {
+        "createTitle": "Add New Advance Payment",
+        "editTitle": "Edit Advance Payment",
+        "driver": "Driver",
+        "driverPlaceholder": "-- Select driver --",
+        "amount": "Amount (VND)",
+        "paymentDate": "Payment Date",
+        "note": "Note",
+        "notePlaceholder": "Payment note...",
+        "cancel": "Cancel",
+        "saving": "Saving...",
+        "create": "Create",
+        "update": "Update"
+      },
+      "actions": {
+        "edit": "Edit",
+        "delete": "Delete",
+        "markDeducted": "Mark as Deducted"
+      },
+      "confirmations": {
+        "delete": "Are you sure you want to delete this advance payment?",
+        "markDeducted": "Mark this advance as deducted from salary?"
+      },
+      "messages": {
+        "created": "Advance payment added successfully!",
+        "updated": "Advance payment updated successfully!",
+        "deleted": "Advance payment deleted successfully!",
+        "markedDeducted": "Marked as deducted!"
+      },
+      "errors": {
+        "loadFailed": "Failed to load advance payments",
+        "saveFailed": "Failed to save advance payment",
+        "deleteFailed": "Failed to delete"
+      },
+      "noData": "No advance payment records"
     }
   },
   "crm": {
@@ -1033,7 +3588,234 @@
     "salesPipeline": "Sales Pipeline",
     "revenueAnalysis": "Revenue Analysis",
     "customerAnalysis": "Customer Analysis",
-    "salesPerformance": "Sales Performance"
+    "salesPerformance": "Sales Performance",
+    "dashboard": {
+      "title": "CRM Dashboard",
+      "subtitle": "Customer and sales management",
+      "newLead": "New Lead",
+      "newCustomer": "New Customer",
+      "customers": "Customers",
+      "activeCustomers": "Active",
+      "leadsCount": "Leads",
+      "new": "New",
+      "qualified": "Qualified",
+      "openOpportunities": "Open Opportunities",
+      "value": "Value",
+      "wonThisMonth": "Won This Month",
+      "salesPipeline": "Sales Pipeline",
+      "viewAll": "View All",
+      "totalPipelineValue": "Total Pipeline Value",
+      "weightedPipelineValue": "Weighted Pipeline Value",
+      "noPipelineData": "No pipeline data",
+      "attentionNeeded": "Attention Needed",
+      "overdueActivities": "Overdue Activities",
+      "activitiesToday": "Activities Today",
+      "pendingQuotes": "Pending Quotes",
+      "noAttentionNeeded": "No attention needed",
+      "quickActions": "Quick Actions",
+      "contact": "Contacts",
+      "opportunity": "Opportunities",
+      "quote": "Quotes",
+      "activity": "Activities",
+      "recentActivities": "Recent Activities",
+      "noActivities": "No activities yet",
+      "completed": "Completed",
+      "planned": "Planned",
+      "stages": {
+        "qualification": "Qualification",
+        "needsAnalysis": "Needs Analysis",
+        "proposal": "Proposal",
+        "negotiation": "Negotiation",
+        "closedWon": "Closed Won",
+        "closedLost": "Closed Lost"
+      },
+      "activityTypes": {
+        "call": "Call",
+        "email": "Email",
+        "meeting": "Meeting",
+        "task": "Task",
+        "note": "Note",
+        "visit": "Visit",
+        "demo": "Demo",
+        "followUp": "Follow-up"
+      }
+    },
+    "leadsPage": {
+      "title": "Lead Management",
+      "subtitle": "Manage and track potential customers",
+      "addLead": "Add Lead",
+      "searchPlaceholder": "Search leads...",
+      "filters": {
+        "allStatus": "All Status",
+        "allSource": "All Sources"
+      },
+      "columns": {
+        "name": "Name",
+        "company": "Company",
+        "contact": "Contact",
+        "source": "Source",
+        "status": "Status",
+        "value": "Value",
+        "createdAt": "Created",
+        "actions": "Actions"
+      },
+      "status": {
+        "NEW": "New",
+        "CONTACTED": "Contacted",
+        "QUALIFIED": "Qualified",
+        "UNQUALIFIED": "Unqualified",
+        "CONVERTED": "Converted",
+        "LOST": "Lost"
+      },
+      "source": {
+        "WEBSITE": "Website",
+        "REFERRAL": "Referral",
+        "COLD_CALL": "Cold Call",
+        "SOCIAL_MEDIA": "Social Media",
+        "TRADE_SHOW": "Trade Show",
+        "ADVERTISEMENT": "Advertisement",
+        "EMAIL_CAMPAIGN": "Email Campaign",
+        "PARTNER": "Partner",
+        "OTHER": "Other"
+      },
+      "actions": {
+        "view": "View",
+        "edit": "Edit",
+        "delete": "Delete",
+        "convert": "Convert to Opportunity"
+      },
+      "convertModal": {
+        "title": "Convert Lead to Opportunity",
+        "confirm": "Are you sure you want to convert this lead to opportunity?",
+        "cancel": "Cancel",
+        "convert": "Convert"
+      },
+      "deleteModal": {
+        "title": "Delete Lead",
+        "confirm": "Are you sure you want to delete this lead?",
+        "cancel": "Cancel",
+        "delete": "Delete"
+      },
+      "noData": "No leads found",
+      "totalLeads": "Total"
+    },
+    "opportunitiesPage": {
+      "title": "Opportunity Management",
+      "subtitle": "Track sales opportunities",
+      "addOpportunity": "Add Opportunity",
+      "searchPlaceholder": "Search opportunities...",
+      "filters": {
+        "allStages": "All Stages"
+      },
+      "columns": {
+        "name": "Opportunity Name",
+        "account": "Account",
+        "contact": "Contact",
+        "stage": "Stage",
+        "probability": "Probability",
+        "amount": "Amount",
+        "closeDate": "Expected Close",
+        "actions": "Actions"
+      },
+      "stages": {
+        "QUALIFICATION": "Qualification",
+        "NEEDS_ANALYSIS": "Needs Analysis",
+        "PROPOSAL": "Proposal",
+        "NEGOTIATION": "Negotiation",
+        "CLOSED_WON": "Closed Won",
+        "CLOSED_LOST": "Closed Lost"
+      },
+      "actions": {
+        "view": "View",
+        "edit": "Edit",
+        "delete": "Delete",
+        "closeWon": "Close Won",
+        "closeLost": "Close Lost"
+      },
+      "closeModal": {
+        "titleWon": "Close as Won",
+        "titleLost": "Close as Lost",
+        "confirmWon": "Mark this opportunity as won?",
+        "confirmLost": "Mark this opportunity as lost?",
+        "cancel": "Cancel",
+        "confirm": "Confirm"
+      },
+      "deleteModal": {
+        "title": "Delete Opportunity",
+        "confirm": "Are you sure you want to delete this opportunity?",
+        "cancel": "Cancel",
+        "delete": "Delete"
+      },
+      "noData": "No opportunities found",
+      "errors": {
+        "deleteFailed": "Cannot delete this opportunity"
+      }
+    },
+    "quotesPage": {
+      "title": "Quotation Management",
+      "subtitle": "Create and manage quotes",
+      "addQuote": "Add Quote",
+      "searchPlaceholder": "Search quotes..."
+    },
+    "accountsPage": {
+      "title": "Account Management",
+      "subtitle": "Manage customer accounts",
+      "addAccount": "Add Account",
+      "searchPlaceholder": "Search accounts..."
+    },
+    "contactsPage": {
+      "title": "Contact Management",
+      "subtitle": "Manage customer contacts",
+      "addContact": "Add Contact",
+      "searchPlaceholder": "Search contacts..."
+    },
+    "activitiesPage": {
+      "title": "Activities",
+      "subtitle": "Track all CRM activities"
+    },
+    "contractsPage": {
+      "title": "Contracts",
+      "subtitle": "Manage sales contracts"
+    },
+    "salesOrdersPage": {
+      "title": "Sales Orders",
+      "subtitle": "Manage sales orders"
+    },
+    "customerGroupsPage": {
+      "title": "Customer Groups",
+      "subtitle": "Manage customer groups"
+    },
+    "callsPage": {
+      "title": "Call Log",
+      "subtitle": "Track customer calls"
+    },
+    "emailsPage": {
+      "title": "Email Log",
+      "subtitle": "Track customer emails"
+    },
+    "messagesPage": {
+      "title": "Messages",
+      "subtitle": "Track SMS and messages"
+    },
+    "chatPage": {
+      "title": "Chat Inbox",
+      "subtitle": "Customer chat communications"
+    },
+    "reportsPage": {
+      "title": "CRM Reports",
+      "revenue": {
+        "title": "Revenue Analysis"
+      },
+      "customers": {
+        "title": "Customer Analysis"
+      },
+      "pipeline": {
+        "title": "Sales Pipeline"
+      },
+      "performance": {
+        "title": "Sales Performance"
+      }
+    }
   },
   "accounting": {
     "chartOfAccounts": "Chart of Accounts",
@@ -1055,7 +3837,476 @@
     "trialBalance": "Trial Balance",
     "profitLoss": "Profit & Loss",
     "balanceSheet": "Balance Sheet",
-    "cashFlow": "Cash Flow"
+    "cashFlow": "Cash Flow",
+    "dashboard": {
+      "title": "Accounting",
+      "subtitle": "Financial accounting management according to VAS standards",
+      "seedData": "Generate Sample Data",
+      "seeding": "Generating...",
+      "seedConfirm": "Are you sure you want to generate sample data for Accounting?",
+      "seedSuccess": "Sample data generated successfully! Please refresh the page.",
+      "seedError": "Unable to generate sample data",
+      "accountsReceivable": "Accounts Receivable",
+      "accountsPayable": "Accounts Payable",
+      "bankBalance": "Bank Balance",
+      "fixedAssetsCount": "Fixed Assets",
+      "assets": "assets",
+      "quickLinks": {
+        "chartOfAccounts": "Chart of Accounts",
+        "chartOfAccountsDesc": "Manage accounting chart according to VAS",
+        "journalEntries": "Journal Entries",
+        "journalEntriesDesc": "Create and manage journal entries",
+        "accountsReceivable": "Accounts Receivable",
+        "accountsReceivableDesc": "Manage invoices and customer payments",
+        "accountsPayable": "Accounts Payable",
+        "accountsPayableDesc": "Manage invoices and vendor payments",
+        "banking": "Banking & Cash",
+        "bankingDesc": "Manage bank accounts and transactions",
+        "fixedAssets": "Fixed Assets",
+        "fixedAssetsDesc": "Manage assets and depreciation",
+        "tax": "Tax",
+        "taxDesc": "Manage VAT, PIT, CIT",
+        "reports": "Financial Reports",
+        "reportsDesc": "Balance Sheet, Income Statement, Cash Flow"
+      },
+      "pendingTasks": "Pending Tasks",
+      "pendingInvoices": "Pending Invoices",
+      "invoices": "invoices",
+      "overdueReceivable": "Overdue Receivable",
+      "paymentsDue": "Payments Due",
+      "view": "View",
+      "quickActions": "Quick Actions",
+      "createEntry": "Create Entry",
+      "createInvoice": "Create Invoice",
+      "recordTransaction": "Record Transaction",
+      "createVoucher": "Create Voucher"
+    },
+    "chartOfAccountsPage": {
+      "title": "Chart of Accounts",
+      "subtitle": "Account categories according to VAS standards",
+      "fiscalYears": "Fiscal Years",
+      "addAccount": "Add Account",
+      "searchPlaceholder": "Search by code or account name...",
+      "allTypes": "All types",
+      "allStatuses": "All statuses",
+      "activeStatus": "Active",
+      "inactiveStatus": "Inactive",
+      "tree": "Tree",
+      "list": "List",
+      "columns": {
+        "accountCode": "Account Code",
+        "accountName": "Account Name",
+        "type": "Type",
+        "nature": "Nature",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "classification": {
+        "ASSET": "Asset",
+        "LIABILITY": "Liability",
+        "EQUITY": "Equity",
+        "REVENUE": "Revenue",
+        "EXPENSE": "Expense",
+        "CONTRA": "Adjustment"
+      },
+      "nature": {
+        "DEBIT": "Debit",
+        "CREDIT": "Credit",
+        "BOTH": "Debit/Credit"
+      },
+      "allowPosting": "Allow posting",
+      "loading": "Loading...",
+      "noAccounts": "No accounts found",
+      "pagination": {
+        "showing": "Showing",
+        "of": "of",
+        "accounts": "accounts",
+        "page": "Page"
+      },
+      "deleteModal": {
+        "title": "Confirm Delete",
+        "message": "Are you sure you want to deactivate account",
+        "cancel": "Cancel",
+        "delete": "Delete"
+      },
+      "errors": {
+        "cannotDelete": "Cannot delete this account"
+      },
+      "tooltips": {
+        "edit": "Edit",
+        "delete": "Delete"
+      }
+    },
+    "journalEntriesPage": {
+      "title": "Journal Entries",
+      "subtitle": "Manage accounting entries",
+      "journals": "Journals",
+      "createEntry": "Create Entry",
+      "searchPlaceholder": "Search by entry number, description...",
+      "allJournals": "All journals",
+      "allStatuses": "All statuses",
+      "columns": {
+        "entryNumber": "Entry Number",
+        "date": "Date",
+        "description": "Description",
+        "debit": "Debit",
+        "credit": "Credit",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "status": {
+        "DRAFT": "Draft",
+        "PENDING": "Pending",
+        "POSTED": "Posted",
+        "CANCELLED": "Cancelled",
+        "REVERSED": "Reversed"
+      },
+      "loading": "Loading...",
+      "noEntries": "No entries found",
+      "pagination": {
+        "showing": "Showing",
+        "of": "of",
+        "entries": "entries",
+        "display": "Display",
+        "rows": "rows",
+        "page": "Page"
+      },
+      "actions": {
+        "view": "View details",
+        "edit": "Edit",
+        "post": "Post",
+        "reverse": "Reverse",
+        "delete": "Delete"
+      },
+      "confirmPost": "Are you sure you want to post entry {entryNumber}?",
+      "confirmReverse": "Are you sure you want to reverse entry {entryNumber}?",
+      "errors": {
+        "cannotPost": "Cannot post this entry",
+        "cannotReverse": "Cannot reverse this entry",
+        "cannotDelete": "Cannot delete this entry"
+      },
+      "deleteModal": {
+        "title": "Confirm Delete",
+        "message": "Are you sure you want to delete entry",
+        "warning": "This action cannot be undone.",
+        "cancel": "Cancel",
+        "delete": "Delete",
+        "deleting": "Deleting..."
+      }
+    },
+    "accountsReceivablePage": {
+      "title": "Accounts Receivable",
+      "subtitle": "Manage invoices and customer payments",
+      "receipts": "Receipts",
+      "createInvoice": "Create Invoice",
+      "searchPlaceholder": "Search by invoice number...",
+      "allStatuses": "All statuses",
+      "overdueOnly": "Show overdue only",
+      "aging": {
+        "current": "Current",
+        "days1_30": "1-30 days",
+        "days31_60": "31-60 days",
+        "days61_90": "61-90 days",
+        "over90": "> 90 days",
+        "totalReceivable": "Total Receivable"
+      },
+      "columns": {
+        "invoiceNumber": "Invoice Number",
+        "invoiceDate": "Invoice Date",
+        "dueDate": "Due Date",
+        "totalAmount": "Total",
+        "paidAmount": "Paid",
+        "balanceAmount": "Balance",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "status": {
+        "DRAFT": "Draft",
+        "SENT": "Sent",
+        "PARTIAL": "Partial",
+        "PAID": "Paid",
+        "CANCELLED": "Cancelled",
+        "OVERDUE": "Overdue"
+      },
+      "loading": "Loading...",
+      "noInvoices": "No invoices found",
+      "pagination": {
+        "showing": "Showing",
+        "of": "of",
+        "invoices": "invoices",
+        "page": "Page"
+      },
+      "actions": {
+        "view": "View details",
+        "send": "Send invoice",
+        "recordPayment": "Record payment"
+      }
+    },
+    "accountsPayablePage": {
+      "title": "Accounts Payable",
+      "subtitle": "Manage invoices and vendor payments",
+      "vouchers": "Vouchers",
+      "createInvoice": "Enter Invoice",
+      "searchPlaceholder": "Search by invoice number...",
+      "allStatuses": "All statuses",
+      "overdueOnly": "Show overdue only",
+      "aging": {
+        "current": "Current",
+        "days1_30": "1-30 days",
+        "days31_60": "31-60 days",
+        "days61_90": "61-90 days",
+        "over90": "> 90 days",
+        "totalPayable": "Total Payable"
+      },
+      "columns": {
+        "internalInvoice": "Internal Invoice",
+        "vendorInvoice": "Vendor Invoice",
+        "invoiceDate": "Invoice Date",
+        "dueDate": "Due Date",
+        "totalAmount": "Total",
+        "paidAmount": "Paid",
+        "balanceAmount": "Balance",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "status": {
+        "DRAFT": "Draft",
+        "APPROVED": "Approved",
+        "PARTIAL": "Partial",
+        "PAID": "Paid",
+        "CANCELLED": "Cancelled"
+      },
+      "loading": "Loading...",
+      "noInvoices": "No invoices found",
+      "pagination": {
+        "showing": "Showing",
+        "of": "of",
+        "invoices": "invoices",
+        "page": "Page"
+      },
+      "actions": {
+        "view": "View details",
+        "approve": "Approve",
+        "createVoucher": "Create voucher"
+      },
+      "confirmApprove": "Approve invoice {invoiceNumber}?",
+      "errors": {
+        "cannotApprove": "Cannot approve this invoice"
+      }
+    },
+    "bankingPage": {
+      "title": "Banking & Cash",
+      "subtitle": "Manage bank accounts and transactions",
+      "reconciliation": "Reconciliation",
+      "addAccount": "Add Account",
+      "accounts": "Accounts",
+      "noAccounts": "No accounts yet",
+      "noBankAccount": "No bank account",
+      "noBankAccountHint": "Add a bank account to start managing transactions",
+      "currentBalance": "Current Balance",
+      "accountType": {
+        "CHECKING": "Checking",
+        "SAVINGS": "Savings",
+        "CASH": "Cash",
+        "CREDIT": "Credit"
+      },
+      "transactionType": {
+        "DEPOSIT": "Deposit",
+        "WITHDRAWAL": "Withdrawal",
+        "TRANSFER_IN": "Transfer In",
+        "TRANSFER_OUT": "Transfer Out",
+        "FEE": "Fee",
+        "INTEREST": "Interest"
+      },
+      "status": {
+        "ACTIVE": "Active",
+        "INACTIVE": "Inactive",
+        "FROZEN": "Frozen",
+        "CLOSED": "Closed",
+        "PENDING": "Pending",
+        "CONFIRMED": "Confirmed"
+      },
+      "quickActions": {
+        "receive": "Receive",
+        "pay": "Pay",
+        "transfer": "Transfer",
+        "edit": "Edit"
+      },
+      "recentTransactions": "Recent Transactions",
+      "viewAll": "View All",
+      "noTransactions": "No transactions yet",
+      "balance": "Balance",
+      "transactions": "transactions"
+    },
+    "fixedAssetsPage": {
+      "title": "Fixed Assets",
+      "subtitle": "Manage assets and depreciation",
+      "runDepreciation": "Run Depreciation",
+      "categories": "Categories",
+      "addAsset": "Add Asset",
+      "searchPlaceholder": "Search by code, name, serial...",
+      "allStatuses": "All statuses",
+      "summary": {
+        "totalAssets": "Total Assets",
+        "acquisitionCost": "Acquisition Cost",
+        "accumulatedDepreciation": "Accumulated Depreciation",
+        "bookValue": "Book Value"
+      },
+      "columns": {
+        "assetCode": "Asset Code",
+        "assetName": "Asset Name",
+        "acquisitionDate": "Acquisition Date",
+        "acquisitionCost": "Acquisition Cost",
+        "accumulatedDepreciation": "Accum. Depr.",
+        "bookValue": "Book Value",
+        "depreciationMethod": "Depr. Method",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "status": {
+        "ACTIVE": "In Use",
+        "INACTIVE": "Suspended",
+        "UNDER_MAINTENANCE": "Under Maintenance",
+        "FULLY_DEPRECIATED": "Fully Depreciated",
+        "DISPOSED": "Disposed"
+      },
+      "depreciationMethod": {
+        "STRAIGHT_LINE": "Straight Line",
+        "DECLINING": "Declining Balance",
+        "DOUBLE_DECLINING": "Double Declining",
+        "UNITS_OF_PRODUCTION": "Units of Production",
+        "SUM_OF_YEARS": "Sum of Years"
+      },
+      "months": "months",
+      "location": "Location",
+      "loading": "Loading...",
+      "noAssets": "No assets found",
+      "pagination": {
+        "showing": "Showing",
+        "of": "of",
+        "assets": "assets",
+        "page": "Page"
+      },
+      "actions": {
+        "view": "View details",
+        "edit": "Edit"
+      }
+    },
+    "taxPage": {
+      "title": "Tax Management",
+      "subtitle": "VAT, PIT, CIT and other taxes",
+      "year": "Year",
+      "menu": {
+        "vat": {
+          "title": "VAT",
+          "description": "Manage input/output VAT"
+        },
+        "vatDeclarations": {
+          "title": "VAT Declarations",
+          "description": "Monthly/quarterly VAT declarations"
+        },
+        "pit": {
+          "title": "PIT",
+          "description": "Personal income tax"
+        },
+        "cit": {
+          "title": "CIT",
+          "description": "Corporate income tax"
+        },
+        "withholding": {
+          "title": "Withholding Tax",
+          "description": "Contractor tax and deductions"
+        },
+        "rates": {
+          "title": "Tax Rates",
+          "description": "Configure tax rates"
+        }
+      },
+      "summary": {
+        "inputVat": "Input VAT",
+        "outputVat": "Output VAT",
+        "vatPayable": "VAT Payable",
+        "vatRefundable": "VAT Refundable",
+        "withholdingTax": "Withholding Tax"
+      },
+      "recentDeclarations": "Recent Declarations",
+      "viewAll": "View All",
+      "declaration": {
+        "vatMonth": "VAT Declaration Month {month}",
+        "dueDate": "Due Date",
+        "submittedDate": "Submitted",
+        "notSubmitted": "Not Submitted",
+        "submitted": "Submitted"
+      },
+      "upcomingDeadlines": "Upcoming Deadlines",
+      "daysLeft": "days left",
+      "pitSettlement": "PIT Settlement Year {year}",
+      "citSettlement": "CIT Settlement Year {year}"
+    },
+    "reportsPage": {
+      "title": "Accounting Reports",
+      "subtitle": "Financial and management reports",
+      "reports": {
+        "trialBalance": {
+          "title": "Trial Balance",
+          "description": "Trial Balance - Summary of account balances by period"
+        },
+        "pnl": {
+          "title": "Profit & Loss",
+          "description": "Profit & Loss / Income Statement"
+        },
+        "balanceSheet": {
+          "title": "Balance Sheet",
+          "description": "Balance Sheet - Financial position at a point in time"
+        },
+        "cashFlow": {
+          "title": "Cash Flow Statement",
+          "description": "Cash Flow Statement - Cash inflows/outflows by activity"
+        },
+        "generalLedger": {
+          "title": "General Ledger",
+          "description": "General Ledger - Transaction details by account"
+        },
+        "journal": {
+          "title": "General Journal",
+          "description": "General Journal - All entries in chronological order"
+        },
+        "arAging": {
+          "title": "AR Aging Report",
+          "description": "AR Aging Report - Receivables aging analysis"
+        },
+        "apAging": {
+          "title": "AP Aging Report",
+          "description": "AP Aging Report - Payables aging analysis"
+        },
+        "revenue": {
+          "title": "Revenue Report",
+          "description": "Revenue Report - Multi-dimensional revenue analysis"
+        },
+        "expenses": {
+          "title": "Expense Report",
+          "description": "Expense Report - Expense analysis by category"
+        }
+      },
+      "quickPeriod": "Quick Period Selection",
+      "periods": {
+        "thisMonth": "This Month",
+        "lastMonth": "Last Month",
+        "thisQuarter": "This Quarter",
+        "lastQuarter": "Last Quarter",
+        "thisYear": "This Year",
+        "lastYear": "Last Year"
+      },
+      "schedules": {
+        "title": "Report Schedules",
+        "settings": "Schedule Settings",
+        "monthly": "Monthly - Day {day}",
+        "quarterly": "Quarterly - Day {day}",
+        "weekly": "Weekly - {day}",
+        "active": "Active",
+        "paused": "Paused"
+      }
+    }
   },
   "wms": {
     "stockOverview": "Stock Overview",
@@ -1076,7 +4327,35 @@
     "inventoryReport": "Inventory Report",
     "stockMovement": "Stock Movement",
     "agingReport": "Aging Report",
-    "valuationReport": "Valuation Report"
+    "valuationReport": "Valuation Report",
+    "dashboard": {
+      "title": "WMS Dashboard",
+      "subtitle": "Warehouse Management",
+      "goodsReceiptBtn": "Goods Receipt",
+      "shippingBtn": "Shipping",
+      "productsCount": "Products",
+      "warehouses": "Warehouses",
+      "stockValue": "Stock Value",
+      "pendingReceipts": "Pending Receipts",
+      "pendingShipments": "Pending Shipments",
+      "lowStock": "Low Stock",
+      "recentMovements": "Recent Stock Movements",
+      "viewAll": "View All",
+      "lowStockAlerts": "Low Stock Alerts",
+      "belowMinimum": "Below minimum",
+      "stock": "Stock",
+      "transfers": "Transfers",
+      "reports": "Reports",
+      "movementTypes": {
+        "in": "In",
+        "out": "Out",
+        "transfer": "Transfer"
+      },
+      "timeAgo": {
+        "minutes": "minutes ago",
+        "hours": "hours ago"
+      }
+    }
   },
   "fms": {
     "shipments": "Shipments",
@@ -1086,8 +4365,8 @@
     "containers": "Containers",
     "billOfLading": "Bill of Lading",
     "airwayBills": "Airway Bills",
-    "customsDeclarations": "Customs Declarations",
-    "customsPartners": "Customs Partners",
+    "customsDeclarations": "Declarations",
+    "customsPartners": "Partners",
     "hsCodes": "HS Codes",
     "parsingInstructions": "AI Parse Instructions",
     "agentsPartners": "Agents & Partners",
@@ -1096,8 +4375,8 @@
     "profitAnalysis": "Profit Analysis",
     "agentPerformance": "Agent Performance",
     "hsCodesPage": {
-      "title": "Internal HS Code Catalog",
-      "subtitle": "Manage company product codes and HS codes",
+      "title": "HS Codes",
+      "subtitle": "Internal product codes and HS codes catalog",
       "addProduct": "Add Product",
       "importExcel": "Import Excel",
       "exportExcel": "Export Excel",
@@ -1196,10 +4475,10 @@
       }
     },
     "customsPage": {
-      "title": "Customs Declarations",
-      "subtitle": "Manage import/export customs declarations",
-      "createNew": "Create New Declaration",
-      "importFromDocs": "Import from Documents",
+      "title": "Declarations",
+      "subtitle": "Manage import/export declarations",
+      "createNew": "New",
+      "importFromDocs": "Import File",
       "searchPlaceholder": "Search declaration number, company...",
       "filters": {
         "allTypes": "All Types",
@@ -1222,14 +4501,14 @@
       },
       "columns": {
         "declarationNo": "Declaration No.",
+        "invoiceNo": "Invoice No.",
+        "blNo": "B/L No.",
         "type": "Type",
-        "trader": "Trader",
-        "customsOffice": "Customs Office",
-        "value": "Value",
-        "taxes": "Taxes",
+        "exporter": "Exporter",
+        "trader": "Importer",
+        "registeredDate": "Reg. Date",
         "status": "Status",
-        "actions": "Actions",
-        "invoiceNo": "Invoice"
+        "actions": "Actions"
       },
       "noData": "No declarations yet",
       "noDataHint": "Create a customs declaration to get started",
@@ -1247,11 +4526,14 @@
         "view": "View Details",
         "edit": "Edit",
         "submit": "Submit Declaration",
-        "exportXml": "Export XML"
+        "exportXml": "Export XML",
+        "delete": "Delete"
       },
       "confirmSubmit": "Are you sure you want to submit this declaration?",
+      "confirmDelete": "Are you sure you want to delete this declaration?",
       "submitSuccess": "Declaration submitted successfully!",
       "submitError": "Unable to submit declaration",
+      "deleteError": "Unable to delete declaration",
       "exportError": "Unable to export XML",
       "modal": {
         "createTitle": "Create New Customs Declaration",
@@ -1821,5 +5103,157 @@
     "approve": "Are you sure you want to approve?",
     "reject": "Are you sure you want to reject?",
     "cancel": "Are you sure you want to cancel?"
+  },
+  "myTasks": {
+    "title": "My Tasks",
+    "subtitle": "Manage all tasks to be done",
+    "refresh": "Refresh",
+    "createTask": "Create task",
+    "searchPlaceholder": "Search tasks...",
+    "allPriorities": "All priorities",
+    "retry": "Try again",
+    "empty": {
+      "noTasks": "No tasks",
+      "createNew": "Create new task"
+    },
+    "tabs": {
+      "active": "To Do",
+      "pending": "Not Started",
+      "approval": "Need Approval",
+      "watching": "Watching",
+      "completed": "Done",
+      "all": "All"
+    },
+    "scopes": {
+      "all": "All",
+      "company": "Company",
+      "personal": "Personal"
+    },
+    "priorities": {
+      "urgent": "Urgent",
+      "high": "High",
+      "normal": "Normal",
+      "low": "Low"
+    },
+    "statuses": {
+      "pending": "Not Started",
+      "inProgress": "In Progress",
+      "completed": "Completed",
+      "cancelled": "Cancelled"
+    },
+    "taskTypes": {
+      "action": "Action Required",
+      "approval": "Approval Required",
+      "review": "Watching",
+      "notification": "Notification"
+    },
+    "counts": {
+      "active": "Active",
+      "pending": "Not Started",
+      "inProgress": "In Progress",
+      "completed": "Done",
+      "overdue": "Overdue",
+      "needApproval": "Need Approval",
+      "watching": "Watching"
+    },
+    "groups": {
+      "overdue": "Overdue",
+      "today": "Today",
+      "tomorrow": "Tomorrow",
+      "thisWeek": "This Week",
+      "later": "Later",
+      "noDeadline": "No Deadline"
+    },
+    "dates": {
+      "today": "Today",
+      "tomorrow": "Tomorrow",
+      "yesterday": "Yesterday",
+      "overdueDays": "Overdue {days} days"
+    },
+    "actions": {
+      "edit": "Edit",
+      "approve": "Approve",
+      "reject": "Reject",
+      "start": "Start",
+      "complete": "Complete",
+      "enterRejectReason": "Enter rejection reason:"
+    },
+    "badges": {
+      "personal": "Personal",
+      "needApproval": "Need Approval"
+    },
+    "toasts": {
+      "taskStarted": "Task started",
+      "taskCompleted": "Task completed",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "error": "Error"
+    },
+    "sources": {
+      "manual": "Manual",
+      "tms": "TMS",
+      "hrm": "HRM",
+      "crm": "CRM",
+      "accounting": "Accounting",
+      "wms": "WMS",
+      "project": "Project",
+      "workflow": "Workflow",
+      "system": "System"
+    }
+  },
+  "platformDashboard": {
+    "selectModule": "Select a module to get started",
+    "modulesActive": "Modules Active",
+    "employees": "Employees",
+    "pendingTasks": "Pending Tasks",
+    "alerts": "Alerts",
+    "modules": "Modules",
+    "dragToReorder": "Drag to reorder",
+    "active": "Active",
+    "comingSoon": "Coming Soon",
+    "access": "Access",
+    "contactToActivate": "Contact to activate",
+    "needMoreModules": "Need more modules?",
+    "contactUsToActivate": "Contact us to activate more modules for your business",
+    "contact": "Contact",
+    "stats": {
+      "trips": "Trips",
+      "vehicles": "Vehicles",
+      "drivers": "Drivers",
+      "products": "Products",
+      "inboundOrders": "Inbound Orders",
+      "outboundOrders": "Outbound Orders",
+      "shipments": "Shipments",
+      "declarations": "Declarations",
+      "containersInYard": "Containers in Yard",
+      "waitingTrucks": "Waiting Trucks",
+      "vesselsDocked": "Vessels Docked",
+      "ordersToday": "Orders Today",
+      "delivering": "Delivering",
+      "codCollected": "COD Collected",
+      "productionOrders": "Production Orders",
+      "inProduction": "In Production",
+      "completed": "Completed",
+      "customers": "Customers",
+      "opportunities": "Opportunities",
+      "quotes": "Quotes",
+      "employees": "Employees",
+      "leaves": "Leaves",
+      "recruitment": "Recruitment",
+      "receivable": "Receivable",
+      "payable": "Payable",
+      "balance": "Balance",
+      "costCenters": "Cost Centers",
+      "budget": "Budget",
+      "variance": "Variance",
+      "projects": "Projects",
+      "tasks": "Tasks",
+      "milestones": "Milestones",
+      "workflows": "Workflows",
+      "pendingApproval": "Pending Approval",
+      "documents": "Documents",
+      "folders": "Folders",
+      "shared": "Shared"
+    }
   }
 }

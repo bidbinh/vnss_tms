@@ -81,7 +81,12 @@ class CustomsResponse(BaseModel):
     trader_name: Optional[str]
     trader_tax_code: Optional[str]
 
-    bl_no: Optional[str]
+    # Exporter (foreign partner)
+    foreign_partner_name: Optional[str] = None
+    foreign_partner_country: Optional[str] = None
+
+    invoice_no: Optional[str] = None
+    bl_no: Optional[str] = None
     vessel_name: Optional[str]
     loading_port: Optional[str]
     discharge_port: Optional[str]
@@ -276,6 +281,9 @@ def list_customs_declarations(
             customs_office_name=d.customs_office_name,
             trader_name=d.trader_name,
             trader_tax_code=d.trader_tax_code,
+            foreign_partner_name=d.foreign_partner_name,
+            foreign_partner_country=d.foreign_partner_country,
+            invoice_no=d.invoice_no,
             bl_no=d.bl_no,
             vessel_name=d.vessel_name,
             loading_port=d.loading_port,
@@ -323,6 +331,9 @@ def create_customs_declaration(
         customs_office_name=declaration.customs_office_name,
         trader_name=declaration.trader_name,
         trader_tax_code=declaration.trader_tax_code,
+        foreign_partner_name=declaration.foreign_partner_name,
+        foreign_partner_country=declaration.foreign_partner_country,
+        invoice_no=declaration.invoice_no,
         bl_no=declaration.bl_no,
         vessel_name=declaration.vessel_name,
         loading_port=declaration.loading_port,
@@ -708,6 +719,9 @@ def update_customs_declaration(
         customs_office_name=declaration.customs_office_name,
         trader_name=declaration.trader_name,
         trader_tax_code=declaration.trader_tax_code,
+        foreign_partner_name=declaration.foreign_partner_name,
+        foreign_partner_country=declaration.foreign_partner_country,
+        invoice_no=declaration.invoice_no,
         bl_no=declaration.bl_no,
         vessel_name=declaration.vessel_name,
         loading_port=declaration.loading_port,

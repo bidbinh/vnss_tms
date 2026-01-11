@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { usePageTranslations } from "@/hooks/usePageTranslations";
 
 interface Stats {
   tractors: { total: number; active: number; inactive: number };
@@ -139,6 +140,7 @@ interface CustomerRevenue {
 }
 
 export default function TMSDashboardPage() {
+  const { t } = usePageTranslations("tms.dashboardPage");
   const router = useRouter();
   const [stats, setStats] = useState<Stats | null>(null);
   const [alerts, setAlerts] = useState<Alerts | null>(null);
@@ -264,49 +266,49 @@ export default function TMSDashboardPage() {
 
   return (
     <div className="p-6 space-y-6">
-      <h1 className="text-2xl font-bold">TMS Dashboard - Quản Trị Vận Tải</h1>
+      <h1 className="text-2xl font-bold">{t("title")}</h1>
 
       {/* Stats Cards */}
       {stats && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           <div className="bg-white p-5 rounded-lg shadow border border-gray-200">
-            <div className="text-sm text-gray-600 whitespace-nowrap">Đầu kéo</div>
+            <div className="text-sm text-gray-600 whitespace-nowrap">{t("tractors")}</div>
             <div className="mt-2 text-3xl font-bold text-blue-600">{stats.tractors.active}</div>
             <div className="mt-2 text-xs text-gray-500 whitespace-nowrap">
-              Tổng: {stats.tractors.total} | Ngừng: {stats.tractors.inactive}
+              {t("total")}: {stats.tractors.total} | {t("stopped")}: {stats.tractors.inactive}
             </div>
           </div>
 
           <div className="bg-white p-5 rounded-lg shadow border border-gray-200">
-            <div className="text-sm text-gray-600 whitespace-nowrap">Rơ mooc</div>
+            <div className="text-sm text-gray-600 whitespace-nowrap">{t("trailers")}</div>
             <div className="mt-2 text-3xl font-bold text-indigo-600">{stats.trailers.active}</div>
             <div className="mt-2 text-xs text-gray-500 whitespace-nowrap">
-              Tổng: {stats.trailers.total} | Ngừng: {stats.trailers.inactive}
+              {t("total")}: {stats.trailers.total} | {t("stopped")}: {stats.trailers.inactive}
             </div>
           </div>
 
           <div className="bg-white p-5 rounded-lg shadow border border-gray-200">
-            <div className="text-sm text-gray-600 whitespace-nowrap">Tài xế</div>
+            <div className="text-sm text-gray-600 whitespace-nowrap">{t("drivers")}</div>
             <div className="mt-2 text-3xl font-bold text-green-600">{stats.drivers.active}</div>
             <div className="mt-2 text-xs text-gray-500 whitespace-nowrap">
-              Đang hoạt động
+              {t("active")}
             </div>
           </div>
 
           <div className="bg-white p-5 rounded-lg shadow border border-gray-200">
-            <div className="text-sm text-gray-600 whitespace-nowrap">Đơn hàng hôm nay</div>
+            <div className="text-sm text-gray-600 whitespace-nowrap">{t("ordersToday")}</div>
             <div className="mt-2 text-3xl font-bold text-purple-600">{stats.orders_today.total}</div>
             <div className="mt-2 text-xs text-gray-500 whitespace-nowrap">
-              HT: {stats.orders_today.completed} | XL: {stats.orders_today.in_progress}
+              {t("completed")}: {stats.orders_today.completed} | {t("inProgress")}: {stats.orders_today.in_progress}
             </div>
           </div>
 
           <div className="bg-white p-5 rounded-lg shadow border border-gray-200">
-            <div className="text-sm text-gray-600 whitespace-nowrap">Chi phí bảo trì đầu kéo</div>
+            <div className="text-sm text-gray-600 whitespace-nowrap">{t("tractorMaintenanceCost")}</div>
             <div className="mt-2 text-3xl font-bold text-orange-600">
               {formatCurrency(stats.maintenance_cost_month)}
             </div>
-            <div className="mt-2 text-xs text-gray-500">Tháng này</div>
+            <div className="mt-2 text-xs text-gray-500">{t("thisMonth")}</div>
           </div>
         </div>
       )}
@@ -316,36 +318,36 @@ export default function TMSDashboardPage() {
         {/* Fuel Consumption */}
         {fuelConsumption && (
           <div className="bg-white p-5 rounded-lg shadow border border-gray-200">
-            <h2 className="text-lg font-semibold mb-4">Tiêu hao nhiên liệu (30 ngày)</h2>
+            <h2 className="text-lg font-semibold mb-4">{t("fuelConsumption30Days")}</h2>
 
             {/* Summary stats */}
             <div className="grid grid-cols-3 gap-3 mb-4">
               <div className="bg-blue-50 p-3 rounded text-center">
                 <div className="text-xl font-bold text-blue-600">{fuelConsumption.period_30_days.total_liters.toLocaleString()}</div>
-                <div className="text-xs text-gray-600 whitespace-nowrap">Tổng (lít)</div>
+                <div className="text-xs text-gray-600 whitespace-nowrap">{t("totalLiters")}</div>
               </div>
               <div className="bg-green-50 p-3 rounded text-center">
                 <div className="text-xl font-bold text-green-600">{fuelConsumption.period_30_days.total_km.toLocaleString()}</div>
-                <div className="text-xs text-gray-600 whitespace-nowrap">Tổng km</div>
+                <div className="text-xs text-gray-600 whitespace-nowrap">{t("totalKm")}</div>
               </div>
               <div className="bg-purple-50 p-3 rounded text-center">
                 <div className="text-xl font-bold text-purple-600">{fuelConsumption.period_30_days.liters_per_100km}</div>
-                <div className="text-xs text-gray-600 whitespace-nowrap">Lít/100km</div>
+                <div className="text-xs text-gray-600 whitespace-nowrap">{t("litersPer100km")}</div>
               </div>
             </div>
 
             {/* Top consuming vehicles - table format */}
             {fuelConsumption.top_consuming_vehicles && fuelConsumption.top_consuming_vehicles.length > 0 && (
               <div>
-                <div className="text-sm font-medium text-gray-700 mb-2">Top xe tiêu hao cao (lít/100km):</div>
+                <div className="text-sm font-medium text-gray-700 mb-2">{t("topHighConsumptionVehicles")}:</div>
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-gray-200 text-gray-600">
                       <th className="text-left py-2 font-medium">#</th>
-                      <th className="text-left py-2 font-medium whitespace-nowrap">Biển số</th>
-                      <th className="text-right py-2 font-medium whitespace-nowrap">30 ngày (lít)</th>
-                      <th className="text-right py-2 font-medium whitespace-nowrap">30 ngày</th>
-                      <th className="text-right py-2 font-medium whitespace-nowrap">7 lần</th>
+                      <th className="text-left py-2 font-medium whitespace-nowrap">{t("plateNumber")}</th>
+                      <th className="text-right py-2 font-medium whitespace-nowrap">{t("last30Days")}</th>
+                      <th className="text-right py-2 font-medium whitespace-nowrap">{t("litersPer100km")}</th>
+                      <th className="text-right py-2 font-medium whitespace-nowrap">{t("last7Logs")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -372,23 +374,23 @@ export default function TMSDashboardPage() {
         {/* Maintenance Average Cost */}
         {maintenanceAvgCost && (
           <div className="bg-white p-5 rounded-lg shadow border border-gray-200">
-            <h2 className="text-lg font-semibold mb-4">Chi phí sửa chữa trung bình (6 tháng)</h2>
+            <h2 className="text-lg font-semibold mb-4">{t("avgMaintenanceCost6Months")}</h2>
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div className="bg-orange-50 p-3 rounded">
-                <div className="text-sm text-gray-600">Tổng chi phí</div>
+                <div className="text-sm text-gray-600">{t("totalCost")}</div>
                 <div className="text-xl font-bold text-orange-600">{formatCurrency(maintenanceAvgCost.total_cost_6_months)}</div>
               </div>
               <div className="bg-purple-50 p-3 rounded">
-                <div className="text-sm text-gray-600">Trung bình/xe</div>
+                <div className="text-sm text-gray-600">{t("avgPerVehicle")}</div>
                 <div className="text-xl font-bold text-purple-600">{formatCurrency(maintenanceAvgCost.avg_cost_per_vehicle)}</div>
               </div>
             </div>
             <div className="text-xs text-gray-500">
-              Tổng xe: {maintenanceAvgCost.total_vehicles} | Xe có bảo trì: {maintenanceAvgCost.vehicles_with_maintenance}
+              {t("totalVehicles")}: {maintenanceAvgCost.total_vehicles} | {t("vehiclesWithMaintenance")}: {maintenanceAvgCost.vehicles_with_maintenance}
             </div>
             {maintenanceAvgCost.monthly_breakdown.length > 0 && (
               <div className="mt-3 space-y-1">
-                <div className="text-sm font-medium text-gray-700">Chi phí theo tháng:</div>
+                <div className="text-sm font-medium text-gray-700">{t("costByMonth")}:</div>
                 {maintenanceAvgCost.monthly_breakdown.map((item) => (
                   <div key={item.month} className="flex justify-between text-sm">
                     <span className="text-gray-600">{item.month}</span>
@@ -404,33 +406,33 @@ export default function TMSDashboardPage() {
       {/* Trip Stats Section */}
       {tripStats && (
         <div className="bg-white p-5 rounded-lg shadow border border-gray-200">
-          <h2 className="text-lg font-semibold mb-4">Thống kê chuyến xe (30 ngày)</h2>
+          <h2 className="text-lg font-semibold mb-4">{t("tripStats30Days")}</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
             <div className="bg-indigo-50 p-3 rounded text-center">
               <div className="text-2xl font-bold text-indigo-600">{tripStats.total_trips}</div>
-              <div className="text-sm text-gray-600">Tổng số chuyến</div>
+              <div className="text-sm text-gray-600">{t("totalTrips")}</div>
             </div>
             <div className="bg-teal-50 p-3 rounded text-center">
               <div className="text-2xl font-bold text-teal-600">{tripStats.total_active_drivers}</div>
-              <div className="text-sm text-gray-600">Tài xế hoạt động</div>
+              <div className="text-sm text-gray-600">{t("activeDrivers")}</div>
             </div>
             <div className="bg-cyan-50 p-3 rounded text-center">
               <div className="text-2xl font-bold text-cyan-600">{tripStats.avg_trips_per_driver}</div>
-              <div className="text-sm text-gray-600">TB chuyến/tài xế</div>
+              <div className="text-sm text-gray-600">{t("avgTripsPerDriver")}</div>
             </div>
             <div className="bg-sky-50 p-3 rounded text-center">
               <div className="text-2xl font-bold text-sky-600">{tripStats.drivers_with_trips}</div>
-              <div className="text-sm text-gray-600">Tài xế có chuyến</div>
+              <div className="text-sm text-gray-600">{t("driversWithTrips")}</div>
             </div>
           </div>
           {tripStats.top_drivers.length > 0 && (
             <div>
-              <div className="text-sm font-medium text-gray-700 mb-2">Top tài xế:</div>
+              <div className="text-sm font-medium text-gray-700 mb-2">{t("topDrivers")}:</div>
               <div className="space-y-1">
                 {tripStats.top_drivers.map((driver, idx) => (
                   <div key={driver.driver_id} className="flex justify-between items-center text-sm py-1 border-b">
                     <span className="text-gray-600">#{idx + 1} {driver.driver_name}</span>
-                    <span className="font-medium text-indigo-600">{driver.trip_count} chuyến</span>
+                    <span className="font-medium text-indigo-600">{driver.trip_count} {t("trips")}</span>
                   </div>
                 ))}
               </div>
@@ -442,7 +444,7 @@ export default function TMSDashboardPage() {
       {/* Revenue & Profit Section with Date Range */}
       <div className="bg-white p-5 rounded-lg shadow border border-gray-200">
         <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
-          <h2 className="text-lg font-semibold">Doanh thu & Lợi nhuận</h2>
+          <h2 className="text-lg font-semibold">{t("revenueAndProfit")}</h2>
           <div className="flex items-center gap-2">
             <input
               type="date"
@@ -464,11 +466,11 @@ export default function TMSDashboardPage() {
           {/* Revenue */}
           {revenue && (
             <div className="space-y-3">
-              <div className="text-sm font-medium text-gray-700">Doanh thu (Sau thuế)</div>
+              <div className="text-sm font-medium text-gray-700">{t("revenueAfterTax")}</div>
               <div className="bg-emerald-50 p-4 rounded">
                 <div className="text-2xl font-bold text-emerald-600">{formatCurrency(revenue.total_revenue)}</div>
                 <div className="text-xs text-gray-500 mt-1">
-                  {revenue.total_orders} đơn hàng | TB/xe: {formatCurrency(revenue.avg_revenue_per_vehicle)}
+                  {revenue.total_orders} {t("orders")} | {t("avgPerVehicleShort")}: {formatCurrency(revenue.avg_revenue_per_vehicle)}
                 </div>
               </div>
             </div>
@@ -477,11 +479,11 @@ export default function TMSDashboardPage() {
           {/* Gross Profit */}
           {profit && (
             <div className="space-y-3">
-              <div className="text-sm font-medium text-gray-700">Lợi nhuận gộp</div>
+              <div className="text-sm font-medium text-gray-700">{t("grossProfit")}</div>
               <div className="bg-blue-50 p-4 rounded">
                 <div className="text-2xl font-bold text-blue-600">{formatCurrency(profit.gross_profit)}</div>
                 <div className="text-xs text-gray-500 mt-1">
-                  Biên lợi nhuận: {profit.margins.gross_margin_percent}%
+                  {t("profitMargin")}: {profit.margins.gross_margin_percent}%
                 </div>
               </div>
             </div>
@@ -490,13 +492,13 @@ export default function TMSDashboardPage() {
           {/* Net Profit */}
           {profit && (
             <div className="space-y-3">
-              <div className="text-sm font-medium text-gray-700">Lợi nhuận ròng</div>
+              <div className="text-sm font-medium text-gray-700">{t("netProfit")}</div>
               <div className={`p-4 rounded ${profit.net_profit >= 0 ? 'bg-green-50' : 'bg-red-50'}`}>
                 <div className={`text-2xl font-bold ${profit.net_profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                   {formatCurrency(profit.net_profit)}
                 </div>
                 <div className="text-xs text-gray-500 mt-1">
-                  Biên lợi nhuận: {profit.margins.net_margin_percent}%
+                  {t("profitMargin")}: {profit.margins.net_margin_percent}%
                 </div>
               </div>
             </div>
@@ -506,18 +508,18 @@ export default function TMSDashboardPage() {
         {/* Cost Breakdown */}
         {profit && (
           <div className="mt-4 pt-4 border-t">
-            <div className="text-sm font-medium text-gray-700 mb-2">Chi phí trong kỳ:</div>
+            <div className="text-sm font-medium text-gray-700 mb-2">{t("costsInPeriod")}:</div>
             <div className="grid grid-cols-3 gap-4 text-sm">
               <div className="text-center">
-                <div className="text-gray-600">Nhiên liệu</div>
+                <div className="text-gray-600">{t("fuel")}</div>
                 <div className="font-medium text-orange-600">{formatCurrency(profit.costs.fuel)}</div>
               </div>
               <div className="text-center">
-                <div className="text-gray-600">Bảo trì</div>
+                <div className="text-gray-600">{t("maintenance")}</div>
                 <div className="font-medium text-purple-600">{formatCurrency(profit.costs.maintenance)}</div>
               </div>
               <div className="text-center">
-                <div className="text-gray-600">Tổng chi phí</div>
+                <div className="text-gray-600">{t("totalCosts")}</div>
                 <div className="font-medium text-red-600">{formatCurrency(profit.costs.total)}</div>
               </div>
             </div>
@@ -528,9 +530,9 @@ export default function TMSDashboardPage() {
       {/* Customer Revenue Distribution */}
       {customerRevenue && customerRevenue.distribution.length > 0 && (
         <div className="bg-white p-5 rounded-lg shadow border border-gray-200">
-          <h2 className="text-lg font-semibold mb-4">Tỷ trọng doanh số theo khách hàng</h2>
+          <h2 className="text-lg font-semibold mb-4">{t("customerRevenueDistribution")}</h2>
           <div className="text-sm text-gray-500 mb-4">
-            Tổng: {formatCurrency(customerRevenue.total_revenue)} | {customerRevenue.total_customers} khách hàng
+            {t("total")}: {formatCurrency(customerRevenue.total_revenue)} | {customerRevenue.total_customers} {t("customers")}
           </div>
           <div className="space-y-3">
             {customerRevenue.distribution.slice(0, 10).map((customer) => (
@@ -547,7 +549,7 @@ export default function TMSDashboardPage() {
                 </div>
                 <div className="flex justify-between text-xs text-gray-500 mt-1">
                   <span>{formatCurrency(customer.revenue)}</span>
-                  <span>{customer.order_count} đơn</span>
+                  <span>{customer.order_count} {t("ordersCount")}</span>
                 </div>
               </div>
             ))}
@@ -558,22 +560,22 @@ export default function TMSDashboardPage() {
       {/* Alerts Section */}
       {alerts && (
         <div className="bg-white p-5 rounded-lg shadow border border-gray-200">
-          <h2 className="text-lg font-semibold mb-4">Cảnh báo</h2>
+          <h2 className="text-lg font-semibold mb-4">{t("alerts")}</h2>
           <div className="space-y-4">
             {alerts.maintenance_overdue.length > 0 && (
               <div>
                 <div className="text-sm font-medium text-red-700 mb-2">
-                  Bảo trì quá hạn ({alerts.maintenance_overdue.length})
+                  {t("maintenanceOverdue")} ({alerts.maintenance_overdue.length})
                 </div>
                 <div className="space-y-2">
                   {alerts.maintenance_overdue.map((alert, idx) => (
                     <div key={idx} className="bg-red-50 border border-red-200 rounded p-3 text-sm">
                       <div className="font-medium">{alert.vehicle_plate}</div>
                       <div className="text-gray-600">
-                        {alert.maintenance_type} - Quá hạn {alert.days_overdue} ngày
+                        {alert.maintenance_type} - {t("overdueBy")} {alert.days_overdue} {t("days")}
                       </div>
                       <div className="text-xs text-gray-500">
-                        Hạn: {formatDate(alert.next_due_date || "")}
+                        {t("dueDate")}: {formatDate(alert.next_due_date || "")}
                       </div>
                     </div>
                   ))}
@@ -584,17 +586,17 @@ export default function TMSDashboardPage() {
             {alerts.maintenance_due_soon.length > 0 && (
               <div>
                 <div className="text-sm font-medium text-yellow-700 mb-2">
-                  Bảo trì sắp đến hạn ({alerts.maintenance_due_soon.length})
+                  {t("maintenanceDueSoon")} ({alerts.maintenance_due_soon.length})
                 </div>
                 <div className="space-y-2">
                   {alerts.maintenance_due_soon.map((alert, idx) => (
                     <div key={idx} className="bg-yellow-50 border border-yellow-200 rounded p-3 text-sm">
                       <div className="font-medium">{alert.vehicle_plate}</div>
                       <div className="text-gray-600">
-                        {alert.maintenance_type} - Còn {alert.days_until} ngày
+                        {alert.maintenance_type} - {t("remaining")} {alert.days_until} {t("days")}
                       </div>
                       <div className="text-xs text-gray-500">
-                        Hạn: {formatDate(alert.next_due_date || "")}
+                        {t("dueDate")}: {formatDate(alert.next_due_date || "")}
                       </div>
                     </div>
                   ))}
@@ -605,15 +607,15 @@ export default function TMSDashboardPage() {
             {alerts.registration_expiring.length > 0 && (
               <div>
                 <div className="text-sm font-medium text-orange-700 mb-2">
-                  Đăng kiểm sắp hết hạn ({alerts.registration_expiring.length})
+                  {t("registrationExpiring")} ({alerts.registration_expiring.length})
                 </div>
                 <div className="space-y-2">
                   {alerts.registration_expiring.map((alert, idx) => (
                     <div key={idx} className="bg-orange-50 border border-orange-200 rounded p-3 text-sm">
                       <div className="font-medium">{alert.vehicle_plate}</div>
-                      <div className="text-gray-600">Còn {alert.days_until} ngày</div>
+                      <div className="text-gray-600">{t("remaining")} {alert.days_until} {t("days")}</div>
                       <div className="text-xs text-gray-500">
-                        Hạn: {formatDate(alert.registration_expiry || "")}
+                        {t("dueDate")}: {formatDate(alert.registration_expiry || "")}
                       </div>
                     </div>
                   ))}
@@ -624,7 +626,7 @@ export default function TMSDashboardPage() {
             {alerts.inactive_vehicles_count > 0 && (
               <div className="bg-gray-50 border border-gray-200 rounded p-3 text-sm">
                 <div className="font-medium text-gray-700">
-                  Có {alerts.inactive_vehicles_count} phương tiện ngừng hoạt động
+                  {alerts.inactive_vehicles_count} {t("inactiveVehicles")}
                 </div>
               </div>
             )}
@@ -633,7 +635,7 @@ export default function TMSDashboardPage() {
               alerts.maintenance_due_soon.length === 0 &&
               alerts.registration_expiring.length === 0 &&
               alerts.inactive_vehicles_count === 0 && (
-                <div className="text-gray-500 text-sm">Không có cảnh báo</div>
+                <div className="text-gray-500 text-sm">{t("noAlerts")}</div>
               )}
           </div>
         </div>
@@ -644,14 +646,14 @@ export default function TMSDashboardPage() {
         {/* Order Trend */}
         {orderTrend.length > 0 && (
           <div className="bg-white p-5 rounded-lg shadow border border-gray-200">
-            <h2 className="text-lg font-semibold mb-4">Xu hướng đơn hàng (30 ngày)</h2>
+            <h2 className="text-lg font-semibold mb-4">{t("orderTrend30Days")}</h2>
             <div className="space-y-1 max-h-64 overflow-y-auto">
               {orderTrend.slice(-10).map((item, idx) => (
                 <div key={idx} className="flex justify-between items-center text-sm py-1 border-b">
                   <div className="text-gray-600">{formatDate(item.date)}</div>
                   <div className="flex gap-4">
-                    <span className="text-blue-600">Tổng: {item.total}</span>
-                    <span className="text-green-600">Hoàn thành: {item.completed}</span>
+                    <span className="text-blue-600">{t("total")}: {item.total}</span>
+                    <span className="text-green-600">{t("completedOrders")}: {item.completed}</span>
                   </div>
                 </div>
               ))}
@@ -662,13 +664,13 @@ export default function TMSDashboardPage() {
         {/* Vehicle Distribution */}
         {vehicleDist.length > 0 && (
           <div className="bg-white p-5 rounded-lg shadow border border-gray-200">
-            <h2 className="text-lg font-semibold mb-4">Phân bổ phương tiện theo loại</h2>
+            <h2 className="text-lg font-semibold mb-4">{t("vehicleDistribution")}</h2>
             <div className="space-y-3">
               {vehicleDist.map((item, idx) => (
                 <div key={idx}>
                   <div className="flex justify-between text-sm mb-1">
                     <span className="font-medium">{item.type}</span>
-                    <span className="text-gray-600">Tổng: {item.total}</span>
+                    <span className="text-gray-600">{t("total")}: {item.total}</span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2">
                     <div
@@ -677,7 +679,7 @@ export default function TMSDashboardPage() {
                     ></div>
                   </div>
                   <div className="text-xs text-gray-500 mt-1">
-                    Hoạt động: {item.active} | Ngừng: {item.inactive}
+                    {t("operating")}: {item.active} | {t("stopped")}: {item.inactive}
                   </div>
                 </div>
               ))}
@@ -691,7 +693,7 @@ export default function TMSDashboardPage() {
         {/* Maintenance Cost */}
         {maintenanceCost.length > 0 && (
           <div className="bg-white p-5 rounded-lg shadow border border-gray-200">
-            <h2 className="text-lg font-semibold mb-4">Chi phí bảo trì theo loại (3 tháng)</h2>
+            <h2 className="text-lg font-semibold mb-4">{t("maintenanceCostByType3Months")}</h2>
             <div className="space-y-2">
               {maintenanceCost.map((item, idx) => (
                 <div key={idx} className="flex justify-between items-center text-sm py-2 border-b">
@@ -706,7 +708,7 @@ export default function TMSDashboardPage() {
         {/* Top Costly Vehicles */}
         {topVehicles && topVehicles.top_costly_maintenance.length > 0 && (
           <div className="bg-white p-5 rounded-lg shadow border border-gray-200">
-            <h2 className="text-lg font-semibold mb-4">Top xe chi phí bảo trì cao (tháng này)</h2>
+            <h2 className="text-lg font-semibold mb-4">{t("topCostlyVehiclesThisMonth")}</h2>
             <div className="space-y-2">
               {topVehicles.top_costly_maintenance.map((item, idx) => (
                 <div key={idx} className="flex justify-between items-center text-sm py-2 border-b">
@@ -725,7 +727,7 @@ export default function TMSDashboardPage() {
           {/* Recent Orders */}
           {recentActivities.recent_orders.length > 0 && (
             <div className="bg-white p-5 rounded-lg shadow border border-gray-200">
-              <h2 className="text-lg font-semibold mb-4">Đơn hàng gần đây</h2>
+              <h2 className="text-lg font-semibold mb-4">{t("recentOrders")}</h2>
               <div className="space-y-3">
                 {recentActivities.recent_orders.map((order) => (
                   <div key={order.id} className="border-b pb-3">
@@ -757,7 +759,7 @@ export default function TMSDashboardPage() {
           {/* Recent Maintenance */}
           {recentActivities.recent_maintenance.length > 0 && (
             <div className="bg-white p-5 rounded-lg shadow border border-gray-200">
-              <h2 className="text-lg font-semibold mb-4">Bảo trì gần đây</h2>
+              <h2 className="text-lg font-semibold mb-4">{t("recentMaintenance")}</h2>
               <div className="space-y-3">
                 {recentActivities.recent_maintenance.map((maint) => (
                   <div key={maint.id} className="border-b pb-3">
