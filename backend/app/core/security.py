@@ -3,7 +3,7 @@ from typing import Optional
 from fastapi import Depends, HTTPException, Request
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt, JWTError
-from passlib.context import CryptContext
+import bcrypt
 from sqlmodel import Session, select
 
 from app.db.session import get_session
@@ -12,8 +12,6 @@ from app.models import User
 SECRET_KEY = "CHANGE_ME_SECRET"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login", auto_error=False)
 
@@ -28,18 +26,25 @@ def get_token_from_request(request: Request, token_from_header: str | None = Non
     return token_from_header
 
 
-def _truncate_password(password: str) -> str:
-    """Truncate password to 72 bytes (bcrypt limit)"""
-    # bcrypt only uses first 72 bytes of password
-    return password.encode('utf-8')[:72].decode('utf-8', errors='ignore')
+def _truncate_password(password: str) -> bytes:
+    """Truncate password to 72 bytes (bcrypt limit) and return as bytes"""
+    return password.encode('utf-8')[:72]
 
 
 def hash_password(password: str) -> str:
-    return pwd_context.hash(_truncate_password(password))
+    """Hash password using bcrypt directly"""
+    truncated = _truncate_password(password)
+    salt = bcrypt.gensalt()
+    return bcrypt.hashpw(truncated, salt).decode('utf-8')
 
 
 def verify_password(password: str, hashed: str) -> bool:
-    return pwd_context.verify(_truncate_password(password), hashed)
+    """Verify password using bcrypt directly"""
+    try:
+        truncated = _truncate_password(password)
+        return bcrypt.checkpw(truncated, hashed.encode('utf-8'))
+    except Exception:
+        return False
 
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None):
