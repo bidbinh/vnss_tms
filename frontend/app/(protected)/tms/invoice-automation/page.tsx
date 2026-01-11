@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useTranslations } from "next-intl";
 import {
   FileText,
   Play,
@@ -49,6 +50,7 @@ interface OCRResult {
 }
 
 export default function InvoiceAutomationPage() {
+  const t = useTranslations("tms.invoiceAutomationPage");
   const [depots, setDepots] = useState<Depot[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [selectedDepot, setSelectedDepot] = useState<string>("");
@@ -156,12 +158,12 @@ export default function InvoiceAutomationPage() {
         if (data.receipt_number) setReceiptNumber(data.receipt_number);
         if (data.container_code) setContainerCode(data.container_code);
         if (data.depot_code) setSelectedDepot(data.depot_code);
-        setSuccessMessage("OCR completed! Data has been auto-filled.");
+        setSuccessMessage(t("messages.ocrSuccess"));
       } else {
-        setError(data.message || "OCR failed");
+        setError(data.message || t("errors.ocrFailed"));
       }
     } catch (e) {
-      setError("Failed to process image");
+      setError(t("errors.imageProcessFailed"));
     } finally {
       setIsUploading(false);
     }
@@ -182,7 +184,7 @@ export default function InvoiceAutomationPage() {
     setSuccessMessage(null);
 
     if (!selectedDepot || !receiptNumber || !containerCode) {
-      setError("Vui long dien day du thong tin");
+      setError(t("errors.fillAllFields"));
       return;
     }
 
@@ -205,17 +207,17 @@ export default function InvoiceAutomationPage() {
 
       if (res.ok) {
         const job = await res.json();
-        setSuccessMessage(`Job ${job.job_id} da duoc tao. Dang xu ly...`);
+        setSuccessMessage(t("messages.jobCreated", { jobId: job.job_id }));
         setReceiptNumber("");
         setContainerCode("");
         clearImage();
         fetchJobs();
       } else {
         const err = await res.json();
-        setError(err.detail || "Co loi xay ra");
+        setError(err.detail || t("errors.generic"));
       }
     } catch (e) {
-      setError("Khong the ket noi den server");
+      setError(t("errors.serverConnection"));
     } finally {
       setIsSubmitting(false);
     }
@@ -237,13 +239,13 @@ export default function InvoiceAutomationPage() {
   const getStatusText = (status: string) => {
     switch (status) {
       case "completed":
-        return "Hoan thanh";
+        return t("status.completed");
       case "failed":
-        return "That bai";
+        return t("status.failed");
       case "running":
-        return "Dang chay";
+        return t("status.running");
       default:
-        return "Dang cho";
+        return t("status.pending");
     }
   };
 
@@ -269,10 +271,10 @@ export default function InvoiceAutomationPage() {
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
             <FileText className="w-7 h-7" />
-            Invoice Automation
+            {t("title")}
           </h1>
           <p className="text-gray-500 mt-1">
-            Tu dong lay hoa don VAT tu cac depot - Ho tro upload anh phieu thu
+            {t("subtitle")}
           </p>
         </div>
 
@@ -283,7 +285,7 @@ export default function InvoiceAutomationPage() {
             <div className="bg-white rounded-lg border p-6">
               <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
                 <Camera className="w-5 h-5" />
-                Upload anh phieu thu
+                {t("uploadSection.title")}
               </h2>
 
               <div className="space-y-4">
@@ -323,10 +325,10 @@ export default function InvoiceAutomationPage() {
                     <div className="space-y-2">
                       <Upload className="w-12 h-12 mx-auto text-gray-400" />
                       <p className="text-sm text-gray-600">
-                        Click de chon anh hoac keo tha vao day
+                        {t("uploadSection.clickToSelect")}
                       </p>
                       <p className="text-xs text-gray-400">
-                        Ho tro: JPG, PNG (max 5MB)
+                        {t("uploadSection.supportedFormats")}
                       </p>
                     </div>
                   )}
@@ -342,12 +344,12 @@ export default function InvoiceAutomationPage() {
                     {isUploading ? (
                       <>
                         <Loader2 className="w-4 h-4 animate-spin" />
-                        Dang doc anh...
+                        {t("uploadSection.reading")}
                       </>
                     ) : (
                       <>
                         <ImageIcon className="w-4 h-4" />
-                        Doc thong tin tu anh (OCR)
+                        {t("uploadSection.extractOcr")}
                       </>
                     )}
                   </button>
@@ -357,14 +359,14 @@ export default function InvoiceAutomationPage() {
                 {ocrResult && (
                   <div className={`p-4 rounded-lg ${ocrResult.success ? "bg-green-50 border border-green-200" : "bg-red-50 border border-red-200"}`}>
                     <h4 className={`font-medium mb-2 ${ocrResult.success ? "text-green-800" : "text-red-800"}`}>
-                      {ocrResult.success ? "Ket qua OCR:" : "Loi:"}
+                      {ocrResult.success ? t("ocrResult.title") : t("ocrResult.error")}
                     </h4>
                     {ocrResult.success ? (
                       <div className="text-sm space-y-1 text-green-700">
-                        <p>So phieu thu: <strong>{ocrResult.receipt_number || "Khong tim thay"}</strong></p>
-                        <p>So container: <strong>{ocrResult.container_code || "Khong tim thay"}</strong></p>
-                        <p>Depot: <strong>{ocrResult.depot_code || "Khong xac dinh"}</strong></p>
-                        {ocrResult.amount && <p>So tien: <strong>{ocrResult.amount} VND</strong></p>}
+                        <p>{t("ocrResult.receiptNumber")}: <strong>{ocrResult.receipt_number || t("ocrResult.notFound")}</strong></p>
+                        <p>{t("ocrResult.containerCode")}: <strong>{ocrResult.container_code || t("ocrResult.notFound")}</strong></p>
+                        <p>{t("ocrResult.depot")}: <strong>{ocrResult.depot_code || t("ocrResult.unknown")}</strong></p>
+                        {ocrResult.amount && <p>{t("ocrResult.amount")}: <strong>{ocrResult.amount} VND</strong></p>}
                       </div>
                     ) : (
                       <p className="text-sm text-red-700">{ocrResult.message}</p>
@@ -378,14 +380,14 @@ export default function InvoiceAutomationPage() {
             <div className="bg-white rounded-lg border p-6">
               <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
                 <Play className="w-5 h-5" />
-                Thong tin hoa don
+                {t("form.title")}
               </h2>
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 {/* Depot Selection */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Depot
+                    {t("form.depot")}
                   </label>
                   <select
                     value={selectedDepot}
@@ -409,13 +411,13 @@ export default function InvoiceAutomationPage() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     <Receipt className="w-4 h-4 inline mr-1" />
-                    So phieu thu
+                    {t("form.receiptNumber")}
                   </label>
                   <input
                     type="text"
                     value={receiptNumber}
                     onChange={(e) => setReceiptNumber(e.target.value)}
-                    placeholder="VD: NH5932291"
+                    placeholder={t("form.receiptPlaceholder")}
                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
@@ -424,13 +426,13 @@ export default function InvoiceAutomationPage() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     <Package className="w-4 h-4 inline mr-1" />
-                    So container
+                    {t("form.containerCode")}
                   </label>
                   <input
                     type="text"
                     value={containerCode}
                     onChange={(e) => setContainerCode(e.target.value.toUpperCase())}
-                    placeholder="VD: JXLU6143159"
+                    placeholder={t("form.containerPlaceholder")}
                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
@@ -456,12 +458,12 @@ export default function InvoiceAutomationPage() {
                   {isSubmitting ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      Dang xu ly...
+                      {t("form.processing")}
                     </>
                   ) : (
                     <>
                       <Play className="w-4 h-4" />
-                      Tao hoa don
+                      {t("form.createInvoice")}
                     </>
                   )}
                 </button>
@@ -474,12 +476,12 @@ export default function InvoiceAutomationPage() {
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold flex items-center gap-2">
                 <Clock className="w-5 h-5" />
-                Lich su yeu cau
+                {t("history.title")}
               </h2>
               <button
                 onClick={fetchJobs}
                 className="p-2 hover:bg-gray-100 rounded-lg"
-                title="Lam moi"
+                title={t("history.refresh")}
               >
                 <RefreshCw className="w-4 h-4" />
               </button>
@@ -487,7 +489,7 @@ export default function InvoiceAutomationPage() {
 
             {jobs.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
-                Chua co yeu cau nao
+                {t("history.noRequests")}
               </div>
             ) : (
               <div className="space-y-3 max-h-[600px] overflow-y-auto">
@@ -537,12 +539,12 @@ export default function InvoiceAutomationPage() {
 
             {/* Quick Guide */}
             <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-              <h3 className="font-medium text-blue-800 mb-2">Huong dan</h3>
+              <h3 className="font-medium text-blue-800 mb-2">{t("guide.title")}</h3>
               <ul className="text-sm text-blue-700 space-y-1">
-                <li>1. Upload anh phieu thu de tu dong doc thong tin</li>
-                <li>2. Hoac nhap thu cong so phieu thu va container</li>
-                <li>3. Bam "Tao hoa don" va doi ket qua</li>
-                <li>4. Hoa don se duoc gui ve email dang ky</li>
+                <li>{t("guide.step1")}</li>
+                <li>{t("guide.step2")}</li>
+                <li>{t("guide.step3")}</li>
+                <li>{t("guide.step4")}</li>
               </ul>
             </div>
           </div>
@@ -552,7 +554,7 @@ export default function InvoiceAutomationPage() {
         <div className="mt-6 bg-white rounded-lg border p-6">
           <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
             <Building2 className="w-5 h-5" />
-            Depot ho tro
+            {t("depots.title")}
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {depots.map((depot) => (
@@ -562,7 +564,7 @@ export default function InvoiceAutomationPage() {
               >
                 <div className="font-medium">{depot.name}</div>
                 <div className="text-sm text-gray-500 mt-1">
-                  Code: {depot.code}
+                  {t("depots.code")}: {depot.code}
                 </div>
                 <div className="text-xs text-gray-400 mt-1">
                   {depot.description}

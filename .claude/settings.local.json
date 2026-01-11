@@ -268,7 +268,8 @@
       "Bash(docker compose build:*)",
       "Bash(ssh root@9log.tech:*)",
       "Bash(git commit -m \"$\\(cat <<''EOF''\nAdd automated deploy script and update Dockerfile\n\n- Add ops/deploy.sh for automated deployment\n- Add ops/.env.example template for production\n- Update Dockerfile to use requirements.txt instead of hardcoded packages\n- Update docker-compose.yml to read .env from ops folder\n- Update .gitignore to track ops deployment files\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
-      "Bash(ren \"d:\\\\vnss_tms\\\\frontend\\\\app\\\\company-profile\" \"9log.tech-profile\")"
+      "Bash(ren \"d:\\\\vnss_tms\\\\frontend\\\\app\\\\company-profile\" \"9log.tech-profile\")",
+      "Bash(D:\\\\vnss_tms\\\\backend\\\\.venv\\\\Scripts\\\\pip install:*)"
     ]
   }
 }

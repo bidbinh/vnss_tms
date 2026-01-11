@@ -538,6 +538,17 @@
     "create": "Tạo mới",
     "custom": "Tùy chỉnh",
     "dark": "Tối",
+    "dataTable": {
+      "firstPage": "Trang đầu",
+      "lastPage": "Trang cuối",
+      "loading": "Đang tải...",
+      "nextPage": "Trang sau",
+      "noData": "Không có dữ liệu",
+      "previousPage": "Trang trước",
+      "rows": "dòng",
+      "show": "Hiển thị",
+      "showing": "Hiển thị"
+    },
     "date": "Ngày",
     "delete": "Xóa",
     "descending": "Giảm dần",
@@ -1866,49 +1877,49 @@
     "headcountReport": "Báo cáo nhân sự",
     "incomeTaxSettings": "Cài đặt thuế TNCN",
     "incomeTaxSettingsPage": {
-      "title": "Cài đặt Thuế Thu nhập Cá nhân",
-      "subtitle": "Cấu hình tính thuế thu nhập cá nhân",
       "addSetting": "Thêm Cài đặt Mới",
-      "loading": "Đang tải...",
-      "noSettings": "Chưa có cài đặt nào. Nhấn \"Thêm Cài đặt Mới\" để tạo.",
       "columns": {
+        "actions": "Hành động",
+        "dependentDeduction": "Giảm trừ người phụ thuộc",
         "effectiveFrom": "Hiệu lực từ",
         "effectiveTo": "Hiệu lực đến",
         "personalDeduction": "Giảm trừ bản thân",
-        "dependentDeduction": "Giảm trừ người phụ thuộc",
-        "totalInsurance": "Tổng BHXH/YT/TN",
         "status": "Trạng thái",
-        "actions": "Hành động"
+        "totalInsurance": "Tổng BHXH/YT/TN"
       },
+      "confirmDelete": "Bạn có chắc chắn muốn xóa cài đặt này?",
+      "errors": {
+        "deleteFailed": "Lỗi khi xóa cài đặt",
+        "saveFailed": "Lỗi khi lưu cài đặt"
+      },
+      "loading": "Đang tải...",
+      "modal": {
+        "bracket": "Bậc",
+        "bracket7Label": "Bậc 7 (Trên 80 triệu)",
+        "createTitle": "Thêm Cài đặt Thuế Mới",
+        "deductionSection": "Mức giảm trừ",
+        "dependentDeduction": "Giảm trừ người phụ thuộc (VNĐ)",
+        "editTitle": "Sửa Cài đặt Thuế",
+        "effectiveFrom": "Hiệu lực từ",
+        "effectiveTo": "Hiệu lực đến",
+        "healthInsurance": "BHYT (%)",
+        "insuranceSection": "Tỷ lệ bảo hiểm",
+        "maxIncome": "Thu nhập tối đa (VNĐ)",
+        "personalDeduction": "Giảm trừ bản thân (VNĐ)",
+        "quickDeduction": "Khấu trừ nhanh (VNĐ)",
+        "socialInsurance": "BHXH (%)",
+        "statusLabel": "Trạng thái",
+        "taxBracketsSection": "Bậc thuế thu nhập cá nhân",
+        "taxRate": "Thuế suất (%)",
+        "unemploymentInsurance": "BHTN (%)"
+      },
+      "noSettings": "Chưa có cài đặt nào. Nhấn \"Thêm Cài đặt Mới\" để tạo.",
       "status": {
         "ACTIVE": "Đang áp dụng",
         "INACTIVE": "Không áp dụng"
       },
-      "modal": {
-        "createTitle": "Thêm Cài đặt Thuế Mới",
-        "editTitle": "Sửa Cài đặt Thuế",
-        "effectiveFrom": "Hiệu lực từ",
-        "effectiveTo": "Hiệu lực đến",
-        "deductionSection": "Mức giảm trừ",
-        "personalDeduction": "Giảm trừ bản thân (VNĐ)",
-        "dependentDeduction": "Giảm trừ người phụ thuộc (VNĐ)",
-        "insuranceSection": "Tỷ lệ bảo hiểm",
-        "socialInsurance": "BHXH (%)",
-        "healthInsurance": "BHYT (%)",
-        "unemploymentInsurance": "BHTN (%)",
-        "taxBracketsSection": "Bậc thuế thu nhập cá nhân",
-        "bracket": "Bậc",
-        "bracket7Label": "Bậc 7 (Trên 80 triệu)",
-        "maxIncome": "Thu nhập tối đa (VNĐ)",
-        "taxRate": "Thuế suất (%)",
-        "quickDeduction": "Khấu trừ nhanh (VNĐ)",
-        "statusLabel": "Trạng thái"
-      },
-      "errors": {
-        "saveFailed": "Lỗi khi lưu cài đặt",
-        "deleteFailed": "Lỗi khi xóa cài đặt"
-      },
-      "confirmDelete": "Bạn có chắc chắn muốn xóa cài đặt này?"
+      "subtitle": "Cấu hình tính thuế thu nhập cá nhân",
+      "title": "Cài đặt Thuế Thu nhập Cá nhân"
     },
     "interviews": "Phỏng vấn",
     "interviewsPage": {
@@ -2009,30 +2020,30 @@
     },
     "orgChart": "Sơ đồ tổ chức",
     "orgChartPage": {
-      "title": "Sơ đồ tổ chức",
-      "subtitle": "Cơ cấu tổ chức công ty",
+      "hint": "Click vào node để mở rộng/thu gọn. Di chuột qua để xem thông tin chi tiết.",
+      "legend": {
+        "branchManager": "Trưởng chi nhánh",
+        "ceo": "Giám đốc điều hành",
+        "deptHead": "Trưởng phòng",
+        "staff": "Nhân viên",
+        "teamLead": "Team Leader",
+        "title": "Chú thích"
+      },
+      "noEmployees": "Chưa có nhân viên nào.",
+      "noEmployeesDesc": "Hãy thêm nhân viên và thiết lập quan hệ quản lý để hiển thị sơ đồ.",
       "stats": {
         "branches": "Chi nhánh",
         "departments": "Phòng ban",
         "totalEmployees": "Tổng nhân viên"
       },
-      "noEmployees": "Chưa có nhân viên nào.",
-      "noEmployeesDesc": "Hãy thêm nhân viên và thiết lập quan hệ quản lý để hiển thị sơ đồ.",
+      "subtitle": "Cơ cấu tổ chức công ty",
+      "title": "Sơ đồ tổ chức",
       "tooltip": {
-        "noPosition": "Chưa có chức vụ",
         "branch": "Chi nhánh",
         "joinDate": "Vào làm",
+        "noPosition": "Chưa có chức vụ",
         "notUpdated": "Chưa cập nhật"
-      },
-      "legend": {
-        "title": "Chú thích",
-        "ceo": "Giám đốc điều hành",
-        "branchManager": "Trưởng chi nhánh",
-        "deptHead": "Trưởng phòng",
-        "teamLead": "Team Leader",
-        "staff": "Nhân viên"
-      },
-      "hint": "Click vào node để mở rộng/thu gọn. Di chuột qua để xem thông tin chi tiết."
+      }
     },
     "overtime": "Làm thêm giờ",
     "overtimePage": {
@@ -2236,95 +2247,95 @@
     },
     "salaryStructure": "Cơ cấu lương",
     "salaryStructurePage": {
-      "title": "Cơ cấu lương",
-      "subtitle": "Quản lý các mẫu cơ cấu lương và thành phần lương",
       "addStructure": "Thêm cơ cấu lương",
-      "stats": {
-        "totalStructures": "Tổng cơ cấu",
-        "active": "Đang hoạt động",
-        "totalComponents": "Tổng thành phần",
-        "default": "Mặc định"
-      },
-      "noStructures": "Chưa có cơ cấu lương",
-      "noStructuresDesc": "Tạo cơ cấu lương đầu tiên để bắt đầu",
-      "componentTypes": {
-        "EARNING": "Thu nhập",
-        "DEDUCTION": "Khấu trừ",
-        "EMPLOYER_CONTRIBUTION": "Công ty đóng"
-      },
       "calculationTypes": {
         "FIXED": "Cố định",
-        "PERCENT": "Phần trăm",
-        "FORMULA": "Công thức"
-      },
-      "employeeTypes": {
-        "ALL": "Tất cả",
-        "FULL_TIME": "Toàn thời gian",
-        "PART_TIME": "Bán thời gian",
-        "DRIVER": "Tài xế",
-        "CONTRACT": "Hợp đồng"
+        "FORMULA": "Công thức",
+        "PERCENT": "Phần trăm"
       },
       "columns": {
-        "code": "Mã",
-        "name": "Tên",
-        "type": "Loại",
-        "calculation": "Cách tính",
         "amount": "Số tiền",
-        "tax": "Thuế",
+        "calculation": "Cách tính",
+        "code": "Mã",
         "insurance": "Đóng BH",
-        "status": "Trạng thái"
-      },
-      "labels": {
-        "earnings": "Thu nhập",
-        "deductions": "Khấu trừ",
-        "netPay": "Thực lĩnh",
-        "components": "thành phần",
-        "default": "Mặc định",
-        "inactive": "Không hoạt động",
-        "active": "Hoạt động",
-        "disabled": "Tắt",
-        "noDescription": "Không có mô tả",
-        "salaryComponents": "Thành phần lương",
-        "add": "Thêm"
-      },
-      "structureModal": {
-        "createTitle": "Thêm cơ cấu lương",
-        "editTitle": "Sửa cơ cấu lương",
-        "structureCode": "Mã cơ cấu",
-        "structureCodePlaceholder": "SALARY-OFFICE",
-        "structureName": "Tên cơ cấu",
-        "structureNamePlaceholder": "Cơ cấu lương văn phòng",
-        "employeeType": "Loại nhân viên",
-        "description": "Mô tả",
-        "descriptionPlaceholder": "Mô tả cơ cấu lương..."
+        "name": "Tên",
+        "status": "Trạng thái",
+        "tax": "Thuế",
+        "type": "Loại"
       },
       "componentModal": {
-        "createTitle": "Thêm thành phần lương",
-        "editTitle": "Sửa thành phần lương",
+        "calculation": "Cách tính",
         "componentCode": "Mã thành phần",
         "componentCodePlaceholder": "BASIC, MEAL, OT...",
         "componentName": "Tên thành phần",
         "componentNamePlaceholder": "Lương cơ bản, Phụ cấp ăn...",
-        "type": "Loại",
-        "calculation": "Cách tính",
+        "createTitle": "Thêm thành phần lương",
         "defaultAmount": "Số tiền mặc định",
+        "editTitle": "Sửa thành phần lương",
+        "insuranceBase": "Tính vào lương đóng BH",
         "sortOrder": "Thứ tự hiển thị",
         "taxable": "Tính thuế TNCN",
-        "insuranceBase": "Tính vào lương đóng BH"
+        "type": "Loại"
       },
-      "noComponentsYet": "Chưa có thành phần lương. Nhấn \"Thêm\" để tạo mới.",
+      "componentTypes": {
+        "DEDUCTION": "Khấu trừ",
+        "EARNING": "Thu nhập",
+        "EMPLOYER_CONTRIBUTION": "Công ty đóng"
+      },
+      "employeeTypes": {
+        "ALL": "Tất cả",
+        "CONTRACT": "Hợp đồng",
+        "DRIVER": "Tài xế",
+        "FULL_TIME": "Toàn thời gian",
+        "PART_TIME": "Bán thời gian"
+      },
       "errors": {
-        "createStructureFailed": "Tạo cơ cấu lương thất bại",
-        "createComponentFailed": "Thêm thành phần lương thất bại"
+        "createComponentFailed": "Thêm thành phần lương thất bại",
+        "createStructureFailed": "Tạo cơ cấu lương thất bại"
       },
       "instructions": {
-        "title": "Hướng dẫn",
-        "structureDesc": "Cơ cấu lương: Template định nghĩa các thành phần lương cho nhóm nhân viên",
         "componentDesc": "Thành phần lương: Các khoản thu nhập hoặc khấu trừ trong cơ cấu",
+        "insuranceDesc": "Thành phần \"Đóng BH\" sẽ được tính vào mức lương đóng bảo hiểm",
         "overrideDesc": "Khi gán cơ cấu lương cho nhân viên, có thể override số tiền từng thành phần",
+        "structureDesc": "Cơ cấu lương: Template định nghĩa các thành phần lương cho nhóm nhân viên",
         "taxDesc": "Thành phần \"Tính thuế\" sẽ được tính vào thu nhập chịu thuế TNCN",
-        "insuranceDesc": "Thành phần \"Đóng BH\" sẽ được tính vào mức lương đóng bảo hiểm"
-      }
+        "title": "Hướng dẫn"
+      },
+      "labels": {
+        "active": "Hoạt động",
+        "add": "Thêm",
+        "components": "thành phần",
+        "deductions": "Khấu trừ",
+        "default": "Mặc định",
+        "disabled": "Tắt",
+        "earnings": "Thu nhập",
+        "inactive": "Không hoạt động",
+        "netPay": "Thực lĩnh",
+        "noDescription": "Không có mô tả",
+        "salaryComponents": "Thành phần lương"
+      },
+      "noComponentsYet": "Chưa có thành phần lương. Nhấn \"Thêm\" để tạo mới.",
+      "noStructures": "Chưa có cơ cấu lương",
+      "noStructuresDesc": "Tạo cơ cấu lương đầu tiên để bắt đầu",
+      "stats": {
+        "active": "Đang hoạt động",
+        "default": "Mặc định",
+        "totalComponents": "Tổng thành phần",
+        "totalStructures": "Tổng cơ cấu"
+      },
+      "structureModal": {
+        "createTitle": "Thêm cơ cấu lương",
+        "description": "Mô tả",
+        "descriptionPlaceholder": "Mô tả cơ cấu lương...",
+        "editTitle": "Sửa cơ cấu lương",
+        "employeeType": "Loại nhân viên",
+        "structureCode": "Mã cơ cấu",
+        "structureCodePlaceholder": "SALARY-OFFICE",
+        "structureName": "Tên cơ cấu",
+        "structureNamePlaceholder": "Cơ cấu lương văn phòng"
+      },
+      "subtitle": "Quản lý các mẫu cơ cấu lương và thành phần lương",
+      "title": "Cơ cấu lương"
     },
     "skillsMatrix": "Ma trận kỹ năng",
     "skillsPage": {
@@ -2397,115 +2408,115 @@
       "usernamePlaceholder": "Mặc định: SĐT hoặc Email"
     },
     "workersPage": {
-      "title": "Workers",
-      "subtitle": "Quản lý workers từ Personal Workspace",
+      "assignTaskModal": {
+        "description": "Mô tả chi tiết",
+        "descriptionPlaceholder": "Mô tả chi tiết công việc cần làm...",
+        "endTime": "Kết thúc",
+        "paymentAmount": "Số tiền thanh toán (VNĐ)",
+        "refId": "Mã tham chiếu",
+        "refIdPlaceholder": "ID đơn hàng/chuyến xe",
+        "startTime": "Bắt đầu",
+        "taskCode": "Mã công việc",
+        "taskCodePlaceholder": "VD: TASK-001",
+        "taskTitle": "Tiêu đề công việc",
+        "taskTitlePlaceholder": "VD: Giao hàng cho Công ty ABC",
+        "taskType": "Loại công việc",
+        "taskTypes": {
+          "DELIVERY": "Giao hàng",
+          "ORDER": "Đơn hàng",
+          "TRIP": "Chuyến xe"
+        },
+        "title": "Giao việc cho Worker"
+      },
+      "confirmations": {
+        "disconnect": "Bạn có chắc muốn hủy kết nối với {name}?\n\nWorker sẽ không thể nhận việc từ công ty nữa.",
+        "revokeInvitation": "Bạn có chắc muốn hủy lời mời này?"
+      },
+      "editRoleModal": {
+        "currentRole": "Vai trò hiện tại",
+        "modules": {
+          "dispatch": "Điều phối",
+          "masterdata": "Master Data",
+          "reports": "Báo cáo",
+          "tms": "TMS - Vận tải",
+          "workspace": "Workspace"
+        },
+        "permissionsPreview": "Quyền sẽ được cấp:",
+        "roleDescriptions": {
+          "ACCOUNTANT": "Xem báo cáo, đơn hàng",
+          "DISPATCHER": "Quản lý đơn hàng, tài xế, xe",
+          "DRIVER": "Xem và cập nhật đơn hàng được giao",
+          "MANAGER": "Full quyền TMS + Master data + Báo cáo",
+          "WORKER": "Xem công việc được giao"
+        },
+        "selectNewRole": "Chọn vai trò mới",
+        "title": "Đổi quyền Worker"
+      },
+      "errors": {
+        "assignFailed": "Giao việc thất bại",
+        "disconnectFailed": "Không thể hủy kết nối. Vui lòng thử lại.",
+        "inviteFailed": "Gửi lời mời thất bại",
+        "updateRoleFailed": "Cập nhật thất bại"
+      },
+      "invitationStatus": {
+        "ACCEPTED": "Đã chấp nhận",
+        "DECLINED": "Đã từ chối",
+        "PENDING": "Đang chờ"
+      },
+      "inviteFirst": "Mời worker đầu tiên",
+      "inviteModal": {
+        "emailHint": "Nhập email để mời hoặc username của worker đã có tài khoản",
+        "emailOrUsername": "Email hoặc Username",
+        "emailOrUsernamePlaceholder": "email@example.com hoặc username",
+        "message": "Lời nhắn (tùy chọn)",
+        "messagePlaceholder": "Viết lời nhắn cho worker...",
+        "role": "Vai trò",
+        "roleHint": "Quyền có thể được tùy chỉnh sau khi worker chấp nhận lời mời",
+        "roles": {
+          "ACCOUNTANT": "Kế toán - Xem báo cáo, đơn hàng",
+          "CONTRACTOR": "Nhà thầu - Nhận việc theo hợp đồng",
+          "DISPATCHER": "Điều phối - Quản lý đơn hàng, tài xế, xe",
+          "DRIVER": "Tài xế - Xem và cập nhật đơn hàng được giao",
+          "FREELANCER": "Freelancer - Nhận việc theo dự án",
+          "MANAGER": "Quản lý - Full quyền TMS + Master data",
+          "WORKER": "Nhân viên - Xem công việc được giao"
+        },
+        "title": "Mời Worker"
+      },
       "inviteWorker": "Mời Worker",
+      "labels": {
+        "assignTask": "Giao việc",
+        "changeRole": "Đổi quyền",
+        "disconnect": "Hủy kết nối",
+        "license": "GPLX",
+        "role": "Vai trò",
+        "sentAt": "Gửi lúc",
+        "tasks": "việc",
+        "viewWorkspace": "Xem workspace"
+      },
+      "noInvitations": "Chưa có lời mời nào",
+      "noWorkers": "Chưa có worker nào",
+      "searchPlaceholder": "Tìm worker...",
       "stats": {
         "connectedWorkers": "Workers kết nối",
-        "readyToWork": "Sẵn sàng làm việc",
         "pendingInvitations": "Lời mời đang chờ",
+        "readyToWork": "Sẵn sàng làm việc",
         "totalTasksCompleted": "Tổng việc hoàn thành"
+      },
+      "subtitle": "Quản lý workers từ Personal Workspace",
+      "success": {
+        "inviteSent": "Đã gửi lời mời thành công!",
+        "roleUpdated": "Đã cập nhật quyền thành công!",
+        "taskAssigned": "Đã giao việc thành công!"
       },
       "tabs": {
         "connected": "Workers kết nối",
         "invitations": "Lời mời"
       },
-      "searchPlaceholder": "Tìm worker...",
-      "noWorkers": "Chưa có worker nào",
-      "inviteFirst": "Mời worker đầu tiên",
-      "noInvitations": "Chưa có lời mời nào",
+      "title": "Workers",
       "workerStatus": {
         "available": "Sẵn sàng",
         "unavailable": "Tạm ngưng"
-      },
-      "labels": {
-        "license": "GPLX",
-        "role": "Vai trò",
-        "tasks": "việc",
-        "sentAt": "Gửi lúc",
-        "assignTask": "Giao việc",
-        "changeRole": "Đổi quyền",
-        "viewWorkspace": "Xem workspace",
-        "disconnect": "Hủy kết nối"
-      },
-      "invitationStatus": {
-        "PENDING": "Đang chờ",
-        "ACCEPTED": "Đã chấp nhận",
-        "DECLINED": "Đã từ chối"
-      },
-      "assignTaskModal": {
-        "title": "Giao việc cho Worker",
-        "taskType": "Loại công việc",
-        "taskTypes": {
-          "ORDER": "Đơn hàng",
-          "TRIP": "Chuyến xe",
-          "DELIVERY": "Giao hàng"
-        },
-        "taskTitle": "Tiêu đề công việc",
-        "taskTitlePlaceholder": "VD: Giao hàng cho Công ty ABC",
-        "refId": "Mã tham chiếu",
-        "refIdPlaceholder": "ID đơn hàng/chuyến xe",
-        "taskCode": "Mã công việc",
-        "taskCodePlaceholder": "VD: TASK-001",
-        "description": "Mô tả chi tiết",
-        "descriptionPlaceholder": "Mô tả chi tiết công việc cần làm...",
-        "startTime": "Bắt đầu",
-        "endTime": "Kết thúc",
-        "paymentAmount": "Số tiền thanh toán (VNĐ)"
-      },
-      "inviteModal": {
-        "title": "Mời Worker",
-        "emailOrUsername": "Email hoặc Username",
-        "emailOrUsernamePlaceholder": "email@example.com hoặc username",
-        "emailHint": "Nhập email để mời hoặc username của worker đã có tài khoản",
-        "role": "Vai trò",
-        "roles": {
-          "DRIVER": "Tài xế - Xem và cập nhật đơn hàng được giao",
-          "DISPATCHER": "Điều phối - Quản lý đơn hàng, tài xế, xe",
-          "MANAGER": "Quản lý - Full quyền TMS + Master data",
-          "ACCOUNTANT": "Kế toán - Xem báo cáo, đơn hàng",
-          "WORKER": "Nhân viên - Xem công việc được giao",
-          "FREELANCER": "Freelancer - Nhận việc theo dự án",
-          "CONTRACTOR": "Nhà thầu - Nhận việc theo hợp đồng"
-        },
-        "roleHint": "Quyền có thể được tùy chỉnh sau khi worker chấp nhận lời mời",
-        "message": "Lời nhắn (tùy chọn)",
-        "messagePlaceholder": "Viết lời nhắn cho worker..."
-      },
-      "editRoleModal": {
-        "title": "Đổi quyền Worker",
-        "currentRole": "Vai trò hiện tại",
-        "selectNewRole": "Chọn vai trò mới",
-        "roleDescriptions": {
-          "DRIVER": "Xem và cập nhật đơn hàng được giao",
-          "DISPATCHER": "Quản lý đơn hàng, tài xế, xe",
-          "MANAGER": "Full quyền TMS + Master data + Báo cáo",
-          "ACCOUNTANT": "Xem báo cáo, đơn hàng",
-          "WORKER": "Xem công việc được giao"
-        },
-        "permissionsPreview": "Quyền sẽ được cấp:",
-        "modules": {
-          "tms": "TMS - Vận tải",
-          "dispatch": "Điều phối",
-          "masterdata": "Master Data",
-          "reports": "Báo cáo",
-          "workspace": "Workspace"
-        }
-      },
-      "confirmations": {
-        "revokeInvitation": "Bạn có chắc muốn hủy lời mời này?",
-        "disconnect": "Bạn có chắc muốn hủy kết nối với {name}?\n\nWorker sẽ không thể nhận việc từ công ty nữa."
-      },
-      "errors": {
-        "inviteFailed": "Gửi lời mời thất bại",
-        "disconnectFailed": "Không thể hủy kết nối. Vui lòng thử lại.",
-        "assignFailed": "Giao việc thất bại",
-        "updateRoleFailed": "Cập nhật thất bại"
-      },
-      "success": {
-        "inviteSent": "Đã gửi lời mời thành công!",
-        "taskAssigned": "Đã giao việc thành công!",
-        "roleUpdated": "Đã cập nhật quyền thành công!"
       }
     }
   },
@@ -3103,6 +3114,7 @@
         "delete": "Bạn có chắc muốn xóa khoản tạm ứng này?",
         "markDeducted": "Đánh dấu khoản tạm ứng này đã được trừ lương?"
       },
+      "currency": "đ",
       "errors": {
         "deleteFailed": "Xóa thất bại",
         "loadFailed": "Tải dữ liệu tạm ứng thất bại",
@@ -3115,10 +3127,12 @@
         "deducted": "Đã trừ",
         "driver": "Tài xế",
         "month": "Tháng",
+        "monthLabel": "Tháng {month}",
         "notDeducted": "Chưa trừ",
         "status": "Trạng thái",
         "year": "Năm"
       },
+      "loading": "Đang tải...",
       "messages": {
         "created": "Thêm tạm ứng thành công!",
         "deleted": "Xóa tạm ứng thành công!",
@@ -3413,6 +3427,44 @@
       }
     },
     "driverSalary": "Lương tài xế",
+    "driverSalaryPage": {
+      "columns": {
+        "container": "Cont",
+        "deliveryDate": "Ngày giao hàng",
+        "deliverySite": "Điểm giao",
+        "driver": "Tài xế",
+        "flatbed": "Mooc sàn",
+        "fromPort": "Từ cảng",
+        "holiday": "Ngày lễ",
+        "internalCargo": "Hàng xá",
+        "km": "Km",
+        "orderCode": "Mã đơn",
+        "pickupSite": "Điểm lấy",
+        "tripSalary": "Lương chuyến",
+        "tripsPerDay": "Chuyến/ngày"
+      },
+      "currency": "đ",
+      "filters": {
+        "allDrivers": "Tất cả tài xế",
+        "driver": "Tài xế",
+        "month": "Tháng",
+        "monthOption": "Tháng {month}",
+        "year": "Năm"
+      },
+      "loading": "Đang tải...",
+      "noData": "Không có dữ liệu chuyến hàng trong tháng này",
+      "saved": "Đã lưu",
+      "saving": "Đang lưu...",
+      "summary": {
+        "status": "Trạng thái",
+        "totalTripSalary": "Tổng lương chuyến",
+        "totalTrips": "Tổng số chuyến",
+        "tripsThisMonth": "Tổng chuyến trong tháng"
+      },
+      "title": "Quản lý lương tài xế",
+      "totalTripSalaryLabel": "TỔNG LƯƠNG CHUYẾN:",
+      "viewTrips": "Xem chuyến"
+    },
     "driverSalarySettingsPage": {
       "actions": {
         "delete": "Xóa",
@@ -3674,6 +3726,7 @@
       "batchQrError": "Lỗi tạo QR hàng loạt",
       "buttons": {
         "cancel": "Hủy",
+        "close": "Đóng",
         "create": "Tạo hạ rỗng",
         "update": "Cập nhật"
       },
@@ -3715,6 +3768,12 @@
         "uploading": "Đang tải..."
       },
       "downloadError": "Không thể tải file",
+      "errors": {
+        "downloadError": "Không thể tải file",
+        "error": "Lỗi:",
+        "loadError": "Lỗi tải dữ liệu:",
+        "uploadError": "Lỗi tải lên:"
+      },
       "fees": {
         "amountPaid": "Đã trả",
         "amountToPay": "Phải trả",
@@ -3727,6 +3786,7 @@
         "title": "Chi tiết phí",
         "total": "Tổng cộng"
       },
+      "itemName": "hạ rỗng",
       "loadError": "Lỗi tải dữ liệu",
       "loading": "Đang tải...",
       "modal": {
@@ -3761,16 +3821,22 @@
         "closeButton": "Đóng",
         "confirmAll": "Xác nhận tất cả ({count} tài xế)",
         "confirmButton": "Xác nhận đã thanh toán",
+        "confirmPayment": "Xác nhận đã thanh toán",
         "confirmSingle": "Xác nhận đã thanh toán cho {driverName}",
+        "confirmSingleDriver": "Xác nhận đã thanh toán cho {driver}",
+        "confirmSuccess": "Xác nhận thanh toán thành công!",
         "container": "Container",
         "content": "Nội dung",
+        "description": "Nội dung:",
         "drivers": "tài xế",
+        "instruction": "Sau khi quét mã và chuyển tiền thành công, nhấn \"Xác nhận đã thanh toán\"",
         "instructions": "Sau khi quét mã và chuyển tiền thành công, nhấn \"Xác nhận đã thanh toán\"",
         "orderCode": "Mã đơn",
         "orderList": "Danh sách đơn hạ rỗng:",
         "orders": "đơn hạ rỗng",
         "qrError": "Lỗi tạo QR",
         "recipient": "Người nhận",
+        "selectAtLeastOne": "Vui lòng chọn ít nhất 1 đơn hạ rỗng để thanh toán",
         "subtitle": "Quét mã QR để chuyển tiền hoàn lại cho tài xế",
         "title": "Thanh toán VietQR",
         "totalToPay": "Tổng cần thanh toán"
@@ -3817,6 +3883,10 @@
     },
     "fuelLogs": "Nhật ký nhiên liệu",
     "fuelLogsPage": {
+      "actions": {
+        "delete": "Xóa",
+        "edit": "Sửa"
+      },
       "addButton": "Thêm",
       "closeButton": "Đóng",
       "columns": {
@@ -3836,6 +3906,8 @@
       },
       "downloadTemplate": "Tải mẫu",
       "errors": {
+        "analyzeFailed": "Phân tích thất bại",
+        "error": "Lỗi",
         "fillRequired": "Vui lòng điền đầy đủ: Km, Lít xăng, Đơn giá",
         "selectExcelFile": "Vui lòng chọn file Excel (.xlsx hoặc .xls)",
         "selectImage": "Vui lòng chọn ít nhất 1 ảnh",
@@ -3881,6 +3953,7 @@
         "analyzeSuccess": "Phân tích thành công! Vui lòng kiểm tra và điền các thông tin còn thiếu.",
         "analyzing": "Đang phân tích...",
         "createRecord": "Tạo bản ghi",
+        "createSuccess": "Đã tạo bản ghi thành công!",
         "maxImages": "Tối đa 5 ảnh",
         "notImage": "không phải là file ảnh",
         "selectImages": "Chọn ảnh đổ xăng",
@@ -4011,6 +4084,70 @@
       }
     },
     "invoiceAutomation": "Tự động hóa hóa đơn",
+    "invoiceAutomationPage": {
+      "depots": {
+        "code": "Mã",
+        "title": "Depot hỗ trợ"
+      },
+      "errors": {
+        "fillAllFields": "Vui lòng điền đầy đủ thông tin",
+        "generic": "Có lỗi xảy ra",
+        "imageProcessFailed": "Không thể xử lý ảnh",
+        "ocrFailed": "OCR thất bại",
+        "serverConnection": "Không thể kết nối server"
+      },
+      "form": {
+        "containerCode": "Số container",
+        "containerPlaceholder": "VD: JXLU6143159",
+        "createInvoice": "Tạo hóa đơn",
+        "depot": "Depot",
+        "processing": "Đang xử lý...",
+        "receiptNumber": "Số phiếu thu",
+        "receiptPlaceholder": "VD: NH5932291",
+        "title": "Thông tin hóa đơn"
+      },
+      "guide": {
+        "step1": "1. Upload ảnh phiếu thu để tự động trích xuất thông tin",
+        "step2": "2. Hoặc nhập thủ công số phiếu thu và container",
+        "step3": "3. Nhấn \"Tạo hóa đơn\" và chờ kết quả",
+        "step4": "4. Hóa đơn sẽ được gửi về email đã đăng ký",
+        "title": "Hướng dẫn"
+      },
+      "history": {
+        "noRequests": "Chưa có yêu cầu nào",
+        "refresh": "Làm mới",
+        "title": "Lịch sử yêu cầu"
+      },
+      "messages": {
+        "jobCreated": "Job {jobId} đã được tạo. Đang xử lý...",
+        "ocrSuccess": "OCR hoàn tất! Đã tự động điền dữ liệu."
+      },
+      "ocrResult": {
+        "amount": "Số tiền",
+        "containerCode": "Số container",
+        "depot": "Depot",
+        "error": "Lỗi:",
+        "notFound": "Không tìm thấy",
+        "receiptNumber": "Số phiếu thu",
+        "title": "Kết quả OCR:",
+        "unknown": "Không xác định"
+      },
+      "status": {
+        "completed": "Hoàn thành",
+        "failed": "Thất bại",
+        "pending": "Chờ xử lý",
+        "running": "Đang chạy"
+      },
+      "subtitle": "Tự động lấy hóa đơn VAT từ các depot - Hỗ trợ upload ảnh phiếu thu",
+      "title": "Tự động hóa hóa đơn",
+      "uploadSection": {
+        "clickToSelect": "Click để chọn ảnh hoặc kéo thả vào đây",
+        "extractOcr": "Đọc thông tin từ ảnh (OCR)",
+        "reading": "Đang đọc ảnh...",
+        "supportedFormats": "Hỗ trợ: JPG, PNG (max 5MB)",
+        "title": "Upload ảnh phiếu thu"
+      }
+    },
     "locations": {
       "add": "Thêm địa điểm",
       "address": "Địa chỉ",
@@ -4313,9 +4450,62 @@
     },
     "orders": "Đơn hàng",
     "ordersPage": {
+      "actions": {
+        "assign": "Phân công",
+        "cancel": "Hủy",
+        "complete": "Hoàn thành",
+        "edit": "Sửa"
+      },
+      "assignModal": {
+        "assign": "Phân công",
+        "cancel": "Hủy",
+        "deliveryDate": "Ngày giao",
+        "deliveryShift": "Ca giao",
+        "driver": "Tài xế",
+        "pickupDate": "Ngày lấy",
+        "pickupShift": "Ca lấy",
+        "selectDriver": "Chọn tài xế",
+        "shifts": {
+          "afternoon": "Chiều",
+          "evening": "Tối",
+          "morning": "Sáng"
+        },
+        "title": "Phân công đơn hàng cho tài xế"
+      },
+      "columns": {
+        "actions": "Thao tác",
+        "cargoNote": "Ghi chú hàng",
+        "container": "Cont",
+        "containerCode": "Số Cont",
+        "custDate": "Ngày KH",
+        "driver": "Tài xế",
+        "etaDelivery": "ETA Giao",
+        "etaPickup": "ETA Lấy",
+        "orderCode": "Mã đơn",
+        "route": "Lấy → Giao",
+        "status": "Trạng thái"
+      },
       "confirmations": {
         "deleteDocument": "Bạn có chắc muốn xóa tài liệu này?"
       },
+      "createFromText": "Tạo từ văn bản",
+      "createModal": {
+        "cancel": "Hủy",
+        "cargoNote": "Ghi chú hàng",
+        "containerCode": "Số container",
+        "create": "Tạo đơn",
+        "customer": "Khách hàng",
+        "customerDate": "Ngày yêu cầu",
+        "deliverySite": "Điểm giao",
+        "documents": "Chứng từ",
+        "equipment": "Loại container",
+        "orderCode": "Mã đơn",
+        "pickupSite": "Điểm lấy",
+        "quantity": "Số lượng",
+        "selectCustomer": "Chọn khách hàng",
+        "title": "Tạo đơn hàng mới"
+      },
+      "display": "Hiển thị",
       "docTypes": {
         "containerReceipt": "Phiếu giao nhận container",
         "do": "DO (Delivery Order)",
@@ -4323,15 +4513,60 @@
         "other": "Khác",
         "sealPhoto": "Ảnh seal"
       },
+      "newOrder": "Đơn mới",
+      "noDate": "Không có ngày",
+      "noOrders": "Không có đơn hàng",
+      "orders": "đơn hàng",
       "placeholders": {
         "cargoNote": "e.g., Hàng dễ vỡ, xếp cẩn thận",
         "selectDepot": "Chọn depot..."
       },
+      "quickCreate": {
+        "cancel": "Hủy",
+        "clear": "Xóa",
+        "container": "Container",
+        "createOrders": "Tạo {count} đơn",
+        "creating": "Đang tạo...",
+        "customer": "Khách hàng",
+        "dates": "Ngày",
+        "driver": "Tài xế",
+        "line": "Dòng",
+        "parse": "Phân tích",
+        "parsedOrders": "Đơn đã phân tích ({count} đơn)",
+        "placeholder": "Dán nội dung đơn hàng vào đây...",
+        "route": "Tuyến",
+        "selectAll": "Chọn tất cả",
+        "title": "Tạo nhanh từ văn bản"
+      },
+      "roleLabel": "Vai trò",
+      "rows": "dòng",
       "shifts": {
         "afternoon": "chiều",
         "evening": "tối",
         "morning": "sáng"
-      }
+      },
+      "showingOrders": "Hiển thị {start} - {end} / {total} đơn hàng",
+      "status": {
+        "ASSIGNED": "Đã phân công",
+        "CANCELLED": "Đã hủy",
+        "COMPLETED": "Hoàn thành",
+        "DELIVERED": "Đã giao",
+        "IN_TRANSIT": "Đang vận chuyển",
+        "NEW": "Mới",
+        "PICKED_UP": "Đang lấy hàng",
+        "REJECTED": "Từ chối"
+      },
+      "tabs": {
+        "all": "Tất cả",
+        "assigned": "Đã phân công",
+        "cancelled": "Đã hủy",
+        "completed": "Hoàn thành",
+        "delivered": "Đã giao",
+        "inTransit": "Đang vận chuyển",
+        "new": "Mới",
+        "processing": "Đang xử lý"
+      },
+      "title": "Đơn hàng"
     },
     "plReports": "Báo cáo lãi/lỗ",
     "rates": "Bảng giá",
@@ -4705,6 +4940,87 @@
     },
     "title": "Quản lý Vận tải",
     "tripRevenue": "Doanh thu chuyến",
+    "tripRevenuePage": {
+      "buttons": {
+        "apply": "Áp dụng",
+        "applyFreight": "Áp dụng cước",
+        "exportExcel": "Xuất Excel",
+        "exportPdf": "Xuất PDF",
+        "ordersSelected": "đơn đã chọn",
+        "recalculateAll": "Tính lại tất cả cước"
+      },
+      "columns": {
+        "cont": "Cont",
+        "containerNo": "Số Container",
+        "currentFreight": "Cước hiện tại",
+        "customer": "KH",
+        "date": "Ngày",
+        "driver": "Tài xế",
+        "km": "Km",
+        "orderCode": "Mã đơn",
+        "rateFreight": "Cước bảng giá",
+        "route": "Tuyến",
+        "status": "Trạng thái",
+        "tollStations": "Trạm thu phí"
+      },
+      "confirmations": {
+        "recalculateAll": "Bạn có chắc muốn tính lại cước cho tất cả đơn hàng chưa có cước?"
+      },
+      "emptyState": {
+        "description": "Không tìm thấy đơn hàng phù hợp với bộ lọc",
+        "title": "Không có đơn hàng"
+      },
+      "errors": {
+        "applyFreightFailed": "Không thể áp dụng cước",
+        "bulkApplyFailed": "Không thể áp dụng cước hàng loạt",
+        "genericError": "Có lỗi xảy ra",
+        "loadOrdersFailed": "Không thể tải danh sách đơn hàng",
+        "recalculateFailed": "Không thể tính lại cước",
+        "updateFreightFailed": "Không thể cập nhật cước"
+      },
+      "filters": {
+        "clearFilters": "Xóa bộ lọc",
+        "customer": "Khách hàng",
+        "freight": "Cước",
+        "fromDate": "Từ ngày",
+        "rowCount": "Số dòng",
+        "searchPlaceholder": "Tìm theo mã đơn, số container, tài xế, điểm lấy/giao...",
+        "status": "Trạng thái",
+        "toDate": "Đến ngày"
+      },
+      "messages": {
+        "bulkFreightApplied": "Đã áp dụng cước cho {count} đơn hàng",
+        "freightApplied": "Áp dụng cước thành công",
+        "freightUpdated": "Cập nhật cước thành công",
+        "recalculateComplete": "Đã cập nhật {updated} đơn, bỏ qua {skipped} đơn"
+      },
+      "modal": {
+        "freightAmount": "Số tiền cước (VND)",
+        "freightPlaceholder": "Nhập số tiền cước",
+        "suggestedFromRate": "Đề xuất từ bảng giá",
+        "updateFreight": "Cập nhật cước"
+      },
+      "noFreight": "Chưa có cước",
+      "noRateFound": "Không tìm thấy bảng giá",
+      "ordersCount": "đơn hàng",
+      "statusLabels": {
+        "assigned": "Đã phân công",
+        "cancelled": "Đã hủy",
+        "completed": "Hoàn thành",
+        "delivered": "Đã giao",
+        "emptyReturn": "Hạ rỗng",
+        "inTransit": "Đang vận chuyển",
+        "new": "Mới",
+        "rejected": "Từ chối"
+      },
+      "summary": {
+        "totalOrders": "Tổng đơn hàng",
+        "totalRevenue": "Tổng doanh thu",
+        "withFreight": "Có cước",
+        "withoutFreight": "Chưa có cước"
+      },
+      "title": "Quản lý doanh thu chuyến"
+    },
     "trips": {
       "add": "Tạo chuyến",
       "cancelled": "Đã hủy",
@@ -4787,91 +5103,71 @@
     "vehicleCostsPage": {
       "actions": {
         "delete": "Xóa",
-        "downloadInvoice": "Tải hóa đơn",
+        "duplicate": "Nhân bản",
         "edit": "Sửa",
-        "markPaid": "Đánh dấu đã thanh toán",
-        "viewDetails": "Xem chi tiết"
+        "refresh": "Làm mới"
       },
       "addCost": "Thêm chi phí",
+      "addNewCost": "Thêm chi phí mới",
       "columns": {
         "actions": "Thao tác",
-        "amount": "Số tiền",
         "costType": "Loại",
-        "date": "Ngày",
-        "description": "Mô tả",
         "monthlyAllocation": "Phân bổ/tháng",
-        "paidDate": "Ngày thanh toán",
-        "paymentStatus": "Trạng thái",
-        "vehicle": "Xe",
-        "vendor": "Nhà cung cấp"
+        "nameDescription": "Tên / Mô tả",
+        "payment": "Thanh toán",
+        "period": "Thời hạn",
+        "totalValue": "Tổng giá trị",
+        "vehicle": "Xe"
       },
       "confirmations": {
-        "delete": "Bạn có chắc muốn xóa chi phí này?",
-        "markPaid": "Đánh dấu chi phí này đã thanh toán?"
+        "delete": "Bạn có chắc muốn xóa chi phí này?"
       },
-      "costTypes": {
-        "BATTERY": "Ắc quy",
-        "FUEL": "Nhiên liệu",
-        "INSURANCE": "Bảo hiểm",
-        "MAINTENANCE": "Bảo dưỡng",
-        "OTHER": "Khác",
-        "PARKING": "Đỗ xe",
-        "REGISTRATION": "Đăng kiểm",
-        "REPAIR": "Sửa chữa",
-        "TIRE": "Lốp xe",
-        "TOLL": "Phí cầu đường",
-        "WASHING": "Rửa xe"
-      },
+      "currency": "đ",
       "errors": {
         "deleteFailed": "Xóa chi phí thất bại",
+        "generic": "Có lỗi xảy ra",
         "loadFailed": "Tải dữ liệu chi phí thất bại",
         "saveFailed": "Lưu chi phí thất bại"
       },
       "filters": {
         "allMonths": "Tất cả tháng",
-        "allStatuses": "Tất cả trạng thái",
         "allTypes": "Tất cả loại",
         "allVehicles": "Tất cả xe",
-        "costType": "Loại chi phí",
-        "month": "Tháng",
-        "paymentStatus": "Trạng thái TT",
-        "vehicle": "Xe",
-        "year": "Năm"
+        "allYears": "Tất cả năm",
+        "searchPlaceholder": "Tìm theo tên, biển số, nhà cung cấp..."
       },
-      "messages": {
-        "created": "Thêm chi phí thành công!",
-        "deleted": "Xóa chi phí thành công!",
-        "markedPaid": "Đã đánh dấu thanh toán!",
-        "updated": "Cập nhật chi phí thành công!"
-      },
+      "loading": "Đang tải...",
       "modal": {
         "allocationMonths": "Số tháng phân bổ",
         "amount": "Số tiền (VNĐ)",
-        "attachments": "Đính kèm",
         "cancel": "Hủy",
+        "costName": "Tên chi phí",
+        "costNamePlaceholder": "VD: Bảo hiểm TNDS 2024, ETC T1/2024...",
         "costType": "Loại chi phí",
-        "costTypePlaceholder": "-- Chọn loại --",
         "createTitle": "Thêm chi phí mới",
-        "date": "Ngày",
-        "description": "Mô tả",
-        "descriptionPlaceholder": "Mô tả chi phí...",
+        "default": "Mặc định",
         "editTitle": "Sửa chi phí",
+        "endDate": "Ngày kết thúc",
         "invoiceNumber": "Số hóa đơn",
         "invoiceNumberPlaceholder": "Số hóa đơn/biên lai",
-        "monthlyAllocation": "Phân bổ theo tháng",
+        "month": "Tháng",
         "monthlyAllocationHint": "Phân bổ chi phí qua nhiều tháng",
         "notes": "Ghi chú",
-        "notesPlaceholder": "Ghi chú thêm...",
+        "paidAmount": "Số tiền đã thanh toán",
         "paidDate": "Ngày thanh toán",
         "paymentStatus": "Trạng thái thanh toán",
+        "recurring": "Định kỳ",
         "save": "Lưu",
-        "saving": "Đang lưu...",
+        "selectCostType": "-- Chọn loại chi phí --",
+        "sharedAllVehicles": "-- Dùng chung (tất cả xe) --",
+        "startDate": "Ngày bắt đầu",
+        "type": "Loại",
         "update": "Cập nhật",
-        "uploadAttachment": "Tải tệp lên",
+        "variable": "Biến đổi",
         "vehicle": "Xe",
-        "vehiclePlaceholder": "-- Chọn xe --",
         "vendor": "Nhà cung cấp",
-        "vendorPlaceholder": "Tên nhà cung cấp"
+        "vendorPlaceholder": "Tên nhà cung cấp",
+        "year": "Năm"
       },
       "months": {
         "1": "Tháng 1",
@@ -4888,22 +5184,25 @@
         "12": "Tháng 12"
       },
       "noData": "Không có dữ liệu chi phí",
-      "noSearchResults": "Không tìm thấy chi phí phù hợp",
       "paymentStatuses": {
-        "OVERDUE": "Quá hạn",
-        "PAID": "Đã thanh toán",
-        "PARTIAL": "Thanh toán một phần",
-        "PENDING": "Chưa thanh toán"
+        "paid": "Đã thanh toán",
+        "partial": "Thanh toán một phần",
+        "unpaid": "Chưa thanh toán"
       },
       "subtitle": "Theo dõi và quản lý chi phí vận hành xe",
       "summary": {
-        "byType": "Theo loại",
-        "byVehicle": "Theo xe",
+        "average": "Trung bình",
+        "costItems": "Mục chi phí",
+        "monthlyAllocation": "Phân bổ tháng",
         "monthlyAverage": "Trung bình/tháng",
-        "paidAmount": "Đã thanh toán",
-        "pendingAmount": "Chưa thanh toán",
-        "title": "Tổng hợp chi phí",
-        "totalCosts": "Tổng chi phí"
+        "totalCosts": "Tổng chi phí",
+        "vehiclesWithCosts": "Xe có chi phí"
+      },
+      "table": {
+        "months": "tháng",
+        "paid": "Đã TT",
+        "shared": "Dùng chung",
+        "vendor": "NCC"
       },
       "title": "Chi phí vận hành xe"
     },

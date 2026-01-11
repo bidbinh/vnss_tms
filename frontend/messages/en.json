@@ -85,7 +85,18 @@
     "favorites": "Favorites",
     "removeFavorite": "Remove favorite",
     "setDefault": "Set as default",
-    "removeDefault": "Remove default"
+    "removeDefault": "Remove default",
+    "dataTable": {
+      "loading": "Loading...",
+      "noData": "No data",
+      "show": "Show",
+      "rows": "rows",
+      "showing": "Showing",
+      "firstPage": "First page",
+      "previousPage": "Previous page",
+      "nextPage": "Next page",
+      "lastPage": "Last page"
+    }
   },
   "auth": {
     "login": "Login",
@@ -1543,6 +1554,7 @@
       "subtitle": "Manage empty container returns to ports",
       "createButton": "Create Return",
       "payButton": "Payment",
+      "itemName": "empty returns",
       "stats": {
         "totalPortOrders": "Total Port Orders",
         "notReturned": "Not Returned",
@@ -1650,7 +1662,8 @@
       "buttons": {
         "cancel": "Cancel",
         "create": "Create Return",
-        "update": "Update"
+        "update": "Update",
+        "close": "Close"
       },
       "payment": {
         "title": "VietQR Payment",
@@ -1669,16 +1682,28 @@
         "orders": "empty returns",
         "orderList": "Empty return list:",
         "confirmSingle": "Confirm payment for {driverName}",
+        "confirmSingleDriver": "Confirm payment for {driver}",
         "confirmAll": "Confirm all ({count} drivers)",
         "confirmButton": "Confirm Payment",
+        "confirmPayment": "Confirm Payment",
         "closeButton": "Close",
         "qrError": "QR generation error",
-        "instructions": "After scanning and transferring successfully, click \"Confirm Payment\""
+        "instructions": "After scanning and transferring successfully, click \"Confirm Payment\"",
+        "instruction": "After scanning and transferring successfully, click \"Confirm Payment\"",
+        "description": "Content:",
+        "selectAtLeastOne": "Please select at least 1 empty return for payment",
+        "confirmSuccess": "Payment confirmed successfully!"
       },
       "loading": "Loading...",
       "noData": "No empty return data",
       "confirmDelete": "Are you sure you want to delete this return?",
       "deleteSuccess": "Deleted successfully!",
+      "errors": {
+        "error": "Error:",
+        "loadError": "Error loading data:",
+        "downloadError": "Cannot download file",
+        "uploadError": "Upload error:"
+      },
       "loadError": "Error loading data",
       "saveError": "Error",
       "downloadError": "Cannot download file",
@@ -1970,6 +1995,44 @@
         "notAssigned": "Not assigned"
       },
       "viewDetails": "View details"
+    },
+    "driverSalaryPage": {
+      "title": "Driver Salary Management",
+      "filters": {
+        "driver": "Driver",
+        "allDrivers": "All drivers",
+        "year": "Year",
+        "month": "Month",
+        "monthOption": "Month {month}"
+      },
+      "loading": "Loading...",
+      "viewTrips": "View Trips",
+      "saving": "Saving...",
+      "saved": "Saved",
+      "currency": "VND",
+      "summary": {
+        "totalTrips": "Total Trips",
+        "tripsThisMonth": "Total Trips This Month",
+        "totalTripSalary": "Total Trip Salary",
+        "status": "Status"
+      },
+      "columns": {
+        "orderCode": "Order Code",
+        "driver": "Driver",
+        "deliveryDate": "Delivery Date",
+        "pickupSite": "Pickup Site",
+        "deliverySite": "Delivery Site",
+        "container": "Container",
+        "km": "Km",
+        "fromPort": "From Port",
+        "flatbed": "Flatbed",
+        "internalCargo": "Internal Cargo",
+        "holiday": "Holiday",
+        "tripsPerDay": "Trips/Day",
+        "tripSalary": "Trip Salary"
+      },
+      "totalTripSalaryLabel": "TOTAL TRIP SALARY:",
+      "noData": "No trip data for this month"
     },
     "vehicles": {
       "title": "Vehicles",
@@ -2544,15 +2607,22 @@
         "analyzing": "Analyzing...",
         "analyzeSuccess": "Analysis successful! Please check and fill missing info.",
         "createRecord": "Create record",
+        "createSuccess": "Record created successfully!",
         "uploading": "Uploading...",
         "maxImages": "Maximum 5 images",
         "notImage": "is not an image file",
         "tooLarge": "is too large (max 10MB)"
       },
+      "actions": {
+        "edit": "Edit",
+        "delete": "Delete"
+      },
       "confirmations": {
         "delete": "Delete this fuel record?"
       },
       "errors": {
+        "error": "Error",
+        "analyzeFailed": "Analysis failed",
         "selectVehicleDriver": "Please select vehicle and driver",
         "fillRequired": "Please fill all required info: Km, Liters, Unit price",
         "selectImage": "Please select at least 1 image",
@@ -3378,18 +3448,18 @@
     },
     "vehicleCostsPage": {
       "title": "Vehicle Operating Costs",
-      "subtitle": "Track and manage vehicle expenses",
+      "subtitle": "Manage depreciation, insurance, registration, taxes, GPS, tolls...",
       "addCost": "Add Cost",
+      "addNewCost": "Add new cost",
+      "loading": "Loading...",
+      "noData": "No cost records yet",
+      "currency": "VND",
       "filters": {
-        "vehicle": "Vehicle",
+        "searchPlaceholder": "Search by name, plate number, vendor...",
         "allVehicles": "All Vehicles",
-        "costType": "Cost Type",
         "allTypes": "All Types",
-        "year": "Year",
-        "month": "Month",
-        "allMonths": "All Months",
-        "paymentStatus": "Payment Status",
-        "allStatuses": "All Statuses"
+        "allYears": "All Years",
+        "allMonths": "All Months"
       },
       "months": {
         "1": "January",
@@ -3405,110 +3475,96 @@
         "11": "November",
         "12": "December"
       },
-      "costTypes": {
-        "FUEL": "Fuel",
-        "MAINTENANCE": "Maintenance",
-        "REPAIR": "Repair",
-        "INSURANCE": "Insurance",
-        "REGISTRATION": "Registration",
-        "TOLL": "Toll Fees",
-        "PARKING": "Parking",
-        "WASHING": "Washing",
-        "TIRE": "Tires",
-        "BATTERY": "Battery",
-        "OTHER": "Other"
-      },
       "paymentStatuses": {
-        "PAID": "Paid",
-        "PENDING": "Pending",
-        "OVERDUE": "Overdue",
-        "PARTIAL": "Partial"
+        "unpaid": "Unpaid",
+        "partial": "Partial",
+        "paid": "Paid"
       },
       "columns": {
+        "costType": "Cost Type",
+        "nameDescription": "Name / Description",
         "vehicle": "Vehicle",
-        "costType": "Type",
-        "description": "Description",
-        "amount": "Amount",
-        "date": "Date",
-        "paymentStatus": "Status",
-        "paidDate": "Paid Date",
+        "totalValue": "Total Value",
         "monthlyAllocation": "Monthly Allocation",
-        "vendor": "Vendor",
+        "period": "Period",
+        "payment": "Payment",
         "actions": "Actions"
       },
       "summary": {
-        "title": "Cost Summary",
         "totalCosts": "Total Costs",
-        "paidAmount": "Paid",
-        "pendingAmount": "Pending",
-        "monthlyAverage": "Monthly Average",
-        "byType": "By Type",
-        "byVehicle": "By Vehicle"
+        "monthlyAverage": "Avg. Monthly Allocation",
+        "monthlyAllocation": "Monthly Allocation",
+        "average": "Average",
+        "costItems": "Cost Items",
+        "vehiclesWithCosts": "Vehicles with Costs"
+      },
+      "table": {
+        "vendor": "Vendor",
+        "shared": "Shared",
+        "months": "months",
+        "paid": "Paid"
       },
       "modal": {
         "createTitle": "Add New Cost",
         "editTitle": "Edit Cost",
-        "vehicle": "Vehicle",
-        "vehiclePlaceholder": "-- Select vehicle --",
         "costType": "Cost Type",
-        "costTypePlaceholder": "-- Select type --",
-        "amount": "Amount (VND)",
-        "date": "Date",
-        "description": "Description",
-        "descriptionPlaceholder": "Cost description...",
+        "selectCostType": "-- Select cost type --",
+        "type": "Type",
+        "recurring": "Recurring",
+        "variable": "Variable",
+        "default": "Default",
+        "vehicle": "Vehicle",
+        "sharedAllVehicles": "-- Shared (all vehicles) --",
+        "costName": "Cost Name",
+        "costNamePlaceholder": "E.g.: Liability Insurance 2024, ETC Jan/2024...",
+        "amount": "Total Value (VND)",
+        "startDate": "Start Date",
+        "endDate": "End Date",
+        "allocationMonths": "Allocation Months",
+        "monthlyAllocationHint": "Monthly allocation",
+        "month": "Month",
+        "year": "Year",
         "vendor": "Vendor/Supplier",
-        "vendorPlaceholder": "Vendor name",
-        "invoiceNumber": "Invoice Number",
-        "invoiceNumberPlaceholder": "Invoice/Receipt number",
+        "vendorPlaceholder": "E.g.: Bao Viet, PJICO...",
+        "invoiceNumber": "Contract/Invoice Number",
+        "invoiceNumberPlaceholder": "E.g.: HD-001/2024",
         "paymentStatus": "Payment Status",
-        "paidDate": "Paid Date",
-        "monthlyAllocation": "Monthly Allocation",
-        "monthlyAllocationHint": "Spread cost over multiple months",
-        "allocationMonths": "Number of Months",
+        "paidAmount": "Paid Amount",
+        "paidDate": "Payment Date",
         "notes": "Notes",
-        "notesPlaceholder": "Additional notes...",
-        "attachments": "Attachments",
-        "uploadAttachment": "Upload Files",
         "cancel": "Cancel",
-        "saving": "Saving...",
-        "save": "Save",
+        "save": "Create",
         "update": "Update"
       },
       "actions": {
+        "duplicate": "Duplicate",
         "edit": "Edit",
         "delete": "Delete",
-        "markPaid": "Mark as Paid",
-        "viewDetails": "View Details",
-        "downloadInvoice": "Download Invoice"
+        "refresh": "Refresh"
       },
       "confirmations": {
-        "delete": "Are you sure you want to delete this cost record?",
-        "markPaid": "Mark this cost as paid?"
-      },
-      "messages": {
-        "created": "Cost record added successfully!",
-        "updated": "Cost record updated successfully!",
-        "deleted": "Cost record deleted successfully!",
-        "markedPaid": "Marked as paid!"
+        "delete": "Are you sure you want to delete this cost?"
       },
       "errors": {
+        "generic": "An error occurred",
         "loadFailed": "Failed to load cost records",
         "saveFailed": "Failed to save cost record",
         "deleteFailed": "Failed to delete cost record"
-      },
-      "noData": "No cost records found",
-      "noSearchResults": "No matching cost records found"
+      }
     },
     "advancePaymentsPage": {
       "title": "Advance Payment Management",
       "subtitle": "Track driver advance payments and deductions",
       "addPayment": "Add Advance Payment",
+      "loading": "Loading...",
+      "currency": "VND",
       "filters": {
         "driver": "Driver",
         "allDrivers": "All Drivers",
         "year": "Year",
         "month": "Month",
         "allMonths": "All Months",
+        "monthLabel": "Month {month}",
         "status": "Status",
         "allStatuses": "All",
         "notDeducted": "Not Deducted",
@@ -3567,6 +3623,151 @@
         "deleteFailed": "Failed to delete"
       },
       "noData": "No advance payment records"
+    },
+    "invoiceAutomationPage": {
+      "title": "Invoice Automation",
+      "subtitle": "Automatically fetch VAT invoices from depots - Upload receipt image support",
+      "uploadSection": {
+        "title": "Upload Receipt Image",
+        "clickToSelect": "Click to select image or drag and drop here",
+        "supportedFormats": "Supported: JPG, PNG (max 5MB)",
+        "reading": "Reading image...",
+        "extractOcr": "Extract info from image (OCR)"
+      },
+      "ocrResult": {
+        "title": "OCR Result:",
+        "error": "Error:",
+        "receiptNumber": "Receipt number",
+        "containerCode": "Container code",
+        "depot": "Depot",
+        "amount": "Amount",
+        "notFound": "Not found",
+        "unknown": "Unknown"
+      },
+      "form": {
+        "title": "Invoice Information",
+        "depot": "Depot",
+        "receiptNumber": "Receipt Number",
+        "receiptPlaceholder": "e.g., NH5932291",
+        "containerCode": "Container Code",
+        "containerPlaceholder": "e.g., JXLU6143159",
+        "processing": "Processing...",
+        "createInvoice": "Create Invoice"
+      },
+      "history": {
+        "title": "Request History",
+        "refresh": "Refresh",
+        "noRequests": "No requests yet"
+      },
+      "status": {
+        "completed": "Completed",
+        "failed": "Failed",
+        "running": "Running",
+        "pending": "Pending"
+      },
+      "guide": {
+        "title": "Guide",
+        "step1": "1. Upload receipt image to automatically extract information",
+        "step2": "2. Or manually enter receipt number and container",
+        "step3": "3. Click \"Create Invoice\" and wait for result",
+        "step4": "4. Invoice will be sent to your registered email"
+      },
+      "depots": {
+        "title": "Supported Depots",
+        "code": "Code"
+      },
+      "messages": {
+        "ocrSuccess": "OCR completed! Data has been auto-filled.",
+        "jobCreated": "Job {jobId} has been created. Processing..."
+      },
+      "errors": {
+        "fillAllFields": "Please fill in all required fields",
+        "generic": "An error occurred",
+        "serverConnection": "Cannot connect to server",
+        "ocrFailed": "OCR failed",
+        "imageProcessFailed": "Failed to process image"
+      }
+    },
+    "tripRevenuePage": {
+      "title": "Trip Revenue Management",
+      "ordersCount": "orders",
+      "noFreight": "No freight",
+      "noRateFound": "No Rate found",
+      "statusLabels": {
+        "new": "New",
+        "assigned": "Assigned",
+        "inTransit": "In Transit",
+        "delivered": "Delivered",
+        "completed": "Completed",
+        "emptyReturn": "Empty Return",
+        "cancelled": "Cancelled",
+        "rejected": "Rejected"
+      },
+      "summary": {
+        "totalOrders": "Total Orders",
+        "withFreight": "With Freight",
+        "withoutFreight": "Without Freight",
+        "totalRevenue": "Total Revenue"
+      },
+      "filters": {
+        "searchPlaceholder": "Search by order code, container number, driver, pickup/delivery point...",
+        "customer": "Customer",
+        "status": "Status",
+        "freight": "Freight",
+        "fromDate": "From Date",
+        "toDate": "To Date",
+        "rowCount": "Rows",
+        "clearFilters": "Clear Filters"
+      },
+      "columns": {
+        "date": "Date",
+        "orderCode": "Order Code",
+        "driver": "Driver",
+        "route": "Route",
+        "containerNo": "Container No.",
+        "cont": "Cont",
+        "customer": "Cust",
+        "km": "Km",
+        "tollStations": "Tolls",
+        "status": "Status",
+        "currentFreight": "Current Freight",
+        "rateFreight": "Rate Freight"
+      },
+      "buttons": {
+        "applyFreight": "Apply Freight",
+        "ordersSelected": "orders selected",
+        "recalculateAll": "Recalculate All Freight",
+        "exportExcel": "Export Excel",
+        "exportPdf": "Export PDF",
+        "apply": "Apply"
+      },
+      "emptyState": {
+        "title": "No Orders",
+        "description": "No orders found matching the filter criteria"
+      },
+      "modal": {
+        "updateFreight": "Update Freight",
+        "freightAmount": "Freight Amount (VND)",
+        "freightPlaceholder": "Enter freight amount",
+        "suggestedFromRate": "Suggested from Rate"
+      },
+      "confirmations": {
+        "recalculateAll": "Are you sure you want to recalculate freight for all orders without freight?"
+      },
+      "messages": {
+        "freightApplied": "Freight applied successfully",
+        "bulkFreightApplied": "Applied freight to {count} orders",
+        "freightUpdated": "Freight updated successfully",
+        "recalculateComplete": "Updated {updated} orders, skipped {skipped} orders"
+      },
+      "errors": {
+        "loadOrdersFailed": "Unable to load orders list",
+        "genericError": "An error occurred",
+        "applyFreightFailed": "Unable to apply freight",
+        "bulkApplyFailed": "Unable to apply freight in bulk",
+        "updateFreightFailed": "Unable to update freight",
+        "recalculateFailed": "Unable to recalculate freight"
+      }
     }
   },
   "crm": {

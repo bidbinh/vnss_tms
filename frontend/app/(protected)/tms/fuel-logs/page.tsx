@@ -322,13 +322,13 @@ export default function FuelLogsPage() {
 
       const result = await res.json();
 
-      let message = `Import thành công!\n`;
-      message += `Đã nhập: ${result.imported} dòng\n`;
+      let message = `${t("importResult.success")}\n`;
+      message += `${t("importResult.imported", { count: result.imported })}\n`;
       if (result.skipped > 0) {
-        message += `Bỏ qua: ${result.skipped} dòng\n`;
+        message += `${t("importResult.skipped", { count: result.skipped })}\n`;
       }
       if (result.errors && result.errors.length > 0) {
-        message += `\nLỗi:\n${result.errors.join('\n')}`;
+        message += `\n${t("importResult.errors")}:\n${result.errors.join('\n')}`;
       }
 
       alert(message);
@@ -337,7 +337,7 @@ export default function FuelLogsPage() {
       // Reset file input
       e.target.value = '';
     } catch (err: any) {
-      alert('Lỗi: ' + err.message);
+      alert(t("errors.error") + ': ' + err.message);
       e.target.value = '';
     } finally {
       setImporting(false);
@@ -370,15 +370,15 @@ export default function FuelLogsPage() {
 
     Array.from(files).forEach((file) => {
       if (!file.type.startsWith("image/")) {
-        alert(`${file.name} không phải là file ảnh`);
+        alert(`${file.name} ${t("imageUpload.notImage")}`);
         return;
       }
       if (file.size > 10 * 1024 * 1024) {
-        alert(`${file.name} quá lớn (tối đa 10MB)`);
+        alert(`${file.name} ${t("imageUpload.tooLarge")}`);
         return;
       }
       if (uploadedImages.length + newFiles.length >= 5) {
-        alert("Tối đa 5 ảnh");
+        alert(t("imageUpload.maxImages"));
         return;
       }
       newFiles.push(file);
@@ -421,7 +421,7 @@ export default function FuelLogsPage() {
   // Analyze images with AI
   async function handleAnalyzeImages() {
     if (uploadedImages.length === 0) {
-      alert("Vui lòng chọn ít nhất 1 ảnh");
+      alert(t("errors.selectImage"));
       return;
     }
 
@@ -442,7 +442,7 @@ export default function FuelLogsPage() {
 
       if (!res.ok) {
         const error = await res.json();
-        throw new Error(error.detail || "Phân tích thất bại");
+        throw new Error(error.detail || t("errors.analyzeFailed"));
       }
 
       const result = await res.json();
@@ -476,9 +476,9 @@ export default function FuelLogsPage() {
         }
       }
 
-      alert("Phân tích thành công! Vui lòng kiểm tra và điền các thông tin còn thiếu.");
+      alert(t("imageUpload.analyzeSuccess"));
     } catch (err: any) {
-      alert("Lỗi phân tích: " + err.message);
+      alert(t("errors.error") + ': ' + err.message);
     } finally {
       setAnalyzingImages(false);
     }
@@ -488,17 +488,17 @@ export default function FuelLogsPage() {
     e.preventDefault();
 
     if (uploadedImages.length === 0) {
-      alert("Vui lòng chọn ít nhất 1 ảnh");
+      alert(t("errors.selectImage"));
       return;
     }
 
     if (!imageFormData.vehicle_id || !imageFormData.driver_id) {
-      alert("Vui lòng chọn xe và tài xế");
+      alert(t("errors.selectVehicleDriver"));
       return;
     }
 
     if (!imageFormData.odometer_km || !imageFormData.actual_liters || !imageFormData.unit_price) {
-      alert("Vui lòng điền đầy đủ thông tin: Km, Lít xăng, Đơn giá");
+      alert(t("errors.fillRequired"));
       return;
     }
 
@@ -536,14 +536,14 @@ export default function FuelLogsPage() {
         throw new Error(error.detail || "Upload failed");
       }
 
-      alert("Tạo bản ghi thành công!");
+      alert(t("imageUpload.createSuccess"));
 
       // Reset and close modal
       resetImageUploadForm();
       setShowImageUploadModal(false);
       await fetchFuelLogs();
     } catch (err: any) {
-      alert("Lỗi: " + err.message);
+      alert(t("errors.error") + ': ' + err.message);
     } finally {
       setUploadingImages(false);
     }
@@ -632,27 +632,27 @@ export default function FuelLogsPage() {
     <div className="p-3 sm:p-4 lg:p-6 max-w-full overflow-x-hidden">
       {/* Header - Responsive */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
-        <h1 className="text-xl sm:text-2xl font-bold">Theo dõi đổ dầu</h1>
+        <h1 className="text-xl sm:text-2xl font-bold">{t("title")}</h1>
         <div className="flex flex-wrap gap-2 w-full sm:w-auto">
           <button
             onClick={downloadTemplate}
             className="px-3 py-1.5 sm:px-4 sm:py-2 bg-purple-600 text-white rounded hover:bg-purple-700 text-xs sm:text-sm"
           >
-            <span className="hidden sm:inline">⬇️ </span>Tải mẫu
+            <span className="hidden sm:inline">⬇️ </span>{t("downloadTemplate")}
           </button>
           <button
             onClick={() => setShowImageUploadModal(true)}
             className="px-3 py-1.5 sm:px-4 sm:py-2 bg-orange-600 text-white rounded hover:bg-orange-700 flex items-center gap-1 sm:gap-2 text-xs sm:text-sm"
           >
             <Camera className="w-3 h-3 sm:w-4 sm:h-4" />
-            <span className="hidden sm:inline">Upload </span>Ảnh
+            {t("uploadImage")}
           </button>
           <label className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded cursor-pointer text-xs sm:text-sm ${
             importing
               ? "bg-gray-400 text-white cursor-not-allowed"
               : "bg-green-600 text-white hover:bg-green-700"
           }`}>
-            {importing ? "Importing..." : <><span className="hidden sm:inline">📁 </span>Import</>}
+            {importing ? t("importing") : <><span className="hidden sm:inline">📁 </span>{t("import")}</>}
             <input
               type="file"
               accept=".xlsx,.xls"
@@ -669,7 +669,7 @@ export default function FuelLogsPage() {
             }}
             className="px-3 py-1.5 sm:px-4 sm:py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs sm:text-sm"
           >
-            {showForm ? "Đóng" : "+ Thêm"}
+            {showForm ? t("closeButton") : `+ ${t("addButton")}`}
           </button>
         </div>
       </div>
@@ -677,11 +677,11 @@ export default function FuelLogsPage() {
       {showForm && (
         <div className="mb-6 p-3 sm:p-4 border rounded bg-gray-50">
           <h2 className="font-bold mb-3 text-sm sm:text-base">
-            {editingLog ? "Sửa bản ghi" : "Thêm bản ghi mới"}
+            {editingLog ? t("form.editTitle") : t("form.title")}
           </h2>
           <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             <div>
-              <label className="block text-xs mb-1">Ngày *</label>
+              <label className="block text-xs mb-1">{t("form.date")} *</label>
               <input
                 type="date"
                 value={formData.date}
@@ -694,7 +694,7 @@ export default function FuelLogsPage() {
             </div>
 
             <div>
-              <label className="block text-xs mb-1">Số xe *</label>
+              <label className="block text-xs mb-1">{t("form.vehicle")} *</label>
               <select
                 value={formData.vehicle_id}
                 onChange={(e) =>
@@ -703,7 +703,7 @@ export default function FuelLogsPage() {
                 className="w-full text-xs border rounded px-2 py-1"
                 required
               >
-                <option value="">-- Chọn xe --</option>
+                <option value="">{t("form.selectVehicle")}</option>
                 {vehicles.map((v) => (
                   <option key={v.id} value={v.id}>
                     {v.plate_no}
@@ -713,7 +713,7 @@ export default function FuelLogsPage() {
             </div>
 
             <div>
-              <label className="block text-xs mb-1">Tài xế *</label>
+              <label className="block text-xs mb-1">{t("form.driver")} *</label>
               <select
                 value={formData.driver_id}
                 onChange={(e) =>
@@ -726,7 +726,7 @@ export default function FuelLogsPage() {
                 }`}
                 required
               >
-                <option value="">-- Chọn tài xế --</option>
+                <option value="">{t("form.selectDriver")}</option>
                 {drivers.map((d) => (
                   <option key={d.id} value={d.id} className={`${getDriverColor(d.id).bg} ${getDriverColor(d.id).text}`}>
                     {getDriverDisplayName(d)}
@@ -736,7 +736,7 @@ export default function FuelLogsPage() {
             </div>
 
             <div>
-              <label className="block text-xs mb-1">Chỉ số đồng hồ Km *</label>
+              <label className="block text-xs mb-1">{t("form.odometer")} *</label>
               <input
                 type="text"
                 value={formatNumber(formData.odometer_km)}
@@ -752,7 +752,7 @@ export default function FuelLogsPage() {
             </div>
 
             <div>
-              <label className="block text-xs mb-1">Đổ thực tế (lít) *</label>
+              <label className="block text-xs mb-1">{t("form.actualLiters")} *</label>
               <input
                 type="text"
                 value={formatNumber(formData.actual_liters)}
@@ -768,7 +768,7 @@ export default function FuelLogsPage() {
             </div>
 
             <div>
-              <label className="block text-xs mb-1">Đổ trên định vị (lít)</label>
+              <label className="block text-xs mb-1">{t("form.gpsLiters")}</label>
               <input
                 type="text"
                 value={formatNumber(formData.gps_liters)}
@@ -783,7 +783,7 @@ export default function FuelLogsPage() {
             </div>
 
             <div>
-              <label className="block text-xs mb-1">Đơn giá (VND/lít) *</label>
+              <label className="block text-xs mb-1">{t("form.unitPrice")} *</label>
               <input
                 type="text"
                 value={formatNumber(formData.unit_price)}
@@ -799,7 +799,7 @@ export default function FuelLogsPage() {
             </div>
 
             <div>
-              <label className="block text-xs mb-1">Giá chiết khấu (VND/lít)</label>
+              <label className="block text-xs mb-1">{t("form.discountPrice")}</label>
               <input
                 type="text"
                 value={formatNumber(formData.discount_price)}
@@ -814,7 +814,7 @@ export default function FuelLogsPage() {
             </div>
 
             <div>
-              <label className="block text-xs mb-1">Tổng tiền (VND) *</label>
+              <label className="block text-xs mb-1">{t("form.totalAmount")} *</label>
               <input
                 type="text"
                 value={formatNumber(formData.total_amount)}
@@ -830,7 +830,7 @@ export default function FuelLogsPage() {
             </div>
 
             <div>
-              <label className="block text-xs mb-1">Tên trạm</label>
+              <label className="block text-xs mb-1">{t("form.stationName")}</label>
               <input
                 type="text"
                 value={formData.station_name}
@@ -842,7 +842,7 @@ export default function FuelLogsPage() {
             </div>
 
             <div>
-              <label className="block text-xs mb-1">Địa điểm trạm</label>
+              <label className="block text-xs mb-1">{t("form.stationLocation")}</label>
               <input
                 type="text"
                 value={formData.station_location}
@@ -854,7 +854,7 @@ export default function FuelLogsPage() {
             </div>
 
             <div>
-              <label className="block text-xs mb-1">Trạng thái thanh toán *</label>
+              <label className="block text-xs mb-1">{t("form.paymentStatus")} *</label>
               <select
                 value={formData.payment_status}
                 onChange={(e) =>
@@ -863,13 +863,13 @@ export default function FuelLogsPage() {
                 className="w-full text-xs border rounded px-2 py-1"
                 required
               >
-                <option value="UNPAID">Chưa thanh toán</option>
-                <option value="PAID">Đã thanh toán</option>
+                <option value="UNPAID">{t("form.unpaid")}</option>
+                <option value="PAID">{t("form.paid")}</option>
               </select>
             </div>
 
             <div className="col-span-1 sm:col-span-2 lg:col-span-3">
-              <label className="block text-xs mb-1">Ghi chú</label>
+              <label className="block text-xs mb-1">{t("form.note")}</label>
               <textarea
                 value={formData.note}
                 onChange={(e) =>
@@ -885,7 +885,7 @@ export default function FuelLogsPage() {
                 type="submit"
                 className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
               >
-                {editingLog ? "Cập nhật" : "Tạo"}
+                {editingLog ? t("form.update") : t("form.create")}
               </button>
               <button
                 type="button"
@@ -896,7 +896,7 @@ export default function FuelLogsPage() {
                 }}
                 className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
               >
-                Hủy
+                {t("form.cancel")}
               </button>
             </div>
           </form>
@@ -907,13 +907,13 @@ export default function FuelLogsPage() {
       <div className="mb-4 p-3 sm:p-4 border rounded bg-gray-50">
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3">
           <div>
-            <label className="block text-xs mb-1">Xe</label>
+            <label className="block text-xs mb-1">{t("filters.vehicle")}</label>
             <select
               value={filterVehicle}
               onChange={(e) => setFilterVehicle(e.target.value)}
               className="w-full text-xs border rounded px-2 py-1"
             >
-              <option value="">Tất cả</option>
+              <option value="">{t("filters.all")}</option>
               {vehicles.map((v) => (
                 <option key={v.id} value={v.id}>
                   {v.plate_no}
@@ -923,7 +923,7 @@ export default function FuelLogsPage() {
           </div>
 
           <div>
-            <label className="block text-xs mb-1">Tài xế</label>
+            <label className="block text-xs mb-1">{t("filters.driver")}</label>
             <select
               value={filterDriver}
               onChange={(e) => setFilterDriver(e.target.value)}
@@ -933,7 +933,7 @@ export default function FuelLogsPage() {
                   : ""
               }`}
             >
-              <option value="">Tất cả</option>
+              <option value="">{t("filters.all")}</option>
               {drivers.map((d) => (
                 <option key={d.id} value={d.id} className={`${getDriverColor(d.id).bg} ${getDriverColor(d.id).text}`}>
                   {getDriverDisplayName(d)}
@@ -943,20 +943,20 @@ export default function FuelLogsPage() {
           </div>
 
           <div>
-            <label className="block text-xs mb-1">Trạng thái TT</label>
+            <label className="block text-xs mb-1">{t("filters.paymentStatus")}</label>
             <select
               value={filterPaymentStatus}
               onChange={(e) => setFilterPaymentStatus(e.target.value)}
               className="w-full text-xs border rounded px-2 py-1"
             >
-              <option value="">Tất cả</option>
-              <option value="UNPAID">Chưa TT</option>
-              <option value="PAID">Đã TT</option>
+              <option value="">{t("filters.all")}</option>
+              <option value="UNPAID">{t("filters.unpaid")}</option>
+              <option value="PAID">{t("filters.paid")}</option>
             </select>
           </div>
 
           <div>
-            <label className="block text-xs mb-1">Từ ngày</label>
+            <label className="block text-xs mb-1">{t("filters.fromDate")}</label>
             <input
               type="date"
               value={filterStartDate}
@@ -966,7 +966,7 @@ export default function FuelLogsPage() {
           </div>
 
           <div>
-            <label className="block text-xs mb-1">Đến ngày</label>
+            <label className="block text-xs mb-1">{t("filters.toDate")}</label>
             <input
               type="date"
               value={filterEndDate}
@@ -988,37 +988,37 @@ export default function FuelLogsPage() {
                 className="px-2 py-2 text-left font-bold cursor-pointer hover:bg-gray-200 whitespace-nowrap"
                 onClick={() => handleSort("date")}
               >
-                Ngày {sortField === "date" && (sortOrder === "asc" ? "↑" : "↓")}
+                {t("columns.date")} {sortField === "date" && (sortOrder === "asc" ? "↑" : "↓")}
               </th>
-              <th className="px-2 py-2 text-left font-bold whitespace-nowrap">Số xe</th>
-              <th className="px-2 py-2 text-left font-bold whitespace-nowrap">Tài xế</th>
+              <th className="px-2 py-2 text-left font-bold whitespace-nowrap">{t("columns.vehicle")}</th>
+              <th className="px-2 py-2 text-left font-bold whitespace-nowrap">{t("columns.driver")}</th>
               <th
                 className="px-2 py-2 text-right font-bold cursor-pointer hover:bg-gray-200 whitespace-nowrap hidden sm:table-cell"
                 onClick={() => handleSort("odometer_km")}
               >
-                Km {sortField === "odometer_km" && (sortOrder === "asc" ? "↑" : "↓")}
+                {t("columns.odometer")} {sortField === "odometer_km" && (sortOrder === "asc" ? "↑" : "↓")}
               </th>
               <th
                 className="px-2 py-2 text-right font-bold cursor-pointer hover:bg-gray-200 whitespace-nowrap"
                 onClick={() => handleSort("actual_liters")}
               >
-                Lít {sortField === "actual_liters" && (sortOrder === "asc" ? "↑" : "↓")}
+                {t("columns.liters")} {sortField === "actual_liters" && (sortOrder === "asc" ? "↑" : "↓")}
               </th>
-              <th className="px-2 py-2 text-right font-bold whitespace-nowrap hidden lg:table-cell">GPS</th>
-              <th className="px-2 py-2 text-right font-bold whitespace-nowrap hidden lg:table-cell">CL</th>
+              <th className="px-2 py-2 text-right font-bold whitespace-nowrap hidden lg:table-cell">{t("columns.gps")}</th>
+              <th className="px-2 py-2 text-right font-bold whitespace-nowrap hidden lg:table-cell">{t("columns.difference")}</th>
               <th
                 className="px-2 py-2 text-right font-bold cursor-pointer hover:bg-gray-200 whitespace-nowrap hidden md:table-cell"
                 onClick={() => handleSort("unit_price")}
               >
-                Đ.giá {sortField === "unit_price" && (sortOrder === "asc" ? "↑" : "↓")}
+                {t("columns.unitPrice")} {sortField === "unit_price" && (sortOrder === "asc" ? "↑" : "↓")}
               </th>
               <th
                 className="px-2 py-2 text-right font-bold cursor-pointer hover:bg-gray-200 whitespace-nowrap"
                 onClick={() => handleSort("total_amount")}
               >
-                Tổng {sortField === "total_amount" && (sortOrder === "asc" ? "↑" : "↓")}
+                {t("columns.total")} {sortField === "total_amount" && (sortOrder === "asc" ? "↑" : "↓")}
               </th>
-              <th className="px-2 py-2 text-center font-bold whitespace-nowrap">TT</th>
+              <th className="px-2 py-2 text-center font-bold whitespace-nowrap">{t("columns.payment")}</th>
               <th className="px-2 py-2 text-center font-bold whitespace-nowrap"></th>
             </tr>
           </thead>
@@ -1081,14 +1081,14 @@ export default function FuelLogsPage() {
                   <button
                     onClick={() => handleEdit(log)}
                     className="text-blue-600 hover:underline mr-1 sm:mr-2"
-                    title="Sửa"
+                    title={t("actions.edit")}
                   >
                     ✏️
                   </button>
                   <button
                     onClick={() => handleDelete(log.id)}
                     className="text-red-600 hover:underline"
-                    title="Xóa"
+                    title={t("actions.delete")}
                   >
                     🗑️
                   </button>
@@ -1106,7 +1106,7 @@ export default function FuelLogsPage() {
         totalItems={sortedLogs.length}
         onPageChange={setCurrentPage}
         onPageSizeChange={setPageSize}
-        itemName="bản ghi"
+        itemName={t("pagination.records")}
       />
 
       {/* Image Upload Modal - Responsive */}
@@ -1114,7 +1114,7 @@ export default function FuelLogsPage() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
           <div className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-4xl max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-base sm:text-xl font-bold">Tạo bản ghi từ ảnh</h2>
+              <h2 className="text-base sm:text-xl font-bold">{t("imageUpload.title")}</h2>
               <button
                 onClick={() => {
                   setShowImageUploadModal(false);
@@ -1165,7 +1165,7 @@ export default function FuelLogsPage() {
                             className="h-24 flex flex-col items-center justify-center bg-gray-50 rounded border-2 border-dashed border-gray-300 hover:bg-gray-100"
                           >
                             <Upload className="w-6 h-6 text-gray-400" />
-                            <span className="text-xs text-gray-500 mt-1">Thêm</span>
+                            <span className="text-xs text-gray-500 mt-1">{t("imageUpload.addMore")}</span>
                           </button>
                         )}
                       </div>
@@ -1184,12 +1184,12 @@ export default function FuelLogsPage() {
                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                               </svg>
-                              Đang phân tích...
+                              {t("imageUpload.analyzing")}
                             </>
                           ) : (
                             <>
                               <Camera className="w-5 h-5" />
-                              Phân tích AI
+                              {t("imageUpload.analyze")}
                             </>
                           )}
                         </button>
@@ -1202,8 +1202,8 @@ export default function FuelLogsPage() {
                       className="w-full py-8 flex flex-col items-center justify-center hover:bg-gray-50 rounded"
                     >
                       <Upload className="w-12 h-12 text-gray-400 mb-3" />
-                      <span className="text-gray-600 font-medium">Chọn ảnh đổ xăng</span>
-                      <span className="text-sm text-gray-400 mt-1">Tải lên 1-5 ảnh (bơm xăng, biển số, đồng hồ km...)</span>
+                      <span className="text-gray-600 font-medium">{t("imageUpload.selectImages")}</span>
+                      <span className="text-sm text-gray-400 mt-1">{t("imageUpload.uploadHint")}</span>
                     </button>
                   )}
                 </div>
@@ -1212,7 +1212,7 @@ export default function FuelLogsPage() {
               {/* Form Fields - Responsive */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1">Ngày *</label>
+                  <label className="block text-sm font-medium mb-1">{t("form.date")} *</label>
                   <input
                     type="date"
                     value={imageFormData.date}
@@ -1223,14 +1223,14 @@ export default function FuelLogsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-1">Số xe *</label>
+                  <label className="block text-sm font-medium mb-1">{t("form.vehicle")} *</label>
                   <select
                     value={imageFormData.vehicle_id}
                     onChange={(e) => setImageFormData({ ...imageFormData, vehicle_id: e.target.value })}
                     className="w-full border rounded px-3 py-2"
                     required
                   >
-                    <option value="">-- Chọn xe --</option>
+                    <option value="">{t("form.selectVehicle")}</option>
                     {vehicles.map((v) => (
                       <option key={v.id} value={v.id}>
                         {v.plate_no}
@@ -1240,7 +1240,7 @@ export default function FuelLogsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-1">Tài xế *</label>
+                  <label className="block text-sm font-medium mb-1">{t("form.driver")} *</label>
                   <select
                     value={imageFormData.driver_id}
                     onChange={(e) => setImageFormData({ ...imageFormData, driver_id: e.target.value })}
@@ -1251,7 +1251,7 @@ export default function FuelLogsPage() {
                     }`}
                     required
                   >
-                    <option value="">-- Chọn tài xế --</option>
+                    <option value="">{t("form.selectDriver")}</option>
                     {drivers.map((d) => (
                       <option key={d.id} value={d.id} className={`${getDriverColor(d.id).bg} ${getDriverColor(d.id).text}`}>
                         {getDriverDisplayName(d)}
@@ -1261,7 +1261,7 @@ export default function FuelLogsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-1">Chỉ số đồng hồ Km *</label>
+                  <label className="block text-sm font-medium mb-1">{t("form.odometer")} *</label>
                   <input
                     type="text"
                     value={formatNumber(imageFormData.odometer_km)}
@@ -1277,7 +1277,7 @@ export default function FuelLogsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-1">Đổ thực tế (lít) *</label>
+                  <label className="block text-sm font-medium mb-1">{t("form.actualLiters")} *</label>
                   <input
                     type="text"
                     value={formatNumber(imageFormData.actual_liters)}
@@ -1293,7 +1293,7 @@ export default function FuelLogsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-1">Đơn giá (VND/lít) *</label>
+                  <label className="block text-sm font-medium mb-1">{t("form.unitPrice")} *</label>
                   <input
                     type="text"
                     value={formatNumber(imageFormData.unit_price)}
@@ -1309,7 +1309,7 @@ export default function FuelLogsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-1">Tổng tiền (VND) *</label>
+                  <label className="block text-sm font-medium mb-1">{t("form.totalAmount")} *</label>
                   <input
                     type="text"
                     value={formatNumber(imageFormData.total_amount)}
@@ -1325,7 +1325,7 @@ export default function FuelLogsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-1">Tên trạm xăng</label>
+                  <label className="block text-sm font-medium mb-1">{t("form.stationName")}</label>
                   <input
                     type="text"
                     value={imageFormData.station_name}
@@ -1335,7 +1335,7 @@ export default function FuelLogsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-1">Địa điểm</label>
+                  <label className="block text-sm font-medium mb-1">{t("form.stationLocation")}</label>
                   <input
                     type="text"
                     value={imageFormData.station_location}
@@ -1346,7 +1346,7 @@ export default function FuelLogsPage() {
               </div>
 
               <div className="mb-4">
-                <label className="block text-sm font-medium mb-1">Ghi chú</label>
+                <label className="block text-sm font-medium mb-1">{t("form.note")}</label>
                 <textarea
                   value={imageFormData.note}
                   onChange={(e) => setImageFormData({ ...imageFormData, note: e.target.value })}
@@ -1365,7 +1365,7 @@ export default function FuelLogsPage() {
                   }}
                   className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
                 >
-                  Hủy
+                  {t("form.cancel")}
                 </button>
                 <button
                   type="submit"
@@ -1374,7 +1374,7 @@ export default function FuelLogsPage() {
                     uploadingImages ? "bg-gray-400" : "bg-orange-600 hover:bg-orange-700"
                   }`}
                 >
-                  {uploadingImages ? "Đang tải lên..." : "Tạo bản ghi"}
+                  {uploadingImages ? t("imageUpload.uploading") : t("imageUpload.createRecord")}
                 </button>
               </div>
             </form>

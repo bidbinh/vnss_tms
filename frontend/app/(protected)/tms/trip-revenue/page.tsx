@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api/v1";
 
@@ -50,16 +51,7 @@ interface PaginatedResponse {
   total_pages: number;
 }
 
-const STATUS_LABELS: Record<string, string> = {
-  NEW: "Mới",
-  ASSIGNED: "Đã phân công",
-  IN_TRANSIT: "Đang vận chuyển",
-  DELIVERED: "Đã giao",
-  COMPLETED: "Hoàn thành",
-  EMPTY_RETURN: "Trả rỗng",
-  CANCELLED: "Huỷ",
-  REJECTED: "Từ chối",
-};
+// STATUS_LABELS will be defined inside component using t() calls
 
 const STATUS_COLORS: Record<string, string> = {
   NEW: "bg-gray-100 text-gray-700",
@@ -76,6 +68,20 @@ type SortField = "order_code" | "order_date" | "customer_code" | "status" | "fre
 type SortDirection = "asc" | "desc";
 
 export default function TripRevenuePage() {
+  const t = useTranslations("tms.tripRevenuePage");
+  const tCommon = useTranslations("common");
+
+  const STATUS_LABELS: Record<string, string> = {
+    NEW: t("statusLabels.new"),
+    ASSIGNED: t("statusLabels.assigned"),
+    IN_TRANSIT: t("statusLabels.inTransit"),
+    DELIVERED: t("statusLabels.delivered"),
+    COMPLETED: t("statusLabels.completed"),
+    EMPTY_RETURN: t("statusLabels.emptyReturn"),
+    CANCELLED: t("statusLabels.cancelled"),
+    REJECTED: t("statusLabels.rejected"),
+  };
+
   const [orders, setOrders] = useState<OrderRevenueItem[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [summary, setSummary] = useState<RevenueSummary | null>(null);
@@ -152,7 +158,7 @@ export default function TripRevenuePage() {
         headers: { Authorization: `Bearer ${localStorage.getItem("access_token")}` },
       });
       if (!res.ok) {
-        throw new Error("Không thể tải danh sách đơn hàng");
+        throw new Error(t("errors.loadOrdersFailed"));
       }
       const data: PaginatedResponse = await res.json();
       setOrders(data.items);
@@ -161,7 +167,7 @@ export default function TripRevenuePage() {
       setSelectedIds(new Set());
       setSelectAll(false);
     } catch (err: any) {
-      setError(err.message || "Có lỗi xảy ra");
+      setError(err.message || t("errors.genericError"));
     } finally {
       setLoading(false);
     }
@@ -281,9 +287,9 @@ export default function TripRevenuePage() {
         headers: { Authorization: `Bearer ${localStorage.getItem("access_token")}` },
       });
       if (!res.ok) {
-        throw new Error("Không thể áp dụng cước");
+        throw new Error(t("errors.applyFreightFailed"));
       }
-      setSuccessMsg("Đã áp dụng cước thành công");
+      setSuccessMsg(t("messages.freightApplied"));
       setTimeout(() => setSuccessMsg(null), 3000);
       fetchOrders();
       fetchSummary();
@@ -307,10 +313,10 @@ export default function TripRevenuePage() {
         body: JSON.stringify({ order_ids: Array.from(selectedIds) }),
       });
       if (!res.ok) {
-        throw new Error("Không thể áp dụng cước hàng loạt");
+        throw new Error(t("errors.bulkApplyFailed"));
       }
       const result = await res.json();
-      setSuccessMsg(`Đã áp dụng cước cho ${result.updated} đơn hàng`);
+      setSuccessMsg(t("messages.bulkFreightApplied", { count: result.updated }));
       setTimeout(() => setSuccessMsg(null), 3000);
       fetchOrders();
       fetchSummary();
@@ -334,9 +340,9 @@ export default function TripRevenuePage() {
         body: JSON.stringify({ freight_charge: parseInt(editFreight) || 0 }),
       });
       if (!res.ok) {
-        throw new Error("Không thể cập nhật cước");
+        throw new Error(t("errors.updateFreightFailed"));
       }
-      setSuccessMsg("Đã cập nhật cước thành công");
+      setSuccessMsg(t("messages.freightUpdated"));
       setTimeout(() => setSuccessMsg(null), 3000);
       setEditingOrder(null);
       fetchOrders();
@@ -349,7 +355,7 @@ export default function TripRevenuePage() {
   }
 
   async function recalculateAll() {
-    if (!confirm("Bạn có chắc muốn tính lại cước cho tất cả đơn hàng chưa có cước?")) return;
+    if (!confirm(t("confirmations.recalculateAll"))) return;
     setProcessing(true);
     try {
       const res = await fetch(`${API_BASE_URL}/trip-revenue/recalculate-all?overwrite=false`, {
@@ -357,10 +363,10 @@ export default function TripRevenuePage() {
         headers: { Authorization: `Bearer ${localStorage.getItem("access_token")}` },
       });
       if (!res.ok) {
-        throw new Error("Không thể tính lại cước");
+        throw new Error(t("errors.recalculateFailed"));
       }
       const result = await res.json();
-      setSuccessMsg(`Đã cập nhật ${result.updated} đơn hàng, bỏ qua ${result.skipped} đơn`);
+      setSuccessMsg(t("messages.recalculateComplete", { updated: result.updated, skipped: result.skipped }));
       setTimeout(() => setSuccessMsg(null), 5000);
       fetchOrders();
       fetchSummary();
@@ -704,7 +710,7 @@ export default function TripRevenuePage() {
     <div className="p-6 max-w-full overflow-x-hidden bg-gray-50 min-h-screen">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Quản lý doanh thu chuyến</h1>
+        <h1 className="text-3xl font-bold text-gray-900">{t("title")}</h1>
       </div>
 
       {/* Success/Error Messages */}
@@ -717,7 +723,7 @@ export default function TripRevenuePage() {
         <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
           {error}
           <button onClick={() => setError(null)} className="ml-4 text-red-500 underline">
-            Đóng
+            {tCommon("close")}
           </button>
         </div>
       )}
@@ -726,19 +732,19 @@ export default function TripRevenuePage() {
       {summary && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <div className="p-4 bg-white rounded-lg shadow border border-gray-100">
-            <div className="text-sm text-gray-500 mb-1">Tổng đơn hàng</div>
+            <div className="text-sm text-gray-500 mb-1">{t("summary.totalOrders")}</div>
             <div className="text-2xl font-bold text-gray-900">{summary.total_orders}</div>
           </div>
           <div className="p-4 bg-white rounded-lg shadow border border-gray-100">
-            <div className="text-sm text-gray-500 mb-1">Đã có cước</div>
+            <div className="text-sm text-gray-500 mb-1">{t("summary.withFreight")}</div>
             <div className="text-2xl font-bold text-green-600">{summary.orders_with_freight}</div>
           </div>
           <div className="p-4 bg-white rounded-lg shadow border border-gray-100">
-            <div className="text-sm text-gray-500 mb-1">Chưa có cước</div>
+            <div className="text-sm text-gray-500 mb-1">{t("summary.withoutFreight")}</div>
             <div className="text-2xl font-bold text-orange-600">{summary.orders_without_freight}</div>
           </div>
           <div className="p-4 bg-white rounded-lg shadow border border-gray-100">
-            <div className="text-sm text-gray-500 mb-1">Tổng doanh thu</div>
+            <div className="text-sm text-gray-500 mb-1">{t("summary.totalRevenue")}</div>
             <div className="text-2xl font-bold text-blue-600">{formatCurrency(summary.total_revenue)} đ</div>
           </div>
         </div>
@@ -750,7 +756,7 @@ export default function TripRevenuePage() {
         <div className="mb-4">
           <input
             type="text"
-            placeholder="Tìm kiếm theo mã đơn, số cont, tài xế, điểm lấy/giao..."
+            placeholder={t("filters.searchPlaceholder")}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full text-sm border border-gray-300 rounded-lg px-4 py-2"
@@ -759,13 +765,13 @@ export default function TripRevenuePage() {
         {/* Filter row */}
         <div className="grid grid-cols-2 md:grid-cols-7 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Khách hàng</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t("filters.customer")}</label>
             <select
               value={customerId}
               onChange={(e) => { setCustomerId(e.target.value); setPage(1); }}
               className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2"
             >
-              <option value="">Tất cả</option>
+              <option value="">{tCommon("all")}</option>
               {customers.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.code} - {c.name}
@@ -774,34 +780,34 @@ export default function TripRevenuePage() {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Trạng thái</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t("filters.status")}</label>
             <select
               value={status}
               onChange={(e) => { setStatus(e.target.value); setPage(1); }}
               className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2"
             >
-              <option value="">Tất cả</option>
-              <option value="DELIVERED">Đã giao</option>
-              <option value="COMPLETED">Hoàn thành</option>
-              <option value="EMPTY_RETURN">Trả rỗng</option>
-              <option value="IN_TRANSIT">Đang vận chuyển</option>
-              <option value="ASSIGNED">Đã phân công</option>
+              <option value="">{tCommon("all")}</option>
+              <option value="DELIVERED">{t("statusLabels.delivered")}</option>
+              <option value="COMPLETED">{t("statusLabels.completed")}</option>
+              <option value="EMPTY_RETURN">{t("statusLabels.emptyReturn")}</option>
+              <option value="IN_TRANSIT">{t("statusLabels.inTransit")}</option>
+              <option value="ASSIGNED">{t("statusLabels.assigned")}</option>
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Cước</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t("filters.freight")}</label>
             <select
               value={hasFreight}
               onChange={(e) => { setHasFreight(e.target.value); setPage(1); }}
               className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2"
             >
-              <option value="">Tất cả</option>
-              <option value="true">Đã có cước</option>
-              <option value="false">Chưa có cước</option>
+              <option value="">{tCommon("all")}</option>
+              <option value="true">{t("summary.withFreight")}</option>
+              <option value="false">{t("summary.withoutFreight")}</option>
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Từ ngày</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t("filters.fromDate")}</label>
             <input
               type="date"
               value={startDate}
@@ -810,7 +816,7 @@ export default function TripRevenuePage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Đến ngày</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t("filters.toDate")}</label>
             <input
               type="date"
               value={endDate}
@@ -819,7 +825,7 @@ export default function TripRevenuePage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Số dòng</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t("filters.rowCount")}</label>
             <select
               value={pageSize}
               onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}
@@ -843,7 +849,7 @@ export default function TripRevenuePage() {
               }}
               className="px-4 py-2 text-sm text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200"
             >
-              Xoá bộ lọc
+              {t("filters.clearFilters")}
             </button>
           </div>
         </div>
@@ -856,21 +862,21 @@ export default function TripRevenuePage() {
           disabled={selectedIds.size === 0 || processing}
           className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Áp dụng cước ({selectedIds.size} đơn đã chọn)
+          {t("buttons.applyFreight")} ({selectedIds.size} {t("buttons.ordersSelected")})
         </button>
         <button
           onClick={recalculateAll}
           disabled={processing}
           className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50"
         >
-          Tính lại tất cả cước
+          {t("buttons.recalculateAll")}
         </button>
         <button
           onClick={fetchOrders}
           disabled={loading}
           className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
         >
-          Làm mới
+          {tCommon("refresh")}
         </button>
         <div className="border-l border-gray-300 h-6 mx-2"></div>
         <button
@@ -878,17 +884,17 @@ export default function TripRevenuePage() {
           disabled={processing || total === 0}
           className="px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 disabled:opacity-50"
         >
-          Xuất Excel
+          {t("buttons.exportExcel")}
         </button>
         <button
           onClick={exportToPDF}
           disabled={processing || total === 0}
           className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50"
         >
-          Xuất PDF
+          {t("buttons.exportPdf")}
         </button>
         <span className="text-sm text-gray-500">
-          Tổng: {total} đơn hàng
+          {tCommon("total")}: {total} {t("ordersCount")}
         </span>
       </div>
 
@@ -896,7 +902,7 @@ export default function TripRevenuePage() {
       {loading && (
         <div className="flex items-center justify-center py-12">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          <span className="ml-3 text-gray-600">Đang tải...</span>
+          <span className="ml-3 text-gray-600">{tCommon("loading")}</span>
         </div>
       )}
 
@@ -919,45 +925,45 @@ export default function TripRevenuePage() {
                     className="px-3 py-3 text-left font-bold text-gray-700 cursor-pointer hover:bg-gray-100 min-w-[70px]"
                     onClick={() => handleSort("order_date")}
                   >
-                    Ngày<SortIcon field="order_date" />
+                    {t("columns.date")}<SortIcon field="order_date" />
                   </th>
                   <th
                     className="px-3 py-3 text-left font-bold text-gray-700 cursor-pointer hover:bg-gray-100 min-w-[100px]"
                     onClick={() => handleSort("order_code")}
                   >
-                    Mã đơn<SortIcon field="order_code" />
+                    {t("columns.orderCode")}<SortIcon field="order_code" />
                   </th>
-                  <th className="px-3 py-3 text-left font-bold text-gray-700 min-w-[80px]">Tài xế</th>
-                  <th className="px-3 py-3 text-left font-bold text-gray-700 min-w-[200px]">Tuyến</th>
-                  <th className="px-3 py-3 text-left font-bold text-gray-700 min-w-[120px]">Số cont</th>
-                  <th className="px-3 py-3 text-center font-bold text-gray-700 min-w-[50px]">Cont</th>
+                  <th className="px-3 py-3 text-left font-bold text-gray-700 min-w-[80px]">{t("columns.driver")}</th>
+                  <th className="px-3 py-3 text-left font-bold text-gray-700 min-w-[200px]">{t("columns.route")}</th>
+                  <th className="px-3 py-3 text-left font-bold text-gray-700 min-w-[120px]">{t("columns.containerNo")}</th>
+                  <th className="px-3 py-3 text-center font-bold text-gray-700 min-w-[50px]">{t("columns.cont")}</th>
                   <th
                     className="px-3 py-3 text-left font-bold text-gray-700 cursor-pointer hover:bg-gray-100 min-w-[60px]"
                     onClick={() => handleSort("customer_code")}
                   >
-                    KH<SortIcon field="customer_code" />
+                    {t("columns.customer")}<SortIcon field="customer_code" />
                   </th>
-                  <th className="px-3 py-3 text-center font-bold text-gray-700 min-w-[50px]">Km</th>
-                  <th className="px-3 py-3 text-center font-bold text-gray-700 min-w-[50px]">Trạm</th>
+                  <th className="px-3 py-3 text-center font-bold text-gray-700 min-w-[50px]">{t("columns.km")}</th>
+                  <th className="px-3 py-3 text-center font-bold text-gray-700 min-w-[50px]">{t("columns.tollStations")}</th>
                   <th
                     className="px-3 py-3 text-center font-bold text-gray-700 cursor-pointer hover:bg-gray-100 min-w-[100px]"
                     onClick={() => handleSort("status")}
                   >
-                    Trạng thái<SortIcon field="status" />
+                    {t("columns.status")}<SortIcon field="status" />
                   </th>
                   <th
                     className="px-3 py-3 text-right font-bold text-gray-700 cursor-pointer hover:bg-gray-100 min-w-[120px]"
                     onClick={() => handleSort("freight_charge")}
                   >
-                    Cước hiện tại<SortIcon field="freight_charge" />
+                    {t("columns.currentFreight")}<SortIcon field="freight_charge" />
                   </th>
                   <th
                     className="px-3 py-3 text-right font-bold text-gray-700 cursor-pointer hover:bg-gray-100 min-w-[120px]"
                     onClick={() => handleSort("suggested_freight")}
                   >
-                    Cước từ Rate<SortIcon field="suggested_freight" />
+                    {t("columns.rateFreight")}<SortIcon field="suggested_freight" />
                   </th>
-                  <th className="px-3 py-3 text-center font-bold text-gray-700 min-w-[120px]">Thao tác</th>
+                  <th className="px-3 py-3 text-center font-bold text-gray-700 min-w-[120px]">{tCommon("actions")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -1014,14 +1020,14 @@ export default function TripRevenuePage() {
                       {order.freight_charge ? (
                         <span className="font-bold text-green-600">{formatCurrency(order.freight_charge)} đ</span>
                       ) : (
-                        <span className="text-orange-500">Chưa có</span>
+                        <span className="text-orange-500">{t("noFreight")}</span>
                       )}
                     </td>
                     <td className="px-3 py-3 text-right">
                       {order.rate_matched ? (
                         <span className="font-medium text-blue-600">{formatCurrency(order.suggested_freight)} đ</span>
                       ) : (
-                        <span className="text-gray-400 text-xs">Không tìm thấy Rate</span>
+                        <span className="text-gray-400 text-xs">{t("noRateFound")}</span>
                       )}
                     </td>
                     <td className="px-3 py-3 text-center">
@@ -1032,7 +1038,7 @@ export default function TripRevenuePage() {
                             disabled={processing}
                             className="px-2 py-1 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700 disabled:opacity-50"
                           >
-                            Áp dụng
+                            {t("buttons.apply")}
                           </button>
                         )}
                         <button
@@ -1042,7 +1048,7 @@ export default function TripRevenuePage() {
                           }}
                           className="px-2 py-1 text-xs font-medium text-gray-700 bg-gray-100 rounded hover:bg-gray-200"
                         >
-                          Sửa
+                          {tCommon("edit")}
                         </button>
                       </div>
                     </td>
@@ -1056,7 +1062,7 @@ export default function TripRevenuePage() {
           {totalPages > 1 && (
             <div className="px-4 py-3 border-t border-gray-200 flex items-center justify-between">
               <div className="text-sm text-gray-500">
-                Trang {page} / {totalPages}
+                {tCommon("page")} {page} / {totalPages}
               </div>
               <div className="flex gap-2">
                 <button
@@ -1064,14 +1070,14 @@ export default function TripRevenuePage() {
                   disabled={page === 1}
                   className="px-3 py-1 text-sm border border-gray-300 rounded disabled:opacity-50"
                 >
-                  Trước
+                  {tCommon("previous")}
                 </button>
                 <button
                   onClick={() => setPage(Math.min(totalPages, page + 1))}
                   disabled={page === totalPages}
                   className="px-3 py-1 text-sm border border-gray-300 rounded disabled:opacity-50"
                 >
-                  Sau
+                  {tCommon("next")}
                 </button>
               </div>
             </div>
@@ -1083,8 +1089,8 @@ export default function TripRevenuePage() {
       {!loading && orders.length === 0 && (
         <div className="bg-white rounded-lg shadow border border-gray-100 p-12 text-center">
           <div className="text-4xl mb-4">📋</div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Không có đơn hàng</h3>
-          <p className="text-gray-600">Không tìm thấy đơn hàng phù hợp với bộ lọc</p>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">{t("emptyState.title")}</h3>
+          <p className="text-gray-600">{t("emptyState.description")}</p>
         </div>
       )}
 
@@ -1094,22 +1100,22 @@ export default function TripRevenuePage() {
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
             <div className="p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                Cập nhật cước - {editingOrder.order_code}
+                {t("modal.updateFreight")} - {editingOrder.order_code}
               </h3>
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Cước vận chuyển (VND)
+                  {t("modal.freightAmount")}
                 </label>
                 <input
                   type="number"
                   value={editFreight}
                   onChange={(e) => setEditFreight(e.target.value)}
                   className="w-full border border-gray-300 rounded-lg px-4 py-2 text-lg"
-                  placeholder="Nhập số tiền cước"
+                  placeholder={t("modal.freightPlaceholder")}
                 />
                 {editingOrder.suggested_freight && (
                   <p className="mt-2 text-sm text-gray-500">
-                    Cước đề xuất từ Rate: {formatCurrency(editingOrder.suggested_freight)} đ
+                    {t("modal.suggestedFromRate")}: {formatCurrency(editingOrder.suggested_freight)} đ
                   </p>
                 )}
               </div>
@@ -1118,14 +1124,14 @@ export default function TripRevenuePage() {
                   onClick={() => setEditingOrder(null)}
                   className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
                 >
-                  Huỷ
+                  {tCommon("cancel")}
                 </button>
                 <button
                   onClick={saveEditFreight}
                   disabled={processing}
                   className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50"
                 >
-                  Lưu
+                  {tCommon("save")}
                 </button>
               </div>
             </div>

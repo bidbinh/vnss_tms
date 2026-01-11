@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import { getDriverColor } from "@/lib/utils";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api/v1";
@@ -79,6 +80,7 @@ interface DriverSalaryTrip {
 }
 
 export default function DriverSalaryManagementPage() {
+  const t = useTranslations("tms.driverSalaryPage");
   const [year, setYear] = useState(new Date().getFullYear());
   const [month, setMonth] = useState(new Date().getMonth() + 1);
   const [selectedDriver, setSelectedDriver] = useState("");
@@ -413,19 +415,19 @@ export default function DriverSalaryManagementPage() {
 
   return (
     <div className="p-6 max-w-full overflow-x-hidden">
-      <h1 className="text-3xl font-bold mb-6">Quản lý lương tài xế</h1>
+      <h1 className="text-3xl font-bold mb-6">{t("title")}</h1>
 
       {/* Filters */}
       <div className="bg-white p-4 rounded-lg shadow mb-6">
         <div className="grid grid-cols-4 gap-4">
           <div>
-            <label className="block text-sm font-medium mb-1">Tài xế</label>
+            <label className="block text-sm font-medium mb-1">{t("filters.driver")}</label>
             <select
               value={selectedDriver}
               onChange={(e) => setSelectedDriver(e.target.value)}
               className="w-full border rounded px-3 py-2"
             >
-              <option value="">Tất cả tài xế</option>
+              <option value="">{t("filters.allDrivers")}</option>
               {drivers.map((d) => (
                 <option key={d.id} value={d.id}>
                   {d.name}
@@ -435,7 +437,7 @@ export default function DriverSalaryManagementPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Năm</label>
+            <label className="block text-sm font-medium mb-1">{t("filters.year")}</label>
             <input
               type="number"
               value={year}
@@ -445,7 +447,7 @@ export default function DriverSalaryManagementPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Tháng</label>
+            <label className="block text-sm font-medium mb-1">{t("filters.month")}</label>
             <select
               value={month}
               onChange={(e) => setMonth(parseInt(e.target.value))}
@@ -453,7 +455,7 @@ export default function DriverSalaryManagementPage() {
             >
               {[...Array(12)].map((_, i) => (
                 <option key={i + 1} value={i + 1}>
-                  Tháng {i + 1}
+                  {t("filters.monthOption", { month: i + 1 })}
                 </option>
               ))}
             </select>
@@ -465,7 +467,7 @@ export default function DriverSalaryManagementPage() {
               disabled={loading}
               className="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:bg-gray-400"
             >
-              {loading ? "Đang tải..." : "Xem chuyến"}
+              {loading ? t("loading") : t("viewTrips")}
             </button>
           </div>
         </div>
@@ -476,20 +478,20 @@ export default function DriverSalaryManagementPage() {
         <div className="bg-green-50 p-4 rounded-lg shadow mb-6">
           <div className="grid grid-cols-4 gap-4 text-center">
             <div>
-              <div className="text-sm text-gray-600">Tổng số chuyến</div>
+              <div className="text-sm text-gray-600">{t("summary.totalTrips")}</div>
               <div className="text-2xl font-bold">{trips.length}</div>
             </div>
             <div>
-              <div className="text-sm text-gray-600">Tổng chuyến trong tháng</div>
+              <div className="text-sm text-gray-600">{t("summary.tripsThisMonth")}</div>
               <div className="text-2xl font-bold">{trips[0]?.trips_per_month || 0}</div>
             </div>
             <div>
-              <div className="text-sm text-gray-600">Tổng lương chuyến</div>
-              <div className="text-2xl font-bold">{formatCurrency(totalSalary)} đ</div>
+              <div className="text-sm text-gray-600">{t("summary.totalTripSalary")}</div>
+              <div className="text-2xl font-bold">{formatCurrency(totalSalary)} {t("currency")}</div>
             </div>
             <div>
-              <div className="text-sm text-gray-600">Trạng thái</div>
-              <div className="text-sm font-semibold text-blue-600">{saving ? "Đang lưu..." : "Đã lưu"}</div>
+              <div className="text-sm text-gray-600">{t("summary.status")}</div>
+              <div className="text-sm font-semibold text-blue-600">{saving ? t("saving") : t("saved")}</div>
             </div>
           </div>
         </div>
@@ -501,19 +503,19 @@ export default function DriverSalaryManagementPage() {
           <table className="border-collapse text-xs" style={{ tableLayout: 'fixed' }}>
             <thead className="bg-gray-100 sticky top-0 z-10">
               <tr>
-                <ResizableHeader columnKey="order_code" sortable sortKey="order_code" className="text-left">Mã đơn</ResizableHeader>
-                <ResizableHeader columnKey="driver_id" sortable sortKey="driver_id" className="text-center">Tài xế</ResizableHeader>
-                <ResizableHeader columnKey="customer_requested_date" sortable sortKey="customer_requested_date" className="text-left">Ngày giao hàng</ResizableHeader>
-                <ResizableHeader columnKey="pickup_site_name" sortable sortKey="pickup_site_name" className="text-left">Điểm lấy</ResizableHeader>
-                <ResizableHeader columnKey="delivery_site_name" sortable sortKey="delivery_site_name" className="text-left">Điểm giao</ResizableHeader>
-                <ResizableHeader columnKey="container_code" sortable sortKey="container_code" className="text-center">Cont</ResizableHeader>
-                <ResizableHeader columnKey="distance_km" sortable sortKey="distance_km" className="text-center">Km</ResizableHeader>
-                <ResizableHeader columnKey="is_from_port" className="text-center">Từ cảng</ResizableHeader>
-                <ResizableHeader columnKey="is_flatbed" className="text-center">Mooc sàn</ResizableHeader>
-                <ResizableHeader columnKey="is_internal_cargo" className="text-center">Hàng xá</ResizableHeader>
-                <ResizableHeader columnKey="is_holiday" className="text-center">Ngày lễ</ResizableHeader>
-                <ResizableHeader columnKey="trips_per_day" sortable sortKey="trips_per_day" className="text-center">Chuyến/ngày</ResizableHeader>
-                <ResizableHeader columnKey="calculated_salary" sortable sortKey="calculated_salary" className="text-right">Lương chuyến</ResizableHeader>
+                <ResizableHeader columnKey="order_code" sortable sortKey="order_code" className="text-left">{t("columns.orderCode")}</ResizableHeader>
+                <ResizableHeader columnKey="driver_id" sortable sortKey="driver_id" className="text-center">{t("columns.driver")}</ResizableHeader>
+                <ResizableHeader columnKey="customer_requested_date" sortable sortKey="customer_requested_date" className="text-left">{t("columns.deliveryDate")}</ResizableHeader>
+                <ResizableHeader columnKey="pickup_site_name" sortable sortKey="pickup_site_name" className="text-left">{t("columns.pickupSite")}</ResizableHeader>
+                <ResizableHeader columnKey="delivery_site_name" sortable sortKey="delivery_site_name" className="text-left">{t("columns.deliverySite")}</ResizableHeader>
+                <ResizableHeader columnKey="container_code" sortable sortKey="container_code" className="text-center">{t("columns.container")}</ResizableHeader>
+                <ResizableHeader columnKey="distance_km" sortable sortKey="distance_km" className="text-center">{t("columns.km")}</ResizableHeader>
+                <ResizableHeader columnKey="is_from_port" className="text-center">{t("columns.fromPort")}</ResizableHeader>
+                <ResizableHeader columnKey="is_flatbed" className="text-center">{t("columns.flatbed")}</ResizableHeader>
+                <ResizableHeader columnKey="is_internal_cargo" className="text-center">{t("columns.internalCargo")}</ResizableHeader>
+                <ResizableHeader columnKey="is_holiday" className="text-center">{t("columns.holiday")}</ResizableHeader>
+                <ResizableHeader columnKey="trips_per_day" sortable sortKey="trips_per_day" className="text-center">{t("columns.tripsPerDay")}</ResizableHeader>
+                <ResizableHeader columnKey="calculated_salary" sortable sortKey="calculated_salary" className="text-right">{t("columns.tripSalary")}</ResizableHeader>
               </tr>
             </thead>
             <tbody>
@@ -572,7 +574,7 @@ export default function DriverSalaryManagementPage() {
                       )}
                     </td>
                     <td className="px-2 py-2 text-right border border-gray-300 font-bold text-blue-600 overflow-hidden whitespace-nowrap" style={{ width: columnWidths.calculated_salary, maxWidth: columnWidths.calculated_salary }}>
-                      {formatCurrency(trip.calculated_salary)} đ
+                      {formatCurrency(trip.calculated_salary)} {t("currency")}
                     </td>
                   </tr>
                 );
@@ -581,10 +583,10 @@ export default function DriverSalaryManagementPage() {
             <tfoot className="bg-gray-100 font-bold">
               <tr>
                 <td colSpan={12} className="px-2 py-2 text-right border border-gray-300">
-                  TỔNG LƯƠNG CHUYẾN:
+                  {t("totalTripSalaryLabel")}
                 </td>
                 <td className="px-2 py-2 text-right border border-gray-300 text-blue-600">
-                  {formatCurrency(totalSalary)} đ
+                  {formatCurrency(totalSalary)} {t("currency")}
                 </td>
               </tr>
             </tfoot>
@@ -594,7 +596,7 @@ export default function DriverSalaryManagementPage() {
 
       {sortedTrips.length === 0 && !loading && (
         <div className="text-center text-gray-500 py-12">
-          Không có dữ liệu chuyến hàng trong tháng này
+          {t("noData")}
         </div>
       )}
     </div>

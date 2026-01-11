@@ -68,3 +68,4 @@ ops/.env
 !ops/deploy.sh
 !ops/.env.example
 !ops/docker-compose.yml
+.aider*

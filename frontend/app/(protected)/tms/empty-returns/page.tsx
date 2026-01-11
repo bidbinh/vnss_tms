@@ -301,7 +301,7 @@ export default function EmptyReturnsPage() {
       setStats(newStats);
     } catch (err: any) {
       console.error("Error fetching data:", err);
-      alert("Lỗi tải dữ liệu: " + err.message);
+      alert(t("errors.loadError") + " " + err.message);
     } finally {
       setLoading(false);
     }
@@ -656,7 +656,7 @@ export default function EmptyReturnsPage() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm("Bạn có chắc muốn xóa thông tin hạ rỗng này?")) return;
+    if (!confirm(t("confirmDelete"))) return;
 
     try {
       const token = localStorage.getItem("access_token");
@@ -667,10 +667,10 @@ export default function EmptyReturnsPage() {
 
       if (!res.ok) throw new Error("Failed to delete");
 
-      alert("Xóa thành công!");
+      alert(t("deleteSuccess"));
       fetchAllData();
     } catch (err: any) {
-      alert("Lỗi: " + err.message);
+      alert(t("errors.error") + " " + err.message);
     }
   }
 
@@ -734,7 +734,7 @@ export default function EmptyReturnsPage() {
       setShowModal(false);
       fetchAllData();
     } catch (err: any) {
-      alert("Lỗi: " + err.message);
+      alert(t("errors.error") + " " + err.message);
     }
   }
 
@@ -762,7 +762,7 @@ export default function EmptyReturnsPage() {
       setPaymentMode("single");
       setShowPaymentModal(true);
     } catch (err: any) {
-      alert("Lỗi tạo QR: " + err.message);
+      alert(t("payment.qrError") + ": " + err.message);
     } finally {
       setPaymentLoading(false);
     }
@@ -770,7 +770,7 @@ export default function EmptyReturnsPage() {
 
   async function generateBatchQR() {
     if (selectedIds.size === 0) {
-      alert("Vui lòng chọn ít nhất 1 đơn hạ rỗng để thanh toán");
+      alert(t("payment.selectAtLeastOne"));
       return;
     }
 
@@ -796,7 +796,7 @@ export default function EmptyReturnsPage() {
       setPaymentMode("batch");
       setShowPaymentModal(true);
     } catch (err: any) {
-      alert("Lỗi tạo QR hàng loạt: " + err.message);
+      alert(t("batchQrError") + ": " + err.message);
     } finally {
       setPaymentLoading(false);
     }
@@ -824,12 +824,12 @@ export default function EmptyReturnsPage() {
         throw new Error(error.detail || "Failed to confirm payment");
       }
 
-      alert("Xác nhận thanh toán thành công!");
+      alert(t("payment.confirmSuccess"));
       setShowPaymentModal(false);
       setSinglePaymentData(null);
       fetchAllData();
     } catch (err: any) {
-      alert("Lỗi xác nhận: " + err.message);
+      alert(t("confirmError") + ": " + err.message);
     } finally {
       setConfirmingPayment(false);
     }
@@ -863,7 +863,7 @@ export default function EmptyReturnsPage() {
       setSelectedIds(new Set());
       fetchAllData();
     } catch (err: any) {
-      alert("Lỗi xác nhận: " + err.message);
+      alert(t("confirmError") + ": " + err.message);
     } finally {
       setConfirmingPayment(false);
     }
@@ -921,7 +921,7 @@ export default function EmptyReturnsPage() {
 
       setAttachedFiles((prev) => [...prev, ...uploadedFiles]);
     } catch (err: any) {
-      alert("Lỗi upload: " + err.message);
+      alert(t("errors.uploadError") + " " + err.message);
     } finally {
       setUploadingFiles(false);
     }
@@ -1176,7 +1176,7 @@ export default function EmptyReturnsPage() {
               setPageSize(size);
               setCurrentPage(1);
             }}
-            itemName="hạ rỗng"
+            itemName={t("itemName")}
           />
         </div>
       )}
@@ -1189,14 +1189,14 @@ export default function EmptyReturnsPage() {
             <div className="px-6 py-4 border-b bg-gray-50 flex justify-between items-center">
               <div>
                 <h2 className="text-xl font-bold text-gray-800">
-                  {modalMode === "create" ? "Tạo hạ rỗng mới" : "Cập nhật hạ rỗng"}
+                  {modalMode === "create" ? t("modal.createTitle") : t("modal.editTitle")}
                 </h2>
                 <p className="text-sm text-gray-500 mt-1">
                   {modalMode === "create" && selectedOrder
-                    ? `Đơn hàng: ${selectedOrder.order_code} | Container: ${selectedOrder.container_code || "-"}`
+                    ? t("modal.orderInfo", { orderCode: selectedOrder.order_code, containerCode: selectedOrder.container_code || "-" })
                     : selectedReturn
-                    ? `Đơn hàng: ${selectedReturn.order_code} | Container: ${selectedReturn.container_code || "-"}`
-                    : "Chọn đơn hàng từ danh sách"}
+                    ? t("modal.orderInfo", { orderCode: selectedReturn.order_code, containerCode: selectedReturn.container_code || "-" })
+                    : t("modal.selectOrder")}
                 </p>
               </div>
               <button
@@ -1214,7 +1214,7 @@ export default function EmptyReturnsPage() {
                 {modalMode === "create" && !selectedOrder && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Chọn đơn hàng <span className="text-red-500">*</span>
+                      {t("modal.selectOrderLabel")} <span className="text-red-500">*</span>
                     </label>
                     <select
                       className="w-full border rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-200 outline-none"
@@ -1226,12 +1226,12 @@ export default function EmptyReturnsPage() {
                         }
                       }}
                     >
-                      <option value="">-- Chọn đơn hàng --</option>
+                      <option value="">{t("modal.selectOrderPlaceholder")}</option>
                       {portOrders
                         .filter((o) => !o.has_empty_return)
                         .map((o) => (
                           <option key={o.id} value={o.id}>
-                            {o.order_code} - {o.container_code || "N/A"} - {o.driver_name || "Chưa có tài xế"}
+                            {o.order_code} - {o.container_code || "N/A"} - {o.driver_name || t("modal.noDriver")}
                           </option>
                         ))}
                     </select>
@@ -1242,7 +1242,7 @@ export default function EmptyReturnsPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Ngày hạ rỗng <span className="text-red-500">*</span>
+                      {t("modal.returnDateLabel")} <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="date"
@@ -1254,7 +1254,7 @@ export default function EmptyReturnsPage() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Cảng hạ <span className="text-red-500">*</span>
+                      {t("modal.portSiteLabel")} <span className="text-red-500">*</span>
                     </label>
                     <select
                       required
@@ -1262,7 +1262,7 @@ export default function EmptyReturnsPage() {
                       onChange={(e) => setFormData({ ...formData, port_site_id: e.target.value })}
                       className="w-full border rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-200 outline-none"
                     >
-                      <option value="">-- Chọn cảng hạ --</option>
+                      <option value="">{t("modal.selectPortPlaceholder")}</option>
                       {portSites.map((site) => (
                         <option key={site.id} value={site.id}>
                           {site.company_name}
@@ -1278,16 +1278,16 @@ export default function EmptyReturnsPage() {
                     <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    Chi tiết phí
+                    {t("fees.title")}
                   </h3>
 
                   <div className="space-y-3">
                     {/* Fee row template - Phí nâng hạ đầu tiên */}
                     {[
-                      { label: "Phí nâng hạ", fee: "lift_fee", paid: "lift_fee_paid" },
-                      { label: "Phí vệ sinh", fee: "cleaning_fee", paid: "cleaning_fee_paid" },
-                      { label: "Phí lưu bãi", fee: "storage_fee", paid: "storage_fee_paid" },
-                      { label: "Phí sửa chữa/cược", fee: "repair_fee", paid: "repair_fee_paid" },
+                      { label: t("fees.liftFee"), fee: "lift_fee", paid: "lift_fee_paid" },
+                      { label: t("fees.cleaningFee"), fee: "cleaning_fee", paid: "cleaning_fee_paid" },
+                      { label: t("fees.storageFee"), fee: "storage_fee", paid: "storage_fee_paid" },
+                      { label: t("fees.repairFee"), fee: "repair_fee", paid: "repair_fee_paid" },
                     ].map((item) => (
                       <div key={item.fee} className="grid grid-cols-3 gap-3 items-center">
                         <label className="text-sm text-gray-600">{item.label}</label>
@@ -1295,7 +1295,7 @@ export default function EmptyReturnsPage() {
                           <input
                             type="text"
                             inputMode="numeric"
-                            placeholder="Phải trả"
+                            placeholder={t("fees.amountToPay")}
                             value={(formData as any)[item.fee] ? new Intl.NumberFormat("vi-VN").format((formData as any)[item.fee]) : ""}
                             onChange={(e) => {
                               const rawValue = e.target.value.replace(/[^\d]/g, "");
@@ -1309,7 +1309,7 @@ export default function EmptyReturnsPage() {
                           <input
                             type="text"
                             inputMode="numeric"
-                            placeholder="Đã trả"
+                            placeholder={t("fees.amountPaid")}
                             value={(formData as any)[item.paid] ? new Intl.NumberFormat("vi-VN").format((formData as any)[item.paid]) : ""}
                             onChange={(e) => {
                               const rawValue = e.target.value.replace(/[^\d]/g, "");
@@ -1325,10 +1325,10 @@ export default function EmptyReturnsPage() {
                     {/* Other fee with note */}
                     <div className="grid grid-cols-3 gap-3 items-start">
                       <div>
-                        <label className="text-sm text-gray-600">Phí khác</label>
+                        <label className="text-sm text-gray-600">{t("fees.otherFee")}</label>
                         <input
                           type="text"
-                          placeholder="Ghi chú phí khác"
+                          placeholder={t("fees.otherFeeNote")}
                           value={formData.other_fee_note}
                           onChange={(e) => setFormData({ ...formData, other_fee_note: e.target.value })}
                           className="w-full border rounded-lg px-3 py-2 text-sm mt-1 focus:ring-2 focus:ring-blue-200 outline-none"
@@ -1338,7 +1338,7 @@ export default function EmptyReturnsPage() {
                         <input
                           type="text"
                           inputMode="numeric"
-                          placeholder="Phải trả"
+                          placeholder={t("fees.amountToPay")}
                           value={formData.other_fee ? new Intl.NumberFormat("vi-VN").format(formData.other_fee) : ""}
                           onChange={(e) => {
                             const rawValue = e.target.value.replace(/[^\d]/g, "");
@@ -1352,7 +1352,7 @@ export default function EmptyReturnsPage() {
                         <input
                           type="text"
                           inputMode="numeric"
-                          placeholder="Đã trả"
+                          placeholder={t("fees.amountPaid")}
                           value={formData.other_fee_paid ? new Intl.NumberFormat("vi-VN").format(formData.other_fee_paid) : ""}
                           onChange={(e) => {
                             const rawValue = e.target.value.replace(/[^\d]/g, "");
@@ -1366,7 +1366,7 @@ export default function EmptyReturnsPage() {
 
                     {/* Total */}
                     <div className="border-t pt-3 mt-3 grid grid-cols-3 gap-3 items-center font-medium">
-                      <span className="text-gray-800">Tổng cộng</span>
+                      <span className="text-gray-800">{t("fees.total")}</span>
                       <span className="text-red-600">
                         {formatCurrency(
                           formData.cleaning_fee +
@@ -1395,10 +1395,10 @@ export default function EmptyReturnsPage() {
                     <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
-                    Chứng từ đính kèm
+                    {t("documents.title")}
                   </h3>
                   <p className="text-xs text-gray-500 mb-4">
-                    Tải lên các chứng từ: Hóa đơn VAT, Phiếu hạ rỗng, Phiếu thu, Cược sửa chữa... AI sẽ tự động phân loại.
+                    {t("documents.description")}
                   </p>
 
                   {/* Upload area */}
@@ -1406,15 +1406,15 @@ export default function EmptyReturnsPage() {
                     {uploadingFiles ? (
                       <div className="flex items-center gap-2 text-sm text-gray-500">
                         <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                        Đang tải...
+                        {t("documents.uploading")}
                       </div>
                     ) : (
                       <>
                         <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                         </svg>
-                        <span className="text-sm text-gray-600 mt-2">Kéo thả hoặc nhấn để chọn file</span>
-                        <span className="text-xs text-gray-400">Hỗ trợ: Ảnh, PDF, Word, Excel</span>
+                        <span className="text-sm text-gray-600 mt-2">{t("documents.uploadHint")}</span>
+                        <span className="text-xs text-gray-400">{t("documents.supportedFormats")}</span>
                       </>
                     )}
                     <input
@@ -1476,13 +1476,13 @@ export default function EmptyReturnsPage() {
                                 }}
                                 className="w-full border rounded px-2 py-1 text-sm focus:ring-2 focus:ring-blue-200 outline-none"
                               >
-                                <option value="">-- Chọn loại chứng từ --</option>
-                                <option value="Hoá đơn VAT">Hoá đơn VAT</option>
-                                <option value="Phiếu hạ rỗng">Phiếu hạ rỗng</option>
-                                <option value="Phiếu thu phí">Phiếu thu phí</option>
-                                <option value="Phiếu cược sửa chữa">Phiếu cược sửa chữa</option>
-                                <option value="Biên lai">Biên lai</option>
-                                <option value="Khác">Khác</option>
+                                <option value="">{t("documents.selectType")}</option>
+                                <option value={t("documents.types.vatInvoice")}>{t("documents.types.vatInvoice")}</option>
+                                <option value={t("documents.types.returnSlip")}>{t("documents.types.returnSlip")}</option>
+                                <option value={t("documents.types.feeReceipt")}>{t("documents.types.feeReceipt")}</option>
+                                <option value={t("documents.types.repairDeposit")}>{t("documents.types.repairDeposit")}</option>
+                                <option value={t("documents.types.receipt")}>{t("documents.types.receipt")}</option>
+                                <option value={t("documents.types.other")}>{t("documents.types.other")}</option>
                               </select>
                               <p className="text-xs text-gray-400 mt-0.5 truncate" title={file.name}>{file.name}</p>
                             </div>
@@ -1524,18 +1524,18 @@ export default function EmptyReturnsPage() {
                 {/* Other Info */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Người chi trả</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{t("payer.label")}</label>
                     <select
                       value={formData.payer}
                       onChange={(e) => setFormData({ ...formData, payer: e.target.value })}
                       className="w-full border rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-200 outline-none"
                     >
-                      <option value="COMPANY">Công ty</option>
+                      <option value="COMPANY">{t("payer.company")}</option>
                       <option value="DRIVER">
-                        Tài xế {modalMode === "edit" && selectedReturn?.driver_name ? `(${selectedReturn.driver_name})` : modalMode === "create" && selectedOrder?.driver_name ? `(${selectedOrder.driver_name})` : ""}
+                        {t("payer.driver")} {modalMode === "edit" && selectedReturn?.driver_name ? `(${selectedReturn.driver_name})` : modalMode === "create" && selectedOrder?.driver_name ? `(${selectedOrder.driver_name})` : ""}
                       </option>
                       <option value="CUSTOMER">
-                        Khách hàng {/* TODO: Thêm tên khách hàng khi có dữ liệu */}
+                        {t("payer.customer")}
                       </option>
                     </select>
                   </div>
@@ -1556,13 +1556,13 @@ export default function EmptyReturnsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Ghi chú</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t("notesLabel")}</label>
                   <textarea
                     value={formData.notes}
                     onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                     className="w-full border rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-200 outline-none"
                     rows={3}
-                    placeholder="Ghi chú thêm về việc hạ rỗng..."
+                    placeholder={t("notesPlaceholder")}
                   />
                 </div>
               </div>
@@ -1574,13 +1574,13 @@ export default function EmptyReturnsPage() {
                   onClick={() => setShowModal(false)}
                   className="px-4 py-2.5 border rounded-lg hover:bg-gray-100 transition-colors"
                 >
-                  Hủy
+                  {t("buttons.cancel")}
                 </button>
                 <button
                   type="submit"
                   className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                 >
-                  {modalMode === "create" ? "Tạo hạ rỗng" : "Cập nhật"}
+                  {modalMode === "create" ? t("buttons.create") : t("buttons.update")}
                 </button>
               </div>
             </form>
@@ -1602,12 +1602,12 @@ export default function EmptyReturnsPage() {
                 </div>
                 <div>
                   <h2 className="text-xl font-bold text-gray-800">
-                    {paymentMode === "single" ? "Thanh toán VietQR" : "Thanh toán hàng loạt"}
+                    {paymentMode === "single" ? t("payment.title") : t("payment.batchTitle")}
                   </h2>
                   <p className="text-sm text-gray-500">
                     {paymentMode === "single"
-                      ? "Quét mã QR để chuyển tiền hoàn lại cho tài xế"
-                      : `${batchPaymentData?.total_drivers} tài xế - ${batchPaymentData?.payments.reduce((sum, p) => sum + p.orders.length, 0)} đơn hạ rỗng`}
+                      ? t("payment.subtitle")
+                      : t("payment.batchSubtitle", { driverCount: batchPaymentData?.total_drivers || 0, orderCount: batchPaymentData?.payments.reduce((sum, p) => sum + p.orders.length, 0) || 0 })}
                   </p>
                 </div>
               </div>
@@ -1640,31 +1640,31 @@ export default function EmptyReturnsPage() {
                   {/* Payment Info */}
                   <div className="w-full max-w-md space-y-3">
                     <div className="flex justify-between items-center py-2 border-b">
-                      <span className="text-gray-500">Người nhận</span>
+                      <span className="text-gray-500">{t("payment.recipient")}</span>
                       <span className="font-semibold text-gray-800">{singlePaymentData.driver_name}</span>
                     </div>
                     <div className="flex justify-between items-center py-2 border-b">
-                      <span className="text-gray-500">Ngân hàng</span>
+                      <span className="text-gray-500">{t("payment.bankName")}</span>
                       <span className="font-medium text-gray-700">{singlePaymentData.bank_name || "-"}</span>
                     </div>
                     <div className="flex justify-between items-center py-2 border-b">
-                      <span className="text-gray-500">Số tài khoản</span>
+                      <span className="text-gray-500">{t("payment.accountNumber")}</span>
                       <span className="font-mono text-gray-700">{singlePaymentData.bank_account}</span>
                     </div>
                     <div className="flex justify-between items-center py-2 border-b">
-                      <span className="text-gray-500">Mã đơn</span>
+                      <span className="text-gray-500">{t("payment.orderCode")}</span>
                       <span className="font-medium text-blue-600">{singlePaymentData.order_code}</span>
                     </div>
                     <div className="flex justify-between items-center py-2 border-b">
-                      <span className="text-gray-500">Container</span>
+                      <span className="text-gray-500">{t("payment.container")}</span>
                       <span className="font-mono text-gray-700">{singlePaymentData.container_code || "-"}</span>
                     </div>
                     <div className="flex justify-between items-center py-3 bg-green-50 rounded-lg px-4 -mx-4">
-                      <span className="text-gray-700 font-medium">Số tiền</span>
+                      <span className="text-gray-700 font-medium">{t("payment.amount")}</span>
                       <span className="text-2xl font-bold text-green-600">{formatCurrency(singlePaymentData.amount)}</span>
                     </div>
                     <div className="text-center text-sm text-gray-500 mt-4">
-                      Nội dung: <span className="font-medium">{singlePaymentData.description}</span>
+                      {t("payment.description")} <span className="font-medium">{singlePaymentData.description}</span>
                     </div>
                   </div>
                 </div>
@@ -1676,13 +1676,13 @@ export default function EmptyReturnsPage() {
                   {/* Summary */}
                   <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-xl p-4 flex items-center justify-between">
                     <div>
-                      <div className="text-sm text-gray-500">Tổng cần thanh toán</div>
+                      <div className="text-sm text-gray-500">{t("payment.totalToPay")}</div>
                       <div className="text-3xl font-bold text-green-600">{formatCurrency(batchPaymentData.total_amount)}</div>
                     </div>
                     <div className="text-right">
-                      <div className="text-sm text-gray-500">{batchPaymentData.total_drivers} tài xế</div>
+                      <div className="text-sm text-gray-500">{batchPaymentData.total_drivers} {t("payment.drivers")}</div>
                       <div className="text-sm text-gray-500">
-                        {batchPaymentData.payments.reduce((sum, p) => sum + p.orders.length, 0)} đơn hạ rỗng
+                        {batchPaymentData.payments.reduce((sum, p) => sum + p.orders.length, 0)} {t("payment.orders")}
                       </div>
                     </div>
                   </div>
@@ -1706,7 +1706,7 @@ export default function EmptyReturnsPage() {
                           </div>
                           <div className="text-right">
                             <div className="font-bold text-green-600">{formatCurrency(payment.total_amount)}</div>
-                            <div className="text-xs text-gray-500">{payment.orders.length} đơn</div>
+                            <div className="text-xs text-gray-500">{payment.orders.length} {t("payment.orders")}</div>
                           </div>
                         </div>
 
@@ -1726,7 +1726,7 @@ export default function EmptyReturnsPage() {
                                   <svg className="w-6 h-6 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                                   </svg>
-                                  {payment.error || "Lỗi tạo QR"}
+                                  {payment.error || t("payment.qrError")}
                                 </div>
                               </div>
                             )}
@@ -1734,7 +1734,7 @@ export default function EmptyReturnsPage() {
 
                           {/* Order List */}
                           <div className="flex-1">
-                            <div className="text-xs font-medium text-gray-500 mb-2">Danh sách đơn hạ rỗng:</div>
+                            <div className="text-xs font-medium text-gray-500 mb-2">{t("payment.orderList")}</div>
                             <div className="space-y-1 max-h-32 overflow-y-auto">
                               {payment.orders.map((order) => (
                                 <div key={order.empty_return_id} className="flex justify-between text-sm py-1 border-b border-gray-100">
@@ -1765,7 +1765,7 @@ export default function EmptyReturnsPage() {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                               </svg>
                             )}
-                            Xác nhận đã thanh toán cho {payment.driver_name}
+                            {t("payment.confirmSingleDriver", { driver: payment.driver_name })}
                           </button>
                         </div>
                       </div>
@@ -1778,7 +1778,7 @@ export default function EmptyReturnsPage() {
             {/* Modal Footer */}
             <div className="px-6 py-4 border-t bg-gray-50 flex justify-between items-center">
               <div className="text-sm text-gray-500">
-                Sau khi quét mã và chuyển tiền thành công, nhấn "Xác nhận đã thanh toán"
+                {t("payment.instruction")}
               </div>
               <div className="flex gap-3">
                 <button
@@ -1789,7 +1789,7 @@ export default function EmptyReturnsPage() {
                   }}
                   className="px-4 py-2.5 border rounded-lg hover:bg-gray-100 transition-colors"
                 >
-                  Đóng
+                  {t("buttons.close")}
                 </button>
                 {paymentMode === "single" && singlePaymentData && (
                   <button
@@ -1804,7 +1804,7 @@ export default function EmptyReturnsPage() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                       </svg>
                     )}
-                    Xác nhận đã thanh toán
+                    {t("payment.confirmPayment")}
                   </button>
                 )}
                 {paymentMode === "batch" && batchPaymentData && (
@@ -1823,7 +1823,7 @@ export default function EmptyReturnsPage() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                       </svg>
                     )}
-                    Xác nhận tất cả ({batchPaymentData.total_drivers} tài xế)
+                    {t("payment.confirmAll", { count: batchPaymentData.total_drivers })}
                   </button>
                 )}
               </div>

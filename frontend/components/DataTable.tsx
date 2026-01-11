@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback, useMemo, ReactNode } from "react";
+import { useTranslations } from "next-intl";
 
 // ============ Types ============
 export interface Column<T> {
@@ -58,12 +59,13 @@ export default function DataTable<T>({
   columns,
   data,
   loading = false,
-  emptyMessage = "Không có dữ liệu",
+  emptyMessage,
   rowKey,
   onRowClick,
   maxHeight,
   stickyHeader = true,
 }: DataTableProps<T>) {
+  const t = useTranslations("common.dataTable");
   // Column widths state (for resizing)
   const [columnWidths, setColumnWidths] = useState<Record<string, number>>(() => {
     const widths: Record<string, number> = {};
@@ -202,14 +204,14 @@ export default function DataTable<T>({
               <td colSpan={columns.length} className="px-4 py-8 text-center text-gray-500">
                 <div className="flex items-center justify-center gap-2">
                   <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                  Đang tải...
+                  {t("loading")}
                 </div>
               </td>
             </tr>
           ) : sortedData.length === 0 ? (
             <tr>
               <td colSpan={columns.length} className="px-4 py-8 text-center text-gray-500">
-                {emptyMessage}
+                {emptyMessage || t("noData")}
               </td>
             </tr>
           ) : (
@@ -242,16 +244,19 @@ interface PageSizeSelectorProps {
   pageSize: number;
   onPageSizeChange: (size: number) => void;
   options?: number[];
+  rowsLabel?: string;
 }
 
 export function PageSizeSelector({
   pageSize,
   onPageSizeChange,
   options = [50, 100, 200],
+  rowsLabel,
 }: PageSizeSelectorProps) {
+  const t = useTranslations("common.dataTable");
   return (
     <div className="flex items-center gap-2">
-      <span className="text-xs text-gray-600">Hiển thị:</span>
+      <span className="text-xs text-gray-600">{t("show")}:</span>
       <select
         value={pageSize}
         onChange={(e) => onPageSizeChange(Number(e.target.value))}
@@ -259,7 +264,7 @@ export function PageSizeSelector({
       >
         {options.map((opt) => (
           <option key={opt} value={opt}>
-            {opt} dòng
+            {opt} {rowsLabel || t("rows")}
           </option>
         ))}
       </select>
@@ -286,11 +291,13 @@ export function TablePagination({
   totalItems,
   onPageChange,
   onPageSizeChange,
-  itemName = "dòng",
+  itemName,
   pageSizeOptions = [50, 100, 200],
 }: PaginationProps) {
+  const t = useTranslations("common.dataTable");
   const startIndex = (currentPage - 1) * pageSize + 1;
   const endIndex = Math.min(currentPage * pageSize, totalItems);
+  const displayItemName = itemName || t("rows");
 
   return (
     <div className="px-4 py-3 border-t border-gray-200 flex items-center justify-between bg-white">
@@ -299,9 +306,10 @@ export function TablePagination({
           pageSize={pageSize}
           onPageSizeChange={onPageSizeChange}
           options={pageSizeOptions}
+          rowsLabel={displayItemName}
         />
         <span className="text-xs text-gray-600">
-          Hiển thị {startIndex} - {endIndex} / {totalItems} {itemName}
+          {t("showing")} {startIndex} - {endIndex} / {totalItems} {displayItemName}
         </span>
       </div>
 
@@ -311,7 +319,7 @@ export function TablePagination({
             onClick={() => onPageChange(1)}
             disabled={currentPage === 1}
             className="px-2 py-1 text-xs border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-            title="Trang đầu"
+            title={t("firstPage")}
           >
             ««
           </button>
@@ -319,7 +327,7 @@ export function TablePagination({
             onClick={() => onPageChange(currentPage - 1)}
             disabled={currentPage === 1}
             className="px-2 py-1 text-xs border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-            title="Trang trước"
+            title={t("previousPage")}
           >
             «
           </button>
@@ -359,7 +367,7 @@ export function TablePagination({
             onClick={() => onPageChange(currentPage + 1)}
             disabled={currentPage === totalPages}
             className="px-2 py-1 text-xs border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-            title="Trang sau"
+            title={t("nextPage")}
           >
             »
           </button>
@@ -367,7 +375,7 @@ export function TablePagination({
             onClick={() => onPageChange(totalPages)}
             disabled={currentPage === totalPages}
             className="px-2 py-1 text-xs border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-            title="Trang cuối"
+            title={t("lastPage")}
           >
             »»
           </button>

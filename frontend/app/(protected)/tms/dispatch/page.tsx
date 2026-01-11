@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { useTranslations } from "next-intl";
 import {
   Truck,
   AlertTriangle,
@@ -35,7 +36,6 @@ import {
   Timer,
   Target,
   BarChart3,
-  Database,
   Loader2,
   Satellite,
   Radio,
@@ -175,18 +175,7 @@ function getWorkStatusColor(status: string) {
   }
 }
 
-function getWorkStatusLabel(status: string) {
-  switch (status) {
-    case "on_trip": return "Đang chạy";
-    case "available": return "Sẵn sàng";
-    case "loading": return "Đang xếp hàng";
-    case "unloading": return "Đang dỡ hàng";
-    case "returning": return "Đang về";
-    case "maintenance": return "Bảo trì";
-    case "off_duty": return "Nghỉ";
-    default: return status;
-  }
-}
+// getWorkStatusLabel is now inside the component to use translations
 
 function getSeverityColor(severity: string) {
   switch (severity) {
@@ -214,19 +203,7 @@ function formatTime(dateStr: string) {
   return d.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
 }
 
-function formatTimeAgo(dateStr: string | null) {
-  if (!dateStr) return "-";
-  const d = new Date(dateStr);
-  const now = new Date();
-  const diffMs = now.getTime() - d.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-
-  if (diffMins < 1) return "Vừa xong";
-  if (diffMins < 60) return `${diffMins} phút trước`;
-  const diffHours = Math.floor(diffMins / 60);
-  if (diffHours < 24) return `${diffHours} giờ trước`;
-  return d.toLocaleDateString("vi-VN");
-}
+// formatTimeAgo is now inside the component to use translations
 
 function getActivityTypeColor(logType: string) {
   if (logType.includes("assign")) return "bg-blue-500";
@@ -240,11 +217,40 @@ function getActivityTypeColor(logType: string) {
 // ============================================================================
 
 export default function DispatchCenterPage() {
+  const t = useTranslations("tms.dispatchPage");
+
+  // Helper functions that need translations
+  const getWorkStatusLabel = (status: string) => {
+    switch (status) {
+      case "on_trip": return t("workStatus.onTrip");
+      case "available": return t("workStatus.available");
+      case "loading": return t("workStatus.loading");
+      case "unloading": return t("workStatus.unloading");
+      case "returning": return t("workStatus.returning");
+      case "maintenance": return t("workStatus.maintenance");
+      case "off_duty": return t("workStatus.offDuty");
+      default: return status;
+    }
+  };
+
+  const formatTimeAgo = (dateStr: string | null) => {
+    if (!dateStr) return "-";
+    const d = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now.getTime() - d.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+
+    if (diffMins < 1) return t("time.justNow");
+    if (diffMins < 60) return t("time.minutesAgo", { count: diffMins });
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return t("time.hoursAgo", { count: diffHours });
+    return d.toLocaleDateString("vi-VN");
+  };
+
   // Data states
   const [dashboard, setDashboard] = useState<DispatchDashboard | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isSeeding, setIsSeeding] = useState(false);
   const [gpsProviders, setGpsProviders] = useState<GPSProviderStatus[]>([]);
   const [isSyncingGPS, setIsSyncingGPS] = useState(false);
 
@@ -283,11 +289,11 @@ export default function DispatchCenterPage() {
       setError(null);
     } catch (err) {
       console.error("Fetch error:", err);
-      setError("Không thể tải dữ liệu dispatch");
+      setError(t("errors.cannotLoadData"));
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [t]);
 
   // Fetch GPS providers status
   const fetchGPSProviders = useCallback(async () => {
@@ -308,7 +314,7 @@ export default function DispatchCenterPage() {
       // Refresh dashboard and providers after sync
       await Promise.all([fetchDashboard(), fetchGPSProviders()]);
     } catch (err: any) {
-      alert(err.message || "Không thể đồng bộ GPS");
+      alert(err.message || t("errors.cannotSyncGPS"));
     } finally {
       setIsSyncingGPS(false);
     }
@@ -332,20 +338,6 @@ export default function DispatchCenterPage() {
     const timer = setInterval(() => setCurrentTime(new Date()), 60000);
     return () => clearInterval(timer);
   }, []);
-
-  // Seed sample data
-  const handleSeedData = async () => {
-    setIsSeeding(true);
-    try {
-      await apiFetch("/dispatch/seed-sample-data", { method: "POST" });
-      // Refresh dashboard
-      await fetchDashboard();
-    } catch (err: any) {
-      alert(err.message || "Không thể tạo dữ liệu mẫu");
-    } finally {
-      setIsSeeding(false);
-    }
-  };
 
   // Resolve alert
   const handleResolveAlert = async (alertId: string) => {
@@ -400,7 +392,7 @@ export default function DispatchCenterPage() {
       <div className="h-[calc(100vh-64px)] flex items-center justify-center bg-slate-100">
         <div className="text-center">
           <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Đang tải dữ liệu dispatch...</p>
+          <p className="text-gray-600">{t("loading")}</p>
         </div>
       </div>
     );
@@ -414,19 +406,19 @@ export default function DispatchCenterPage() {
         <div className="text-center max-w-lg">
           <AlertTriangle className="w-16 h-16 text-orange-500 mx-auto mb-4" />
           <h2 className="text-xl font-bold text-gray-800 mb-2">
-            {isConnectionError ? "Không thể kết nối Backend" : "Không có dữ liệu"}
+            {isConnectionError ? t("errors.cannotConnect") : t("errors.noData")}
           </h2>
           <p className="text-gray-600 mb-4">
             {isConnectionError ? (
               <>
-                Vui lòng kiểm tra:
+                {t("errors.checkBackend")}
                 <br />
-                1. Backend đang chạy (uvicorn hoặc python -m uvicorn app.main:app)
+                {t("errors.backendRunning")}
                 <br />
-                2. Database đã migrate (alembic upgrade head)
+                {t("errors.databaseMigrated")}
               </>
             ) : (
-              "Chưa có dữ liệu dispatch. Bạn có thể tạo dữ liệu mẫu để kiểm tra."
+              t("errors.noDispatchData")
             )}
           </p>
           {error && (
@@ -435,31 +427,12 @@ export default function DispatchCenterPage() {
             </p>
           )}
           <div className="flex items-center justify-center gap-3">
-            {!isConnectionError && (
-              <button
-                onClick={handleSeedData}
-                disabled={isSeeding}
-                className="px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
-              >
-                {isSeeding ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Đang tạo...
-                  </>
-                ) : (
-                  <>
-                    <Database className="w-4 h-4" />
-                    Tạo dữ liệu mẫu
-                  </>
-                )}
-              </button>
-            )}
             <button
               onClick={fetchDashboard}
               className="px-6 py-3 bg-white text-gray-700 border rounded-lg font-medium hover:bg-gray-50 flex items-center gap-2"
             >
               <RefreshCw className="w-4 h-4" />
-              Tải lại
+              {t("buttons.reload")}
             </button>
           </div>
         </div>
@@ -515,7 +488,7 @@ export default function DispatchCenterPage() {
                 <div className="p-3 border-b bg-slate-50 rounded-t-xl flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Satellite className="w-4 h-4 text-blue-600" />
-                    <span className="font-semibold text-gray-800 text-sm">GPS Providers</span>
+                    <span className="font-semibold text-gray-800 text-sm">{t("gps.title")}</span>
                   </div>
                   <button
                     onClick={() => handleSyncGPS()}
@@ -523,16 +496,16 @@ export default function DispatchCenterPage() {
                     className="px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 disabled:opacity-50 flex items-center gap-1"
                   >
                     {isSyncingGPS ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
-                    Sync All
+                    {t("buttons.syncAll")}
                   </button>
                 </div>
                 <div className="max-h-64 overflow-y-auto">
                   {gpsProviders.length === 0 ? (
                     <div className="p-4 text-center text-gray-500 text-sm">
                       <WifiOff className="w-8 h-8 mx-auto mb-2 text-gray-300" />
-                      <p>Chưa cấu hình GPS Provider</p>
+                      <p>{t("gps.notConfigured")}</p>
                       <a href="/tms/gps-settings" className="text-blue-600 hover:underline text-xs">
-                        Cấu hình ngay →
+                        {t("gps.configureNow")} &rarr;
                       </a>
                     </div>
                   ) : (
@@ -547,7 +520,7 @@ export default function DispatchCenterPage() {
                             <span className="font-medium text-gray-800 text-sm">{provider.name}</span>
                           </div>
                           <span className="text-xs text-gray-500">
-                            {provider.mapped_vehicles} xe
+                            {provider.mapped_vehicles} {t("gps.vehicles")}
                           </span>
                         </div>
                         <div className="flex items-center justify-between text-xs text-gray-500">
@@ -555,7 +528,7 @@ export default function DispatchCenterPage() {
                           <span>
                             {provider.last_sync_at
                               ? formatTimeAgo(provider.last_sync_at)
-                              : "Chưa sync"}
+                              : t("gps.notSynced")}
                           </span>
                         </div>
                         {provider.last_error && (
@@ -573,23 +546,13 @@ export default function DispatchCenterPage() {
                       href="/tms/gps-settings"
                       className="block text-center text-xs text-blue-600 hover:underline"
                     >
-                      Quản lý GPS Settings →
+                      {t("gps.manageSettings")} &rarr;
                     </a>
                   </div>
                 )}
               </div>
             )}
           </div>
-
-          {/* Seed Data Button */}
-          <button
-            onClick={handleSeedData}
-            disabled={isSeeding}
-            className="px-3 py-2 bg-slate-800 rounded-lg hover:bg-slate-700 transition-colors flex items-center gap-2 text-sm"
-          >
-            {isSeeding ? <Loader2 className="w-4 h-4 animate-spin" /> : <Database className="w-4 h-4" />}
-            <span className="hidden sm:inline">Tạo mẫu</span>
-          </button>
 
           {/* Refresh Button */}
           <button
@@ -640,7 +603,7 @@ export default function DispatchCenterPage() {
               value={commandInput}
               onChange={(e) => setCommandInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleCommand()}
-              placeholder="Nhập lệnh AI: 'Tìm xe gần Quận 7', 'Tối ưu route cho xe 51C-123', 'Gán đơn ADG-100 cho xe rảnh nhất'..."
+              placeholder={t("commandBar.placeholder")}
               className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-200 focus:border-purple-400 outline-none text-sm"
               disabled={isProcessingCommand}
             />
@@ -653,12 +616,12 @@ export default function DispatchCenterPage() {
             {isProcessingCommand ? (
               <>
                 <RefreshCw className="w-4 h-4 animate-spin" />
-                Đang xử lý...
+                {t("commandBar.processing")}
               </>
             ) : (
               <>
                 <Send className="w-4 h-4" />
-                Thực hiện
+                {t("commandBar.execute")}
               </>
             )}
           </button>
@@ -674,7 +637,7 @@ export default function DispatchCenterPage() {
             <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 border border-blue-200">
               <div className="flex items-center gap-2 text-blue-600 mb-1">
                 <Truck className="w-4 h-4" />
-                <span className="text-xs font-medium">Xe hoạt động</span>
+                <span className="text-xs font-medium">{t("stats.activeVehicles")}</span>
               </div>
               <div className="text-2xl font-bold text-blue-700">{stats.active_vehicles}/{stats.total_vehicles}</div>
             </div>
@@ -682,7 +645,7 @@ export default function DispatchCenterPage() {
             <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-4 border border-green-200">
               <div className="flex items-center gap-2 text-green-600 mb-1">
                 <Route className="w-4 h-4" />
-                <span className="text-xs font-medium">Đang chạy</span>
+                <span className="text-xs font-medium">{t("stats.onTrip")}</span>
               </div>
               <div className="text-2xl font-bold text-green-700">{stats.on_trip_vehicles}</div>
             </div>
@@ -690,7 +653,7 @@ export default function DispatchCenterPage() {
             <div className="bg-gradient-to-br from-cyan-50 to-cyan-100 rounded-xl p-4 border border-cyan-200">
               <div className="flex items-center gap-2 text-cyan-600 mb-1">
                 <Users className="w-4 h-4" />
-                <span className="text-xs font-medium">Xe sẵn sàng</span>
+                <span className="text-xs font-medium">{t("stats.available")}</span>
               </div>
               <div className="text-2xl font-bold text-cyan-700">{stats.available_vehicles}</div>
             </div>
@@ -698,7 +661,7 @@ export default function DispatchCenterPage() {
             <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl p-4 border border-orange-200">
               <div className="flex items-center gap-2 text-orange-600 mb-1">
                 <Package className="w-4 h-4" />
-                <span className="text-xs font-medium">Đơn chờ</span>
+                <span className="text-xs font-medium">{t("stats.pendingOrders")}</span>
               </div>
               <div className="text-2xl font-bold text-orange-700">{stats.pending_orders}</div>
             </div>
@@ -706,7 +669,7 @@ export default function DispatchCenterPage() {
             <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-xl p-4 border border-emerald-200">
               <div className="flex items-center gap-2 text-emerald-600 mb-1">
                 <TrendingUp className="w-4 h-4" />
-                <span className="text-xs font-medium">Đang giao</span>
+                <span className="text-xs font-medium">{t("stats.inTransit")}</span>
               </div>
               <div className="text-2xl font-bold text-emerald-700">{stats.in_transit_orders}</div>
             </div>
@@ -714,7 +677,7 @@ export default function DispatchCenterPage() {
             <div className="bg-gradient-to-br from-teal-50 to-teal-100 rounded-xl p-4 border border-teal-200">
               <div className="flex items-center gap-2 text-teal-600 mb-1">
                 <CheckCircle2 className="w-4 h-4" />
-                <span className="text-xs font-medium">Giao hôm nay</span>
+                <span className="text-xs font-medium">{t("stats.deliveredToday")}</span>
               </div>
               <div className="text-2xl font-bold text-teal-700">{stats.delivered_today}</div>
             </div>
@@ -722,7 +685,7 @@ export default function DispatchCenterPage() {
             <div className="bg-gradient-to-br from-rose-50 to-rose-100 rounded-xl p-4 border border-rose-200">
               <div className="flex items-center gap-2 text-rose-600 mb-1">
                 <AlertTriangle className="w-4 h-4" />
-                <span className="text-xs font-medium">Cảnh báo</span>
+                <span className="text-xs font-medium">{t("stats.alerts")}</span>
               </div>
               <div className="text-2xl font-bold text-rose-700">{stats.active_alerts}</div>
             </div>
@@ -730,7 +693,7 @@ export default function DispatchCenterPage() {
             <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-xl p-4 border border-indigo-200">
               <div className="flex items-center gap-2 text-indigo-600 mb-1">
                 <Brain className="w-4 h-4" />
-                <span className="text-xs font-medium">AI Auto Rate</span>
+                <span className="text-xs font-medium">{t("stats.aiAutoRate")}</span>
               </div>
               <div className="text-2xl font-bold text-indigo-700">{stats.ai_auto_rate}%</div>
             </div>
@@ -749,7 +712,7 @@ export default function DispatchCenterPage() {
             <div className="px-4 py-3 border-b bg-slate-50 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <AlertTriangle className="w-4 h-4 text-red-500" />
-                <span className="font-semibold text-sm">Cảnh báo</span>
+                <span className="font-semibold text-sm">{t("alerts.title")}</span>
                 <span className="px-2 py-0.5 bg-red-100 text-red-600 text-xs rounded-full font-medium">{alerts.length}</span>
               </div>
             </div>
@@ -757,7 +720,7 @@ export default function DispatchCenterPage() {
               {alerts.length === 0 ? (
                 <div className="text-center text-gray-400 py-8">
                   <CheckCircle2 className="w-10 h-10 mx-auto mb-2 text-green-400" />
-                  <p className="text-sm">Không có cảnh báo</p>
+                  <p className="text-sm">{t("alerts.noAlerts")}</p>
                 </div>
               ) : (
                 alerts.map((alert) => {
@@ -770,14 +733,14 @@ export default function DispatchCenterPage() {
                           <div className="font-medium text-sm text-gray-900 truncate">{alert.title}</div>
                           <div className="text-xs text-gray-500 mt-0.5">{alert.message}</div>
                           {alert.plate_number && (
-                            <div className="text-xs text-gray-500 mt-1">Xe: {alert.plate_number}</div>
+                            <div className="text-xs text-gray-500 mt-1">{t("alerts.vehicle")} {alert.plate_number}</div>
                           )}
                           <div className="flex items-center gap-2 mt-2">
                             <button
                               onClick={() => handleResolveAlert(alert.id)}
                               className="px-2 py-1 text-xs rounded font-medium bg-slate-900 text-white hover:bg-slate-800"
                             >
-                              Xử lý xong
+                              {t("alerts.resolve")}
                             </button>
                           </div>
                         </div>
@@ -795,7 +758,7 @@ export default function DispatchCenterPage() {
             <div className="px-4 py-3 border-b bg-slate-50 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Package className="w-4 h-4 text-orange-500" />
-                <span className="font-semibold text-sm">Chưa phân xe</span>
+                <span className="font-semibold text-sm">{t("unassignedOrders.title")}</span>
                 <span className="px-2 py-0.5 bg-orange-100 text-orange-600 text-xs rounded-full font-medium">{unassignedOrders.length}</span>
               </div>
             </div>
@@ -803,7 +766,7 @@ export default function DispatchCenterPage() {
               {unassignedOrders.length === 0 ? (
                 <div className="text-center text-gray-400 py-8">
                   <CheckCircle2 className="w-8 h-8 mx-auto mb-2 text-green-400" />
-                  <p className="text-sm">Tất cả đơn đã phân xe</p>
+                  <p className="text-sm">{t("unassignedOrders.allAssigned")}</p>
                 </div>
               ) : (
                 unassignedOrders.map((order) => (
@@ -829,7 +792,7 @@ export default function DispatchCenterPage() {
                       )}
                       {order.customer_requested_date && (
                         <div className="text-orange-600 font-medium">
-                          Deadline: {new Date(order.customer_requested_date).toLocaleDateString("vi-VN")}
+                          {t("unassignedOrders.deadline")} {new Date(order.customer_requested_date).toLocaleDateString("vi-VN")}
                         </div>
                       )}
                     </div>
@@ -850,8 +813,8 @@ export default function DispatchCenterPage() {
                 <div className="w-20 h-20 bg-slate-300 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Navigation className="w-10 h-10 text-slate-500" />
                 </div>
-                <p className="text-slate-600 font-medium">Live Map</p>
-                <p className="text-slate-400 text-sm">Integrate with Mapbox/Google Maps</p>
+                <p className="text-slate-600 font-medium">{t("liveMap.title")}</p>
+                <p className="text-slate-400 text-sm">{t("liveMap.integrationHint")}</p>
               </div>
             </div>
 
@@ -867,19 +830,19 @@ export default function DispatchCenterPage() {
 
             {/* Map Legend */}
             <div className="absolute bottom-4 left-4 bg-white rounded-lg shadow p-3">
-              <div className="text-xs font-medium text-gray-700 mb-2">Chú thích</div>
+              <div className="text-xs font-medium text-gray-700 mb-2">{t("liveMap.legend")}</div>
               <div className="space-y-1">
                 <div className="flex items-center gap-2 text-xs">
                   <div className="w-3 h-3 bg-green-500 rounded-full" />
-                  <span>Đang chạy ({stats?.on_trip_vehicles || 0})</span>
+                  <span>{t("liveMap.onTrip")} ({stats?.on_trip_vehicles || 0})</span>
                 </div>
                 <div className="flex items-center gap-2 text-xs">
                   <div className="w-3 h-3 bg-blue-500 rounded-full" />
-                  <span>Sẵn sàng ({stats?.available_vehicles || 0})</span>
+                  <span>{t("liveMap.available")} ({stats?.available_vehicles || 0})</span>
                 </div>
                 <div className="flex items-center gap-2 text-xs">
                   <div className="w-3 h-3 bg-gray-400 rounded-full" />
-                  <span>Nghỉ/Offline</span>
+                  <span>{t("liveMap.offline")}</span>
                 </div>
               </div>
             </div>
@@ -888,16 +851,16 @@ export default function DispatchCenterPage() {
             <div className="absolute top-4 left-4 bg-white/95 backdrop-blur rounded-xl shadow-lg p-4 w-64">
               <div className="flex items-center gap-2 mb-3">
                 <Activity className="w-5 h-5 text-blue-600" />
-                <span className="font-semibold text-gray-800">Live Operations</span>
+                <span className="font-semibold text-gray-800">{t("liveMap.liveOperations")}</span>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="text-center p-2 bg-green-50 rounded-lg">
                   <div className="text-2xl font-bold text-green-600">{stats?.on_trip_vehicles || 0}</div>
-                  <div className="text-xs text-green-700">Đang chạy</div>
+                  <div className="text-xs text-green-700">{t("liveMap.onTrip")}</div>
                 </div>
                 <div className="text-center p-2 bg-blue-50 rounded-lg">
                   <div className="text-2xl font-bold text-blue-600">{stats?.available_vehicles || 0}</div>
-                  <div className="text-xs text-blue-700">Sẵn sàng</div>
+                  <div className="text-xs text-blue-700">{t("liveMap.available")}</div>
                 </div>
               </div>
             </div>
@@ -908,14 +871,14 @@ export default function DispatchCenterPage() {
             <div className="px-4 py-2 border-b bg-slate-50 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Truck className="w-4 h-4 text-blue-600" />
-                <span className="font-semibold text-sm">Danh sách xe ({vehicles.length})</span>
+                <span className="font-semibold text-sm">{t("vehicleList.title")} ({vehicles.length})</span>
               </div>
               <div className="flex items-center gap-2">
                 <input
                   type="text"
                   value={vehicleSearch}
                   onChange={(e) => setVehicleSearch(e.target.value)}
-                  placeholder="Tìm biển số, tài xế..."
+                  placeholder={t("vehicleList.searchPlaceholder")}
                   className="px-3 py-1 text-xs border rounded-lg w-48 focus:ring-2 focus:ring-blue-200 outline-none"
                 />
               </div>
@@ -925,25 +888,19 @@ export default function DispatchCenterPage() {
                 <div className="flex items-center justify-center h-full text-gray-400">
                   <div className="text-center">
                     <Truck className="w-10 h-10 mx-auto mb-2" />
-                    <p className="text-sm">Chưa có dữ liệu GPS</p>
-                    <button
-                      onClick={handleSeedData}
-                      className="mt-2 px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
-                    >
-                      Tạo dữ liệu mẫu
-                    </button>
+                    <p className="text-sm">{t("vehicleList.noGPSData")}</p>
                   </div>
                 </div>
               ) : (
                 <table className="w-full text-sm">
                   <thead className="bg-slate-50 sticky top-0">
                     <tr className="text-left text-xs text-gray-500">
-                      <th className="px-4 py-2 font-medium">Trạng thái</th>
-                      <th className="px-4 py-2 font-medium">Biển số</th>
-                      <th className="px-4 py-2 font-medium">Tài xế</th>
-                      <th className="px-4 py-2 font-medium">Vị trí</th>
-                      <th className="px-4 py-2 font-medium">Tốc độ</th>
-                      <th className="px-4 py-2 font-medium">Cập nhật</th>
+                      <th className="px-4 py-2 font-medium">{t("vehicleList.columns.status")}</th>
+                      <th className="px-4 py-2 font-medium">{t("vehicleList.columns.plate")}</th>
+                      <th className="px-4 py-2 font-medium">{t("vehicleList.columns.driver")}</th>
+                      <th className="px-4 py-2 font-medium">{t("vehicleList.columns.location")}</th>
+                      <th className="px-4 py-2 font-medium">{t("vehicleList.columns.speed")}</th>
+                      <th className="px-4 py-2 font-medium">{t("vehicleList.columns.updated")}</th>
                       <th className="px-4 py-2 font-medium"></th>
                     </tr>
                   </thead>
@@ -996,7 +953,7 @@ export default function DispatchCenterPage() {
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <Brain className="w-4 h-4 text-purple-600" />
-                <span className="font-semibold text-sm">AI Auto Rate</span>
+                <span className="font-semibold text-sm">{t("aiActivity.autoRate")}</span>
               </div>
               <span className="text-2xl font-bold text-purple-600">{stats?.ai_auto_rate || 0}%</span>
             </div>
@@ -1007,7 +964,7 @@ export default function DispatchCenterPage() {
               />
             </div>
             <p className="text-xs text-gray-500 mt-2">
-              AI tự động xử lý {stats?.ai_auto_rate || 0}% quyết định điều phối
+              {t("aiActivity.autoRateDesc", { rate: stats?.ai_auto_rate || 0 })}
             </p>
           </div>
 
@@ -1016,18 +973,18 @@ export default function DispatchCenterPage() {
             <div className="px-4 py-3 border-b bg-slate-50 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Activity className="w-4 h-4 text-green-600" />
-                <span className="font-semibold text-sm">AI Activity</span>
+                <span className="font-semibold text-sm">{t("aiActivity.title")}</span>
               </div>
               <div className="flex items-center gap-1">
                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                <span className="text-xs text-green-600">Live</span>
+                <span className="text-xs text-green-600">{t("aiActivity.live")}</span>
               </div>
             </div>
             <div className="flex-1 overflow-y-auto p-3 space-y-2">
               {recentActivity.length === 0 ? (
                 <div className="text-center text-gray-400 py-8">
                   <Activity className="w-8 h-8 mx-auto mb-2" />
-                  <p className="text-sm">Chưa có hoạt động</p>
+                  <p className="text-sm">{t("aiActivity.noActivity")}</p>
                 </div>
               ) : (
                 recentActivity.map((log) => (
@@ -1051,17 +1008,17 @@ export default function DispatchCenterPage() {
             <div className="px-4 py-3 border-b bg-slate-50 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Zap className="w-4 h-4 text-amber-500" />
-                <span className="font-semibold text-sm">Quyết định AI</span>
+                <span className="font-semibold text-sm">{t("aiDecisions.title")}</span>
               </div>
               <span className="px-2 py-0.5 bg-amber-100 text-amber-600 text-xs rounded-full font-medium">
-                {stats?.pending_ai_decisions || 0} chờ duyệt
+                {stats?.pending_ai_decisions || 0} {t("aiDecisions.pendingApproval")}
               </span>
             </div>
             <div className="flex-1 overflow-y-auto p-3 space-y-2">
               {aiDecisions.length === 0 ? (
                 <div className="text-center text-gray-400 py-8">
                   <CheckCircle2 className="w-8 h-8 mx-auto mb-2 text-green-400" />
-                  <p className="text-sm">Không có quyết định chờ duyệt</p>
+                  <p className="text-sm">{t("aiDecisions.noPending")}</p>
                 </div>
               ) : (
                 aiDecisions.map((decision) => (
@@ -1080,19 +1037,19 @@ export default function DispatchCenterPage() {
                           onClick={() => handleDecisionAction(decision.id, "approve")}
                           className="flex-1 px-2 py-1 bg-green-600 text-white text-xs rounded font-medium hover:bg-green-700"
                         >
-                          Duyệt
+                          {t("aiDecisions.approve")}
                         </button>
                         <button
                           onClick={() => handleDecisionAction(decision.id, "reject")}
                           className="flex-1 px-2 py-1 bg-white text-gray-700 border text-xs rounded font-medium hover:bg-gray-50"
                         >
-                          Từ chối
+                          {t("aiDecisions.reject")}
                         </button>
                       </div>
                     ) : (
                       <div className="flex items-center gap-1 text-xs text-gray-500">
                         <CheckCircle2 className="w-3 h-3 text-green-500" />
-                        <span>Đã {decision.status === "approved" ? "duyệt" : "từ chối"}</span>
+                        <span>{decision.status === "approved" ? t("aiDecisions.approved") : t("aiDecisions.rejected")}</span>
                       </div>
                     )}
                   </div>

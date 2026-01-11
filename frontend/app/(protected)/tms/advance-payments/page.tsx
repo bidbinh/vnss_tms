@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api/v1";
 
@@ -23,6 +24,7 @@ interface Driver {
 }
 
 export default function AdvancePaymentsPage() {
+  const t = useTranslations("tms.advancePaymentsPage");
   const [payments, setPayments] = useState<AdvancePayment[]>([]);
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [loading, setLoading] = useState(false);
@@ -77,7 +79,7 @@ export default function AdvancePaymentsPage() {
       const data = await res.json();
       setPayments(data);
     } catch (err) {
-      alert("Lỗi: " + err);
+      alert(t("errors.loadFailed") + ": " + err);
     } finally {
       setLoading(false);
     }
@@ -107,17 +109,17 @@ export default function AdvancePaymentsPage() {
 
       if (!res.ok) throw new Error("Failed to save");
 
-      alert(editingId ? "Cập nhật thành công!" : "Tạo tạm ứng thành công!");
+      alert(editingId ? t("messages.updated") : t("messages.created"));
       setShowModal(false);
       resetForm();
       fetchPayments();
     } catch (err) {
-      alert("Lỗi: " + err);
+      alert(t("errors.saveFailed") + ": " + err);
     }
   }
 
   async function handleDelete(id: string) {
-    if (!confirm("Bạn có chắc muốn xóa tạm ứng này?")) return;
+    if (!confirm(t("confirmations.delete"))) return;
 
     try {
       const res = await fetch(`${API_BASE_URL}/advance-payments/${id}`, {
@@ -130,10 +132,10 @@ export default function AdvancePaymentsPage() {
         throw new Error(error.detail || "Failed to delete");
       }
 
-      alert("Xóa thành công!");
+      alert(t("messages.deleted"));
       fetchPayments();
     } catch (err: any) {
-      alert("Lỗi: " + err.message);
+      alert(t("errors.deleteFailed") + ": " + err.message);
     }
   }
 
@@ -178,12 +180,12 @@ export default function AdvancePaymentsPage() {
   return (
     <div className="p-6 max-w-full overflow-x-hidden">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Quản lý Tạm Ứng</h1>
+        <h1 className="text-2xl font-bold">{t("title")}</h1>
         <button
           onClick={() => openModal()}
           className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
         >
-          + Thêm Tạm Ứng
+          + {t("addPayment")}
         </button>
       </div>
 
@@ -191,13 +193,13 @@ export default function AdvancePaymentsPage() {
       <div className="bg-white p-4 rounded-lg shadow mb-6">
         <div className="grid grid-cols-5 gap-4">
           <div>
-            <label className="block text-sm font-medium mb-1">Tài xế</label>
+            <label className="block text-sm font-medium mb-1">{t("filters.driver")}</label>
             <select
               value={filterDriver}
               onChange={(e) => setFilterDriver(e.target.value)}
               className="w-full border rounded px-3 py-2"
             >
-              <option value="">Tất cả</option>
+              <option value="">{t("filters.allDrivers")}</option>
               {drivers.map((d) => (
                 <option key={d.id} value={d.id}>
                   {d.name}
@@ -206,7 +208,7 @@ export default function AdvancePaymentsPage() {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Năm</label>
+            <label className="block text-sm font-medium mb-1">{t("filters.year")}</label>
             <input
               type="number"
               value={filterYear}
@@ -215,30 +217,30 @@ export default function AdvancePaymentsPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Tháng</label>
+            <label className="block text-sm font-medium mb-1">{t("filters.month")}</label>
             <select
               value={filterMonth}
               onChange={(e) => setFilterMonth(e.target.value ? parseInt(e.target.value) : "")}
               className="w-full border rounded px-3 py-2"
             >
-              <option value="">Tất cả</option>
+              <option value="">{t("filters.allMonths")}</option>
               {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((m) => (
                 <option key={m} value={m}>
-                  Tháng {m}
+                  {t("filters.monthLabel", { month: m })}
                 </option>
               ))}
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Trạng thái</label>
+            <label className="block text-sm font-medium mb-1">{t("filters.status")}</label>
             <select
               value={filterDeducted}
               onChange={(e) => setFilterDeducted(e.target.value)}
               className="w-full border rounded px-3 py-2"
             >
-              <option value="all">Tất cả</option>
-              <option value="false">Chưa trừ</option>
-              <option value="true">Đã trừ</option>
+              <option value="all">{t("filters.allStatuses")}</option>
+              <option value="false">{t("filters.notDeducted")}</option>
+              <option value="true">{t("filters.deducted")}</option>
             </select>
           </div>
         </div>
@@ -249,16 +251,16 @@ export default function AdvancePaymentsPage() {
         <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg shadow mb-6">
           <div className="grid grid-cols-3 gap-4 text-center">
             <div>
-              <div className="text-sm text-gray-600">Tổng tạm ứng</div>
-              <div className="text-2xl font-bold text-blue-700">{formatCurrency(totalAdvance)} đ</div>
+              <div className="text-sm text-gray-600">{t("summary.totalAdvance")}</div>
+              <div className="text-2xl font-bold text-blue-700">{formatCurrency(totalAdvance)} {t("currency")}</div>
             </div>
             <div>
-              <div className="text-sm text-gray-600">Đã trừ lương</div>
-              <div className="text-2xl font-bold text-green-700">{formatCurrency(totalDeducted)} đ</div>
+              <div className="text-sm text-gray-600">{t("summary.totalDeducted")}</div>
+              <div className="text-2xl font-bold text-green-700">{formatCurrency(totalDeducted)} {t("currency")}</div>
             </div>
             <div>
-              <div className="text-sm text-gray-600">Chưa trừ</div>
-              <div className="text-2xl font-bold text-orange-700">{formatCurrency(totalPending)} đ</div>
+              <div className="text-sm text-gray-600">{t("summary.totalPending")}</div>
+              <div className="text-2xl font-bold text-orange-700">{formatCurrency(totalPending)} {t("currency")}</div>
             </div>
           </div>
         </div>
@@ -266,19 +268,19 @@ export default function AdvancePaymentsPage() {
 
       {/* Table */}
       {loading ? (
-        <div className="text-center py-12">Đang tải...</div>
+        <div className="text-center py-12">{t("loading")}</div>
       ) : (
         <div className="bg-white rounded-lg shadow overflow-auto max-h-[calc(100vh-220px)]">
           <table className="w-full text-sm">
             <thead className="bg-gray-100 text-gray-700 sticky top-0 z-10">
               <tr>
-                <th className="px-4 py-3 text-left font-bold">Tài xế</th>
-                <th className="px-4 py-3 text-right font-bold">Số tiền</th>
-                <th className="px-4 py-3 text-left font-bold">Ngày tạm ứng</th>
-                <th className="px-4 py-3 text-left font-bold">Ghi chú</th>
-                <th className="px-4 py-3 text-center font-bold">Trạng thái</th>
-                <th className="px-4 py-3 text-center font-bold">Đã trừ</th>
-                <th className="px-4 py-3 text-right font-bold">Thao tác</th>
+                <th className="px-4 py-3 text-left font-bold">{t("columns.driver")}</th>
+                <th className="px-4 py-3 text-right font-bold">{t("columns.amount")}</th>
+                <th className="px-4 py-3 text-left font-bold">{t("columns.paymentDate")}</th>
+                <th className="px-4 py-3 text-left font-bold">{t("columns.note")}</th>
+                <th className="px-4 py-3 text-center font-bold">{t("columns.status")}</th>
+                <th className="px-4 py-3 text-center font-bold">{t("columns.deductedPeriod")}</th>
+                <th className="px-4 py-3 text-right font-bold">{t("columns.actions")}</th>
               </tr>
             </thead>
             <tbody>
@@ -286,18 +288,18 @@ export default function AdvancePaymentsPage() {
                 <tr key={payment.id} className="border-t hover:bg-gray-50">
                   <td className="px-4 py-3">{payment.driver_name || "-"}</td>
                   <td className="px-4 py-3 text-right font-semibold text-blue-700">
-                    {formatCurrency(payment.amount)} đ
+                    {formatCurrency(payment.amount)} {t("currency")}
                   </td>
                   <td className="px-4 py-3">{formatDate(payment.payment_date)}</td>
                   <td className="px-4 py-3 text-gray-600">{payment.note || "-"}</td>
                   <td className="px-4 py-3 text-center">
                     {payment.is_deducted ? (
                       <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">
-                        Đã trừ
+                        {t("status.deducted")}
                       </span>
                     ) : (
                       <span className="px-2 py-1 bg-orange-100 text-orange-800 rounded text-xs">
-                        Chưa trừ
+                        {t("status.notDeducted")}
                       </span>
                     )}
                   </td>
@@ -314,13 +316,13 @@ export default function AdvancePaymentsPage() {
                             onClick={() => openModal(payment)}
                             className="text-blue-600 hover:text-blue-800"
                           >
-                            Sửa
+                            {t("actions.edit")}
                           </button>
                           <button
                             onClick={() => handleDelete(payment.id)}
                             className="text-red-600 hover:text-red-800"
                           >
-                            Xóa
+                            {t("actions.delete")}
                           </button>
                         </>
                       )}
@@ -332,7 +334,7 @@ export default function AdvancePaymentsPage() {
           </table>
 
           {payments.length === 0 && (
-            <div className="text-center py-12 text-gray-500">Không có dữ liệu tạm ứng</div>
+            <div className="text-center py-12 text-gray-500">{t("noData")}</div>
           )}
         </div>
       )}
@@ -342,12 +344,12 @@ export default function AdvancePaymentsPage() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
             <h2 className="text-xl font-bold mb-4">
-              {editingId ? "Cập nhật Tạm Ứng" : "Thêm Tạm Ứng Mới"}
+              {editingId ? t("modal.editTitle") : t("modal.createTitle")}
             </h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium mb-1">
-                  Tài xế <span className="text-red-500">*</span>
+                  {t("modal.driver")} <span className="text-red-500">*</span>
                 </label>
                 <select
                   value={formData.driver_id}
@@ -355,7 +357,7 @@ export default function AdvancePaymentsPage() {
                   className="w-full border rounded px-3 py-2"
                   required
                 >
-                  <option value="">-- Chọn tài xế --</option>
+                  <option value="">{t("modal.driverPlaceholder")}</option>
                   {drivers.map((d) => (
                     <option key={d.id} value={d.id}>
                       {d.name}
@@ -366,7 +368,7 @@ export default function AdvancePaymentsPage() {
 
               <div>
                 <label className="block text-sm font-medium mb-1">
-                  Số tiền (VNĐ) <span className="text-red-500">*</span>
+                  {t("modal.amount")} <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="number"
@@ -381,7 +383,7 @@ export default function AdvancePaymentsPage() {
 
               <div>
                 <label className="block text-sm font-medium mb-1">
-                  Ngày tạm ứng <span className="text-red-500">*</span>
+                  {t("modal.paymentDate")} <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="date"
@@ -393,12 +395,13 @@ export default function AdvancePaymentsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Ghi chú</label>
+                <label className="block text-sm font-medium mb-1">{t("modal.note")}</label>
                 <textarea
                   value={formData.note}
                   onChange={(e) => setFormData({ ...formData, note: e.target.value })}
                   className="w-full border rounded px-3 py-2"
                   rows={3}
+                  placeholder={t("modal.notePlaceholder")}
                 />
               </div>
 
@@ -411,13 +414,13 @@ export default function AdvancePaymentsPage() {
                   }}
                   className="px-4 py-2 border rounded hover:bg-gray-100"
                 >
-                  Hủy
+                  {t("modal.cancel")}
                 </button>
                 <button
                   type="submit"
                   className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
                 >
-                  {editingId ? "Cập nhật" : "Tạo mới"}
+                  {editingId ? t("modal.update") : t("modal.create")}
                 </button>
               </div>
             </form>

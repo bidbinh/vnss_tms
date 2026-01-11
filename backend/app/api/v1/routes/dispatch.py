@@ -595,10 +595,19 @@ def seed_sample_data(
         VehicleWorkStatus.RETURNING.value,
     ]
 
+    # Build a map of vehicle_id -> assigned driver
+    vehicle_driver_map = {}
+    for d in drivers:
+        if d.tractor_id:
+            vehicle_driver_map[d.tractor_id] = d
+
     # Create GPS records for vehicles
     gps_created = 0
     for i, vehicle in enumerate(vehicles):
         loc = hcm_locations[i % len(hcm_locations)]
+
+        # Get assigned driver for this vehicle (via tractor_id relationship)
+        assigned_driver = vehicle_driver_map.get(vehicle.id)
 
         # Check if GPS exists
         existing = session.exec(
@@ -614,15 +623,15 @@ def seed_sample_data(
             existing.address = loc[2]
             existing.work_status = random.choice(work_statuses)
             existing.gps_timestamp = datetime.utcnow()
-            # Assign driver if available
-            if i < len(drivers):
-                existing.driver_id = drivers[i].id
+            # Use assigned driver if available
+            if assigned_driver:
+                existing.driver_id = assigned_driver.id
             session.add(existing)
         else:
             gps = VehicleGPS(
                 tenant_id=tenant_id,
                 vehicle_id=vehicle.id,
-                driver_id=drivers[i % len(drivers)].id if drivers else None,
+                driver_id=assigned_driver.id if assigned_driver else None,
                 latitude=loc[0] + random.uniform(-0.01, 0.01),
                 longitude=loc[1] + random.uniform(-0.01, 0.01),
                 speed=random.uniform(0, 60),
@@ -644,21 +653,23 @@ def seed_sample_data(
     alerts_created = 0
     for i, (atype, sev, title, msg) in enumerate(alert_samples):
         if i < len(vehicles):
+            vehicle = vehicles[i]
+            assigned_driver = vehicle_driver_map.get(vehicle.id)
             alert = DispatchAlert(
                 tenant_id=tenant_id,
                 alert_type=atype,
                 severity=sev,
                 title=title,
                 message=msg,
-                vehicle_id=vehicles[i].id,
-                driver_id=drivers[i % len(drivers)].id if drivers else None,
+                vehicle_id=vehicle.id,
+                driver_id=assigned_driver.id if assigned_driver else None,
             )
             session.add(alert)
             alerts_created += 1
 
     # Create sample AI decisions
     ai_decision_samples = [
-        ("assign", "Gợi ý phân công", "Gợi ý phân công đơn DH001 cho tài xế Nguyễn Văn A", 92),
+        ("assign", "Gợi ý phân công", "Gợi ý phân công đơn hàng cho tài xế", 92),
         ("reassign", "Đổi tài xế", "Đề xuất đổi tài xế do lộ trình tối ưu hơn", 85),
         ("route_change", "Tối ưu lộ trình", "Phát hiện đường tắc, đề xuất đổi lộ trình", 78),
     ]
@@ -666,6 +677,8 @@ def seed_sample_data(
     decisions_created = 0
     for i, (dtype, title, desc, conf) in enumerate(ai_decision_samples):
         if i < len(vehicles):
+            vehicle = vehicles[i]
+            assigned_driver = vehicle_driver_map.get(vehicle.id)
             decision = AIDecision(
                 tenant_id=tenant_id,
                 decision_type=dtype,
@@ -673,8 +686,8 @@ def seed_sample_data(
                 description=desc,
                 confidence=conf,
                 reasoning="AI phân tích dựa trên vị trí hiện tại, lịch trình và khả năng tải.",
-                vehicle_id=vehicles[i].id,
-                driver_id=drivers[i % len(drivers)].id if drivers else None,
+                vehicle_id=vehicle.id,
+                driver_id=assigned_driver.id if assigned_driver else None,
                 status="pending",
             )
             session.add(decision)
@@ -729,18 +742,32 @@ def _get_dispatch_stats(session: Session, tenant_id: str) -> DispatchStats:
         .where(Vehicle.status == "ACTIVE")
     ).one()
 
-    # GPS-based counts
-    available_count = session.exec(
+    # GPS-based counts (for vehicles with GPS records)
+    gps_available_count = session.exec(
         select(func.count(VehicleGPS.id))
         .where(VehicleGPS.tenant_id == tenant_id)
         .where(VehicleGPS.work_status == VehicleWorkStatus.AVAILABLE.value)
     ).one()
 
-    on_trip_count = session.exec(
+    gps_on_trip_count = session.exec(
         select(func.count(VehicleGPS.id))
         .where(VehicleGPS.tenant_id == tenant_id)
         .where(VehicleGPS.work_status == VehicleWorkStatus.ON_TRIP.value)
     ).one()
+
+    # For vehicles without GPS, count active vehicles as potentially available
+    vehicles_with_gps = session.exec(
+        select(func.count(VehicleGPS.id))
+        .where(VehicleGPS.tenant_id == tenant_id)
+    ).one()
+
+    # If no GPS data at all, treat all active vehicles as available
+    if vehicles_with_gps == 0:
+        available_count = active_vehicles
+        on_trip_count = 0
+    else:
+        available_count = gps_available_count
+        on_trip_count = gps_on_trip_count
 
     # Driver counts
     total_drivers = session.exec(
@@ -815,9 +842,10 @@ def _get_vehicles_with_gps(
     status: Optional[str] = None,
     work_status: Optional[str] = None,
 ) -> List[VehicleDispatchInfo]:
-    """Get vehicles with their GPS data"""
+    """Get vehicles with their GPS data and assigned drivers"""
 
-    # Build query
+    # Build query - Join Driver directly with Vehicle via tractor_id
+    # This shows real vehicle-driver assignments from the database
     query = (
         select(Vehicle, VehicleGPS, Driver)
         .outerjoin(VehicleGPS, and_(
@@ -825,8 +853,9 @@ def _get_vehicles_with_gps(
             VehicleGPS.tenant_id == tenant_id
         ))
         .outerjoin(Driver, and_(
-            Driver.id == VehicleGPS.driver_id,
-            Driver.tenant_id == tenant_id
+            Driver.tractor_id == Vehicle.id,
+            Driver.tenant_id == tenant_id,
+            Driver.status == "ACTIVE"
         ))
         .where(Vehicle.tenant_id == tenant_id)
     )
@@ -842,15 +871,25 @@ def _get_vehicles_with_gps(
 
     vehicles = []
     for vehicle, gps, driver in results:
+        # Use driver from GPS record if available, otherwise use assigned driver
+        gps_driver_id = gps.driver_id if gps and gps.driver_id else None
+        actual_driver = driver
+
+        # If GPS has a different driver_id, try to fetch that driver
+        if gps_driver_id and (not driver or driver.id != gps_driver_id):
+            gps_driver = session.get(Driver, gps_driver_id)
+            if gps_driver and str(gps_driver.tenant_id) == tenant_id:
+                actual_driver = gps_driver
+
         vehicles.append(VehicleDispatchInfo(
             id=vehicle.id,
             plate_number=vehicle.plate_no,
             vehicle_type=vehicle.type,
             status=vehicle.status,
             work_status=gps.work_status if gps else VehicleWorkStatus.OFF_DUTY.value,
-            driver_id=driver.id if driver else None,
-            driver_name=driver.name if driver else None,
-            driver_phone=driver.phone if driver else None,
+            driver_id=actual_driver.id if actual_driver else None,
+            driver_name=actual_driver.name if actual_driver else None,
+            driver_phone=actual_driver.phone if actual_driver else None,
             latitude=gps.latitude if gps else None,
             longitude=gps.longitude if gps else None,
             speed=gps.speed if gps else None,
