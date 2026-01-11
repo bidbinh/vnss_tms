@@ -1815,6 +1815,25 @@
         },
         "cancel": "Cancel",
         "assign": "Assign"
+      },
+      "docTypes": {
+        "containerReceipt": "Container Receipt",
+        "do": "DO (Delivery Order)",
+        "handoverReport": "Handover Report",
+        "sealPhoto": "Seal Photo",
+        "other": "Other"
+      },
+      "shifts": {
+        "morning": "morning",
+        "afternoon": "afternoon",
+        "evening": "evening"
+      },
+      "confirmations": {
+        "deleteDocument": "Are you sure you want to delete this document?"
+      },
+      "placeholders": {
+        "selectDepot": "Select depot...",
+        "cargoNote": "e.g., Fragile goods, handle with care"
       }
     },
     "trips": {
@@ -2163,27 +2182,6 @@
         "createPairingFailed": "Error: Unable to create pairing",
         "endPairingFailed": "Error: Unable to end pairing",
         "deletePairingFailed": "Error: Unable to delete pairing"
-      }
-    },
-    "ordersPage": {
-      "docTypes": {
-        "containerReceipt": "Container Receipt",
-        "do": "DO (Delivery Order)",
-        "handoverReport": "Handover Report",
-        "sealPhoto": "Seal Photo",
-        "other": "Other"
-      },
-      "shifts": {
-        "morning": "morning",
-        "afternoon": "afternoon",
-        "evening": "evening"
-      },
-      "confirmations": {
-        "deleteDocument": "Are you sure you want to delete this document?"
-      },
-      "placeholders": {
-        "selectDepot": "Select depot...",
-        "cargoNote": "e.g., Fragile goods, handle with care"
       }
     },
     "sitesPage": {
