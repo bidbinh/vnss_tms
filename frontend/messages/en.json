@@ -2282,7 +2282,9 @@
       "types": {
         "customer": "Customer",
         "port": "Port",
-        "warehouse": "Warehouse"
+        "warehouse": "Warehouse",
+        "pickup": "Pickup",
+        "delivery": "Delivery"
       },
       "status": {
         "on": "On",

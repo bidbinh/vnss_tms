@@ -105,6 +105,8 @@ def update_site(
         site.company_name = payload["company_name"].strip()
     if "code" in payload:
         site.code = payload["code"].strip().upper() if payload["code"] else None
+    if "site_type" in payload:
+        site.site_type = payload["site_type"]
     if "detailed_address" in payload:
         site.detailed_address = payload["detailed_address"].strip()
     if "contact_name" in payload:

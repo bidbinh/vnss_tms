@@ -4936,7 +4936,9 @@
       "types": {
         "customer": "Khách hàng",
         "port": "Cảng",
-        "warehouse": "Kho"
+        "warehouse": "Kho",
+        "pickup": "Điểm lấy hàng",
+        "delivery": "Điểm giao hàng"
       }
     },
     "title": "Quản lý Vận tải",

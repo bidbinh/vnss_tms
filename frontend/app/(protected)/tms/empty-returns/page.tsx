@@ -209,6 +209,10 @@ export default function EmptyReturnsPage() {
   const [filterStartDate, setFilterStartDate] = useState("");
   const [filterEndDate, setFilterEndDate] = useState("");
 
+  // Sorting states
+  const [sortField, setSortField] = useState<string | null>(null);
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+
   // Pagination
   const [pageSize, setPageSize] = useState(50);
   const [currentPage, setCurrentPage] = useState(1);
@@ -383,14 +387,55 @@ export default function EmptyReturnsPage() {
       data = data.filter((r) => r.return_date && new Date(r.return_date) <= new Date(filterEndDate));
     }
 
+    // Sorting
+    if (sortField) {
+      data = [...data].sort((a, b) => {
+        const aVal = (a as any)[sortField];
+        const bVal = (b as any)[sortField];
+
+        // Handle null/undefined
+        if (aVal == null && bVal == null) return 0;
+        if (aVal == null) return sortOrder === "asc" ? 1 : -1;
+        if (bVal == null) return sortOrder === "asc" ? -1 : 1;
+
+        // Compare numbers
+        if (typeof aVal === "number" && typeof bVal === "number") {
+          return sortOrder === "asc" ? aVal - bVal : bVal - aVal;
+        }
+
+        // Compare strings
+        const aStr = String(aVal).toLowerCase();
+        const bStr = String(bVal).toLowerCase();
+        return sortOrder === "asc"
+          ? aStr.localeCompare(bStr, "vi")
+          : bStr.localeCompare(aStr, "vi");
+      });
+    }
+
     return data;
-  }, [mergedData, activeTab, searchTerm, filterStartDate, filterEndDate]);
+  }, [mergedData, activeTab, searchTerm, filterStartDate, filterEndDate, sortField, sortOrder]);
 
   const totalPages = Math.ceil(filteredData.length / pageSize);
   const paginatedData = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
     return filteredData.slice(start, start + pageSize);
   }, [filteredData, currentPage, pageSize]);
+
+  // Handle sort click
+  const handleSort = (columnKey: string) => {
+    if (sortField === columnKey) {
+      if (sortOrder === "asc") {
+        setSortOrder("desc");
+      } else {
+        setSortField(null);
+        setSortOrder("asc");
+      }
+    } else {
+      setSortField(columnKey);
+      setSortOrder("asc");
+    }
+    setCurrentPage(1); // Reset to first page when sorting
+  };
 
   // Count payable items (must be before columns definition)
   const payableCount = useMemo(() => {
@@ -433,40 +478,41 @@ export default function EmptyReturnsPage() {
     {
       key: "order_code",
       header: t("columns.orderCode"),
-      width: 100,
+      width: 95,
       sortable: true,
       render: (row) => <span className="font-medium text-blue-600">{row.order_code}</span>,
     },
     {
       key: "container_code",
       header: t("columns.containerCode"),
-      width: 120,
+      width: 115,
       sortable: true,
       render: (row) => <span className="font-mono text-xs">{row.container_code || "-"}</span>,
     },
     {
       key: "driver_name",
       header: t("columns.driver"),
-      width: 120,
+      width: 130,
       sortable: true,
     },
     {
       key: "return_date",
       header: t("columns.returnDate"),
-      width: 90,
+      width: 85,
       sortable: true,
       render: (row) => formatShortDate(row.return_date),
     },
     {
       key: "port_site_name",
       header: t("columns.portSite"),
-      width: 150,
+      width: 120,
       sortable: true,
+      render: (row) => <span className="truncate" title={row.port_site_name}>{row.port_site_name || "-"}</span>,
     },
     {
       key: "total_amount",
       header: t("columns.totalFees"),
-      width: 100,
+      width: 95,
       align: "right",
       sortable: true,
       render: (row) => (
@@ -478,7 +524,7 @@ export default function EmptyReturnsPage() {
     {
       key: "total_paid",
       header: t("columns.paid"),
-      width: 100,
+      width: 95,
       align: "right",
       sortable: true,
       render: (row) => (
@@ -490,7 +536,7 @@ export default function EmptyReturnsPage() {
     {
       key: "documents",
       header: t("columns.documents"),
-      width: 100,
+      width: 80,
       align: "center",
       sortable: false,
       render: (row) => {
@@ -1103,15 +1149,42 @@ export default function EmptyReturnsPage() {
             <table className="w-full text-sm">
               <thead className="bg-gray-50 text-gray-700">
                 <tr>
-                  {columns.map((col) => (
-                    <th
-                      key={col.key}
-                      className={`px-4 py-3 font-bold text-${col.align || "left"}`}
-                      style={{ width: col.width }}
-                    >
-                      {typeof col.header === "string" ? col.header : col.header}
-                    </th>
-                  ))}
+                  {columns.map((col) => {
+                    const isSorted = sortField === col.key;
+                    const canSort = col.sortable !== false && typeof col.header === "string";
+
+                    return (
+                      <th
+                        key={col.key}
+                        className={`px-4 py-3 font-bold text-${col.align || "left"} ${canSort ? "cursor-pointer hover:bg-gray-100 select-none" : ""}`}
+                        style={{ width: col.width }}
+                        onClick={() => canSort && handleSort(col.key)}
+                      >
+                        <div className={`flex items-center ${col.align === "right" ? "justify-end" : col.align === "center" ? "justify-center" : ""}`}>
+                          {typeof col.header === "string" ? col.header : col.header}
+                          {canSort && (
+                            <span className="ml-1">
+                              {isSorted ? (
+                                sortOrder === "asc" ? (
+                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                  </svg>
+                                ) : (
+                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                  </svg>
+                                )
+                              ) : (
+                                <svg className="w-3 h-3 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                                </svg>
+                              )}
+                            </span>
+                          )}
+                        </div>
+                      </th>
+                    );
+                  })}
                 </tr>
               </thead>
             </table>

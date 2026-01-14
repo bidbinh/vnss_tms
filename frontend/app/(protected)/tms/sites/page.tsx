@@ -74,12 +74,16 @@ const SITE_TYPE_KEYS: Record<string, string> = {
   CUSTOMER: "customer",
   PORT: "port",
   WAREHOUSE: "warehouse",
+  PICKUP: "pickup",
+  DELIVERY: "delivery",
 };
 
 const SITE_TYPE_COLORS: Record<string, string> = {
   CUSTOMER: "bg-blue-100 text-blue-800",
   PORT: "bg-green-100 text-green-800",
   WAREHOUSE: "bg-purple-100 text-purple-800",
+  PICKUP: "bg-cyan-100 text-cyan-800",
+  DELIVERY: "bg-orange-100 text-orange-800",
 };
 
 // ============ Main Component ============
@@ -113,6 +117,8 @@ export default function SitesPage() {
     status: "ACTIVE",
   };
 
+  const [form, setForm] = useState<SiteForm>(emptyForm);
+
   // Check URL params to auto-open create modal with pre-filled data
   useEffect(() => {
     const companyName = searchParams.get("company_name");
@@ -132,8 +138,6 @@ export default function SitesPage() {
       window.history.replaceState({}, "", window.location.pathname);
     }
   }, [searchParams]);
-
-  const [form, setForm] = useState<SiteForm>(emptyForm);
 
   // Sorting
   const [sortField, setSortField] = useState<string>("code");
