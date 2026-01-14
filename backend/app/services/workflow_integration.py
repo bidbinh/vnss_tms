@@ -89,6 +89,16 @@ WORKFLOW_MAPPINGS: Dict[str, Dict[str, Dict[str, Any]]] = {
             "rejected_status": "REJECTED",
             "pending_status": "PENDING",
         },
+        "DriverPayroll": {
+            "workflow_code": "WF-DRIVER-PAYROLL",
+            "entity_table": "driver_payroll",
+            "status_field": "status",
+            "trigger_field": None,  # Always require approval
+            "trigger_threshold": None,
+            "approved_status": "CONFIRMED",
+            "rejected_status": "REJECTED",
+            "pending_status": "PENDING_HR_REVIEW",
+        },
     },
 
     # -------------------------------------------------------------------------

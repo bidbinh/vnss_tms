@@ -6,6 +6,7 @@ from typing import List, Optional
 from app.db.session import get_session
 from app.models import Order, User, Site, DriverSalarySetting
 from app.models.order import OrderStatus
+from app.models.hrm import DriverPayroll, DriverPayrollStatus
 from app.schemas.driver_salary_trip import DriverSalaryTripUpdate, DriverSalaryTripRead, SalaryBreakdown
 from app.core.security import get_current_user
 from app.services.order_status_logger import get_delivered_date
@@ -186,6 +187,23 @@ def list_driver_salary_trips(
         ).limit(1)
     ).first()
 
+    # Check if payroll is locked for this period and driver
+    locked_payroll = None
+    if driver_id:
+        locked_payroll = session.exec(
+            select(DriverPayroll).where(
+                DriverPayroll.tenant_id == tenant_id,
+                DriverPayroll.driver_id == driver_id,
+                DriverPayroll.year == year,
+                DriverPayroll.month == month,
+                DriverPayroll.status.in_([
+                    DriverPayrollStatus.PENDING_DRIVER_CONFIRM.value,
+                    DriverPayrollStatus.CONFIRMED.value,
+                    DriverPayrollStatus.PAID.value
+                ])
+            )
+        ).first()
+
     # Build response with calculated fields
     result = []
 
@@ -211,9 +229,22 @@ def list_driver_salary_trips(
             if delivery_site:
                 delivery_site_name = delivery_site.company_name
 
-        # Auto-calculate distance from Rates if not already set
+        # DISTANCE LOCKING LOGIC
+        # If payroll is locked (status >= PENDING_DRIVER_CONFIRM), use snapshot distance
+        # Otherwise, calculate dynamically from rates
         distance_km = order.distance_km
-        if not distance_km and order.pickup_site_id and order.delivery_site_id:
+        is_distance_locked = False
+
+        if locked_payroll and locked_payroll.trip_snapshot:
+            # Payroll exists and is locked - use snapshot distance
+            trips_in_snapshot = locked_payroll.trip_snapshot.get("trips", [])
+            trip_in_snapshot = next((t for t in trips_in_snapshot if t.get("order_id") == order.id), None)
+            if trip_in_snapshot and trip_in_snapshot.get("distance_km"):
+                distance_km = trip_in_snapshot["distance_km"]
+                is_distance_locked = True
+
+        # If not locked and distance not set, calculate from rates
+        if not is_distance_locked and not distance_km and order.pickup_site_id and order.delivery_site_id:
             # Get distance from Rates table based on site locations
             calculated_distance = get_distance_from_rates(
                 session=session,

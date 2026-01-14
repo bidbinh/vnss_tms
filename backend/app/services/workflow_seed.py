@@ -144,6 +144,42 @@ WORKFLOW_SEEDS: List[Dict] = [
             },
         ],
     },
+    {
+        "code": "WF-DRIVER-PAYROLL",
+        "name": "Phê duyệt bảng lương tài xế",
+        "description": "Quy trình chốt bảng lương tài xế: Dispatcher tạo → HR duyệt → Tài xế xác nhận → HR chi trả. Distance_km bị khóa sau khi tài xế xác nhận.",
+        "workflow_type": WorkflowType.APPROVAL.value,
+        "category": "HRM",
+        "entity_module": "HRM",
+        "entity_type": "DriverPayroll",
+        "default_sla_hours": 96,  # 4 days total
+        "trigger_condition": None,  # Always triggers for driver payroll
+        "trigger_priority": 10,
+        "steps": [
+            {
+                "code": "HR_REVIEW",
+                "name": "HR kiểm tra bảng lương",
+                "step_type": StepType.APPROVAL.value,
+                "step_order": 1,
+                "assignee_type": "ROLE",
+                "assignee_expression": "HR",
+                "sla_hours": 24,
+                "allowed_actions": "APPROVE,REJECT",
+                "description": "Nhân sự kiểm tra chi tiết bảng lương và chuyến xe"
+            },
+            {
+                "code": "DRIVER_CONFIRM",
+                "name": "Tài xế xác nhận",
+                "step_type": StepType.APPROVAL.value,
+                "step_order": 2,
+                "assignee_type": "DRIVER",
+                "assignee_expression": "DRIVER",  # Will be resolved to actual driver
+                "sla_hours": 72,  # 3 days for driver to confirm
+                "allowed_actions": "CONFIRM,REJECT",
+                "description": "Tài xế xác nhận bảng lương đúng qua mobile app. Sau bước này distance_km bị khóa."
+            },
+        ],
+    },
 
     # -------------------------------------------------------------------------
     # TMS Workflows

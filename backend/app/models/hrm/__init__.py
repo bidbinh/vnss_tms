@@ -15,6 +15,7 @@ from .payroll import (
     EmployeeSalary, PayrollPeriod, PayrollRecord, PayrollItem,
     Deduction, DeductionType
 )
+from .driver_payroll import DriverPayroll, DriverPayrollStatus
 from .advance import AdvanceRequest, AdvanceStatus, AdvanceRepayment
 from .insurance import InsuranceRecord, InsuranceType
 from .training import Training, TrainingParticipant, Certificate
@@ -43,6 +44,8 @@ __all__ = [
     "SalaryStructure", "SalaryComponent", "ComponentType",
     "EmployeeSalary", "PayrollPeriod", "PayrollRecord", "PayrollItem",
     "Deduction", "DeductionType",
+    # Driver Payroll
+    "DriverPayroll", "DriverPayrollStatus",
     # Advance
     "AdvanceRequest", "AdvanceStatus", "AdvanceRepayment",
     # Insurance

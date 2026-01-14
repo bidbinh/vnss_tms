@@ -11,6 +11,7 @@ from app.api.v1.routes.hrm.contracts import router as contracts_router
 from app.api.v1.routes.hrm.attendance import router as attendance_router
 from app.api.v1.routes.hrm.leaves import router as leaves_router
 from app.api.v1.routes.hrm.payroll import router as payroll_router
+from app.api.v1.routes.hrm.driver_payroll import router as driver_payroll_router
 from app.api.v1.routes.hrm.advances import router as advances_router
 from app.api.v1.routes.hrm.seed import router as seed_router
 from app.api.v1.routes.hrm.recruitment import router as recruitment_router
@@ -31,6 +32,7 @@ hrm_router.include_router(contracts_router)
 hrm_router.include_router(attendance_router)
 hrm_router.include_router(leaves_router)
 hrm_router.include_router(payroll_router)
+hrm_router.include_router(driver_payroll_router)
 hrm_router.include_router(advances_router)
 hrm_router.include_router(recruitment_router)
 hrm_router.include_router(training_router)
