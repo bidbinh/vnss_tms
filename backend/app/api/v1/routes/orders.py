@@ -573,6 +573,23 @@ def update_order(
     for field, value in update_data.items():
         setattr(order, field, value)
 
+    # Auto-recalculate distance_km when pickup or delivery location changes
+    location_fields = ["pickup_location_id", "delivery_location_id", "pickup_site_id", "delivery_site_id"]
+    if any(field in update_data for field in location_fields):
+        # Only recalculate if distance_km was not explicitly provided in update
+        if "distance_km" not in update_data:
+            order_date_for_rate = order.customer_requested_date.date() if order.customer_requested_date else None
+            new_distance = get_distance_from_rates(
+                session=session,
+                pickup_location_id=order.pickup_location_id,
+                delivery_location_id=order.delivery_location_id,
+                pickup_site_id=order.pickup_site_id,
+                delivery_site_id=order.delivery_site_id,
+                tenant_id=tenant_id,
+                order_date=order_date_for_rate
+            )
+            order.distance_km = new_distance
+
     session.add(order)
     session.commit()
     session.refresh(order)
