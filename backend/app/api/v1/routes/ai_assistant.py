@@ -17,6 +17,7 @@ class ChatMessage(BaseModel):
     message: str
     image: Optional[str] = None  # Base64 encoded image
     image_type: Optional[str] = None  # image/jpeg, image/png
+    context: Optional[dict] = None  # Additional context (customers, sites, task, etc.)
 
 
 class OrderCreationRequest(BaseModel):
@@ -39,34 +40,42 @@ async def parse_message(
     """
     tenant_id = str(current_user.tenant_id)
 
-    # Get context: customers and sites
-    customers = session.exec(
-        select(Customer).where(Customer.tenant_id == tenant_id)
-    ).all()
+    # Use context from request if provided, otherwise fetch from database
+    if chat.context:
+        context = chat.context
+    else:
+        # Fallback: Get context from database
+        customers = session.exec(
+            select(Customer).where(Customer.tenant_id == tenant_id)
+        ).all()
 
-    sites = session.exec(
-        select(Site).where(Site.tenant_id == tenant_id)
-    ).all()
+        sites = session.exec(
+            select(Site).where(Site.tenant_id == tenant_id)
+        ).all()
 
-    context = {
-        "customers": [
-            {"id": str(c.id), "name": c.name, "code": c.code}
-            for c in customers
-        ],
-        "sites": [
-            {
-                "id": str(s.id),
-                "company_name": s.company_name,
-                "address": s.detailed_address,
-                "contact_name": s.contact_name,
-                "contact_phone": s.contact_phone
-            }
-            for s in sites
-        ]
-    }
+        context = {
+            "customers": [
+                {"id": str(c.id), "name": c.name, "code": c.code}
+                for c in customers
+            ],
+            "sites": [
+                {
+                    "id": str(s.id),
+                    "company_name": s.company_name,
+                    "address": s.detailed_address,
+                    "contact_name": s.contact_name,
+                    "contact_phone": s.contact_phone
+                }
+                for s in sites
+            ]
+        }
 
-    # Initialize AI assistant
-    ai = AIAssistant()
+    # Initialize AI assistant with database session for multi-provider support
+    ai = AIAssistant(
+        db_session=session,
+        tenant_id=tenant_id,
+        user_id=str(current_user.id)
+    )
 
     # Parse message
     if chat.image:
@@ -82,7 +91,9 @@ async def parse_message(
     return {
         "success": True,
         "order_data": result["order_data"],
-        "confidence": result["confidence"],
+        "confidence": result.get("confidence", 0.5),
+        "provider_used": result.get("provider_used", "unknown"),
+        "cost_estimate": result.get("cost_estimate", 0.0),
         "suggestions": {
             "message": "Dữ liệu đã được trích xuất. Vui lòng kiểm tra và xác nhận trước khi tạo đơn hàng."
         }

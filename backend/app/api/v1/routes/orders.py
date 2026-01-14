@@ -35,6 +35,10 @@ def preview_order_code(
     # Don't actually increment, just peek at what it would be
     from sqlmodel import select
     from app.models.order_sequence import OrderSequence
+    from app.services.order_code import _get_max_order_number
+
+    # Get max from actual orders (handles manual entries)
+    max_from_orders = _get_max_order_number(session, tenant_id, customer.code)
 
     seq = session.exec(
         select(OrderSequence)
@@ -45,7 +49,9 @@ def preview_order_code(
         )
     ).first()
 
-    next_seq = (seq.last_seq + 1) if seq else 1
+    # Use the higher of sequence tracker or actual max from orders
+    current_max = max(seq.last_seq if seq else 0, max_from_orders)
+    next_seq = current_max + 1
     preview_code = f"{customer.code}-{next_seq}"
 
     return {"order_code": preview_code}

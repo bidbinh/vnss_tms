@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { getSubdomain } from "@/lib/tenant";
@@ -36,8 +36,24 @@ import {
   MessageCircle,
   Bot,
   BookOpen,
+  FileSpreadsheet,
+  Wrench,
+  ChevronDown,
 } from "lucide-react";
 import AIChatWidget from "@/components/AIChatWidget";
+import HomepageLanguageSwitcher from "@/components/HomepageLanguageSwitcher";
+
+// Import translations
+import enMessages from "@/messages/en.json";
+import viMessages from "@/messages/vi.json";
+
+type Locale = "vi" | "en";
+
+// Helper to get translation
+function getTranslations(locale: Locale) {
+  const messages = locale === "en" ? enMessages : viMessages;
+  return messages.homepage;
+}
 
 // ============================================================================
 // DATA
@@ -475,7 +491,7 @@ function LogisticsAnimation() {
 // ============================================================================
 // STATS COUNTER ANIMATION
 // ============================================================================
-function AnimatedStat({ value, label }: { value: string; label: string }) {
+function AnimatedStat({ value, label, dark = false }: { value: string; label: string; dark?: boolean }) {
   const [displayValue, setDisplayValue] = useState("0");
   const elementRef = useRef<HTMLDivElement>(null);
   const hasAnimated = useRef(false);
@@ -522,8 +538,8 @@ function AnimatedStat({ value, label }: { value: string; label: string }) {
 
   return (
     <div ref={elementRef} className="text-center">
-      <div className="text-3xl lg:text-4xl font-bold text-slate-900">{displayValue}</div>
-      <div className="mt-1 text-sm text-slate-500">{label}</div>
+      <div className={`text-3xl lg:text-4xl font-bold ${dark ? "text-white" : "text-slate-900"}`}>{displayValue}</div>
+      <div className={`mt-1 text-sm ${dark ? "text-slate-400" : "text-slate-500"}`}>{label}</div>
     </div>
   );
 }
@@ -566,12 +582,12 @@ function AnimatedModuleCard({ module, delay }: { module: { id: string; name: str
     <Link
       ref={cardRef}
       href={`/solutions/${module.id}`}
-      className="inline-flex items-center gap-3 px-5 py-3 bg-white border border-slate-200 hover:border-slate-300 rounded-xl transition-all hover:shadow-md group opacity-0"
+      className="inline-flex items-center gap-3 px-5 py-3 bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50 rounded-xl transition-all hover:shadow-lg group opacity-0"
     >
       <div className={`w-9 h-9 ${module.color} rounded-lg flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform`}>
         <Icon className="w-5 h-5 text-white" />
       </div>
-      <span className="font-medium text-slate-800 group-hover:text-slate-900">{module.name}</span>
+      <span className="font-medium text-slate-700 group-hover:text-slate-900">{module.name}</span>
       <ArrowRight className="w-4 h-4 text-slate-400 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
     </Link>
   );
@@ -586,6 +602,22 @@ export default function LandingPage() {
   const [scrolled, setScrolled] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
   const heroRef = useRef<HTMLDivElement>(null);
+
+  // Language state - default to English
+  const [locale, setLocale] = useState<Locale>("en");
+  const t = useMemo(() => getTranslations(locale), [locale]);
+
+  // Load saved locale from cookie
+  useEffect(() => {
+    const cookies = document.cookie.split(";");
+    const localeCookie = cookies.find((c) => c.trim().startsWith("homepage_locale="));
+    if (localeCookie) {
+      const savedLocale = localeCookie.split("=")[1] as Locale;
+      if (savedLocale === "vi" || savedLocale === "en") {
+        setLocale(savedLocale);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     const subdomain = getSubdomain();
@@ -654,7 +686,7 @@ export default function LandingPage() {
   if (checkingAuth) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-900">
-        <div className="text-slate-400">Đang tải...</div>
+        <div className="text-slate-400">{t.loading}</div>
       </div>
     );
   }
@@ -687,10 +719,10 @@ export default function LandingPage() {
             {/* Desktop Nav */}
             <div className="hidden lg:flex items-center gap-8">
               {[
-                { id: "modules", label: "Giải pháp" },
-                { id: "features", label: "Tính năng" },
-                { id: "pricing", label: "Bảng giá" },
-                { id: "testimonials", label: "Khách hàng" },
+                { id: "modules", label: t.header.solutions },
+                { id: "features", label: t.header.features },
+                { id: "pricing", label: t.header.pricing },
+                { id: "testimonials", label: t.header.customers },
               ].map((item) => (
                 <button
                   key={item.id}
@@ -702,6 +734,61 @@ export default function LandingPage() {
                   {item.label}
                 </button>
               ))}
+              {/* Tools Dropdown */}
+              <div className="relative group">
+                <button
+                  className={`text-sm font-medium transition-colors inline-flex items-center gap-1.5 ${
+                    scrolled ? "text-slate-600 hover:text-slate-900" : "text-white/80 hover:text-white"
+                  }`}
+                >
+                  {t.header.tools}
+                  <ChevronDown className="w-3 h-3 group-hover:rotate-180 transition-transform" />
+                </button>
+                <div className="absolute top-full left-1/2 -translate-x-1/2 pt-3 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+                  <div className={`rounded-xl shadow-2xl py-2 min-w-[200px] backdrop-blur-xl ${
+                    scrolled
+                      ? "bg-white border border-slate-200"
+                      : "bg-slate-800/95 border border-slate-700"
+                  }`}>
+                    <Link href="/tools" className={`flex items-center gap-3 px-4 py-2 text-sm font-medium ${
+                      scrolled ? "text-slate-900 hover:bg-slate-50" : "text-white hover:bg-white/10"
+                    }`}>
+                      {t.header.allTools} →
+                    </Link>
+                    <div className={`my-2 ${scrolled ? "border-t border-slate-100" : "border-t border-slate-700"}`} />
+                    <Link href="/tools/tariff-lookup" className={`flex items-center gap-3 px-4 py-2 text-sm ${
+                      scrolled ? "text-slate-600 hover:bg-slate-50 hover:text-slate-900" : "text-slate-300 hover:bg-white/10 hover:text-white"
+                    }`}>
+                      {t.header.tariffLookup}
+                    </Link>
+                    <Link href="/tools/freight-calculator" className={`flex items-center gap-3 px-4 py-2 text-sm ${
+                      scrolled ? "text-slate-600 hover:bg-slate-50 hover:text-slate-900" : "text-slate-300 hover:bg-white/10 hover:text-white"
+                    }`}>
+                      {t.header.freightCalculator}
+                    </Link>
+                    <Link href="/tools/port-lookup" className={`flex items-center gap-3 px-4 py-2 text-sm ${
+                      scrolled ? "text-slate-600 hover:bg-slate-50 hover:text-slate-900" : "text-slate-300 hover:bg-white/10 hover:text-white"
+                    }`}>
+                      {t.header.portLookup}
+                    </Link>
+                    <Link href="/tools/incoterms" className={`flex items-center gap-3 px-4 py-2 text-sm ${
+                      scrolled ? "text-slate-600 hover:bg-slate-50 hover:text-slate-900" : "text-slate-300 hover:bg-white/10 hover:text-white"
+                    }`}>
+                      {t.header.incoterms}
+                    </Link>
+                    <Link href="/tools/unit-converter" className={`flex items-center gap-3 px-4 py-2 text-sm ${
+                      scrolled ? "text-slate-600 hover:bg-slate-50 hover:text-slate-900" : "text-slate-300 hover:bg-white/10 hover:text-white"
+                    }`}>
+                      {t.header.unitConverter}
+                    </Link>
+                    <Link href="/tools/import-tax" className={`flex items-center gap-3 px-4 py-2 text-sm ${
+                      scrolled ? "text-slate-600 hover:bg-slate-50 hover:text-slate-900" : "text-slate-300 hover:bg-white/10 hover:text-white"
+                    }`}>
+                      {t.header.importTax}
+                    </Link>
+                  </div>
+                </div>
+              </div>
               <Link
                 href="/9log.tech-profile"
                 className={`text-sm font-medium transition-colors inline-flex items-center gap-1.5 ${
@@ -709,25 +796,30 @@ export default function LandingPage() {
                 }`}
               >
                 <BookOpen className="w-4 h-4" />
-                Profile
+                {t.header.profile}
               </Link>
             </div>
 
-            {/* Auth Buttons */}
+            {/* Auth Buttons + Language Switcher */}
             <div className="hidden lg:flex items-center gap-4">
+              <HomepageLanguageSwitcher
+                currentLocale={locale}
+                onChange={setLocale}
+                variant={scrolled ? "dark" : "light"}
+              />
               <Link
                 href="/login"
                 className={`text-sm font-medium transition-colors ${
                   scrolled ? "text-slate-600 hover:text-slate-900" : "text-white/80 hover:text-white"
                 }`}
               >
-                Đăng nhập
+                {t.header.login}
               </Link>
               <Link
                 href="/register"
                 className="px-5 py-2.5 text-sm font-semibold text-white bg-red-500 hover:bg-red-600 rounded-lg transition-all shadow-lg shadow-red-500/30 hover:shadow-red-500/40"
               >
-                Dùng thử miễn phí
+                {t.header.freeTrial}
               </Link>
             </div>
 
@@ -749,28 +841,48 @@ export default function LandingPage() {
         {mobileMenuOpen && (
           <div className="lg:hidden bg-white border-t border-slate-100 shadow-lg">
             <div className="px-4 py-4 space-y-2">
-              {["modules", "features", "pricing", "testimonials"].map((id) => (
+              {[
+                { id: "modules", label: t.header.solutions },
+                { id: "features", label: t.header.features },
+                { id: "pricing", label: t.header.pricing },
+                { id: "testimonials", label: t.header.customers },
+              ].map((item) => (
                 <button
-                  key={id}
-                  onClick={() => scrollTo(id)}
+                  key={item.id}
+                  onClick={() => scrollTo(item.id)}
                   className="block w-full text-left px-4 py-3 text-slate-700 hover:bg-slate-50 rounded-lg"
                 >
-                  {id === "modules" ? "Giải pháp" : id === "features" ? "Tính năng" : id === "pricing" ? "Bảng giá" : "Khách hàng"}
+                  {item.label}
                 </button>
               ))}
+              <Link
+                href="/tools"
+                className="flex items-center gap-2 w-full text-left px-4 py-3 text-slate-700 hover:bg-slate-50 rounded-lg font-medium"
+              >
+                <Wrench className="w-4 h-4" />
+                {t.header.tools}
+              </Link>
               <Link
                 href="/9log.tech-profile"
                 className="flex items-center gap-2 w-full text-left px-4 py-3 text-slate-700 hover:bg-slate-50 rounded-lg"
               >
                 <BookOpen className="w-4 h-4" />
-                Profile
+                {t.header.profile}
               </Link>
+              {/* Language Switcher for Mobile */}
+              <div className="pt-2">
+                <HomepageLanguageSwitcher
+                  currentLocale={locale}
+                  onChange={setLocale}
+                  variant="dark"
+                />
+              </div>
               <div className="pt-4 border-t border-slate-100 space-y-2">
                 <Link href="/login" className="block w-full text-center px-4 py-3 text-slate-700 border border-slate-200 rounded-lg">
-                  Đăng nhập
+                  {t.header.login}
                 </Link>
                 <Link href="/register" className="block w-full text-center px-4 py-3 text-white bg-red-500 rounded-lg font-semibold">
-                  Dùng thử miễn phí
+                  {t.header.freeTrial}
                 </Link>
               </div>
             </div>
@@ -799,23 +911,22 @@ export default function LandingPage() {
             {/* Badge */}
             <div className="hero-badge inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full mb-8 opacity-0">
               <Sparkles className="w-4 h-4 text-yellow-400" />
-              <span className="text-sm font-medium text-white/90">Tích hợp AI thông minh</span>
+              <span className="text-sm font-medium text-white/90">{t.hero.badge}</span>
             </div>
 
             {/* Headline */}
             <h1 className="hero-title text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold text-white leading-tight opacity-0">
-              ERP <span className="text-red-400">Logistics</span>
+              {t.hero.headline1} <span className="text-red-400">{t.hero.headline2}</span>
               <br />
               <span className="bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400 bg-clip-text text-transparent">
-                Made in Vietnam
+                {t.hero.headline3}
               </span>
             </h1>
 
             {/* Subheadline */}
             <p className="hero-subtitle mt-6 text-lg sm:text-xl text-slate-300 max-w-2xl leading-relaxed opacity-0">
-              Hệ thống quản trị doanh nghiệp logistics toàn diện.
-              Từ vận tải đường bộ, kho bãi, giao nhận quốc tế đến chuyển phát nhanh —
-              <strong className="text-white"> một nền tảng duy nhất.</strong>
+              {t.hero.subtitle}
+              <strong className="text-white"> {t.hero.subtitleBold}</strong>
             </p>
 
             {/* CTA Buttons */}
@@ -824,14 +935,14 @@ export default function LandingPage() {
                 href="/register"
                 className="group inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-semibold text-white bg-red-500 hover:bg-red-600 rounded-xl transition-all shadow-xl shadow-red-500/30 hover:shadow-red-500/40 hover:-translate-y-0.5"
               >
-                Bắt đầu miễn phí
+                {t.hero.cta1}
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Link>
               <button
                 onClick={() => scrollTo("modules")}
                 className="inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-semibold text-white bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl transition-all backdrop-blur-sm"
               >
-                Khám phá giải pháp
+                {t.hero.cta2}
                 <ChevronRight className="w-5 h-5" />
               </button>
             </div>
@@ -853,9 +964,10 @@ export default function LandingPage() {
       <section className="bg-slate-50 border-y border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
-            {STATS.map((stat, i) => (
-              <AnimatedStat key={i} value={stat.value} label={stat.label} />
-            ))}
+            <AnimatedStat value="200+" label={t.stats.businesses} />
+            <AnimatedStat value="15M+" label={t.stats.orders} />
+            <AnimatedStat value="63" label={t.stats.provinces} />
+            <AnimatedStat value="99.9%" label={t.stats.uptime} />
           </div>
         </div>
       </section>
@@ -863,16 +975,15 @@ export default function LandingPage() {
       {/* ================================================================== */}
       {/* MODULES SECTION */}
       {/* ================================================================== */}
-      <section id="modules" className="py-24 lg:py-32">
+      <section id="modules" className="py-24 lg:py-32 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Header */}
           <div className="text-center max-w-3xl mx-auto mb-16">
             <h2 className="text-3xl lg:text-4xl font-bold text-slate-900">
-              13 Modules. Một hệ sinh thái.
+              {t.modules.title}
             </h2>
             <p className="mt-4 text-lg text-slate-600">
-              Được thiết kế đặc biệt cho ngành logistics Việt Nam,
-              tích hợp đầy đủ từ vận hành đến quản trị
+              {t.modules.subtitle}
             </p>
           </div>
 
@@ -884,7 +995,7 @@ export default function LandingPage() {
                 moduleOffset += MODULE_GROUPS[i].modules.length;
               }
               return (
-                <div key={groupIndex} className="bg-slate-50 rounded-2xl p-6 lg:p-8">
+                <div key={groupIndex} className="bg-slate-50 border border-slate-200 rounded-2xl p-6 lg:p-8">
                   <div className="flex items-center gap-3 mb-6">
                     <h3 className="text-lg font-semibold text-slate-900">{group.title}</h3>
                     <span className="text-sm text-slate-400">·</span>
@@ -914,18 +1025,23 @@ export default function LandingPage() {
           {/* Header */}
           <div className="text-center max-w-3xl mx-auto mb-16">
             <h2 className="text-3xl lg:text-4xl font-bold text-white">
-              Tại sao chọn 9log?
+              {t.whyChoose.title}
             </h2>
             <p className="mt-4 text-lg text-slate-400">
-              Xây dựng bởi người Việt, cho doanh nghiệp Việt,
-              với công nghệ AI tiên tiến nhất
+              {t.whyChoose.subtitle}
             </p>
           </div>
 
           {/* Features Grid */}
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {WHY_CHOOSE.map((item, i) => {
+            {[
+              { icon: Brain, key: "aiPowered" as const },
+              { icon: Globe2, key: "madeForVietnam" as const },
+              { icon: TrendingUp, key: "scalable" as const },
+              { icon: Shield, key: "secure" as const },
+            ].map((item, i) => {
               const Icon = item.icon;
+              const itemT = t.whyChoose.items[item.key];
               return (
                 <div
                   key={i}
@@ -934,8 +1050,8 @@ export default function LandingPage() {
                   <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-orange-500 rounded-xl flex items-center justify-center mb-5 shadow-lg shadow-red-500/20 group-hover:scale-110 transition-transform">
                     <Icon className="w-6 h-6 text-white" />
                   </div>
-                  <h3 className="text-lg font-semibold text-white mb-2">{item.title}</h3>
-                  <p className="text-slate-400 text-sm leading-relaxed">{item.desc}</p>
+                  <h3 className="text-lg font-semibold text-white mb-2">{itemT.title}</h3>
+                  <p className="text-slate-400 text-sm leading-relaxed">{itemT.desc}</p>
                 </div>
               );
             })}
@@ -949,12 +1065,10 @@ export default function LandingPage() {
               </div>
               <div>
                 <h3 className="text-2xl font-bold text-white mb-3">
-                  AI Assistant - Trợ lý thông minh
+                  {t.whyChoose.aiHighlight.title}
                 </h3>
                 <p className="text-slate-300 leading-relaxed">
-                  Tích hợp trí tuệ nhân tạo giúp dự báo nhu cầu, tối ưu tuyến đường,
-                  phát hiện bất thường, và đề xuất quyết định. Tiết kiệm đến 30% chi phí vận hành
-                  với các gợi ý thông minh từ AI.
+                  {t.whyChoose.aiHighlight.desc}
                 </p>
               </div>
             </div>
@@ -965,18 +1079,18 @@ export default function LandingPage() {
       {/* ================================================================== */}
       {/* TESTIMONIALS */}
       {/* ================================================================== */}
-      <section id="testimonials" className="py-24 lg:py-32">
+      <section id="testimonials" className="py-24 lg:py-32 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Header */}
           <div className="text-center max-w-3xl mx-auto mb-16">
             <h2 className="text-3xl lg:text-4xl font-bold text-slate-900">
-              Được tin dùng bởi 200+ doanh nghiệp Việt Nam
+              {t.testimonials.title}
             </h2>
           </div>
 
           {/* Testimonials Grid */}
           <div className="grid lg:grid-cols-3 gap-6">
-            {TESTIMONIALS.map((item, i) => (
+            {t.testimonials.items.map((item, i) => (
               <div
                 key={i}
                 className="p-6 lg:p-8 bg-white border border-slate-200 rounded-2xl hover:shadow-xl transition-shadow"
@@ -1021,45 +1135,51 @@ export default function LandingPage() {
           {/* Header */}
           <div className="text-center max-w-3xl mx-auto mb-16">
             <h2 className="text-3xl lg:text-4xl font-bold text-slate-900">
-              Tối ưu chi phí
+              {t.pricing.title}
             </h2>
             <p className="mt-4 text-lg text-slate-600">
-              Dùng thử miễn phí, Nâng cấp nhiều tính năng cho Doanh nghiệp
+              {t.pricing.subtitle}
             </p>
           </div>
 
           {/* Pricing Cards */}
           <div className="grid lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            {PRICING.map((plan, i) => (
+            {[
+              { key: "startup" as const, popular: false },
+              { key: "business" as const, popular: true },
+              { key: "enterprise" as const, popular: false },
+            ].map((planInfo, i) => {
+              const plan = t.pricing.plans[planInfo.key];
+              return (
               <div
                 key={i}
                 className={`relative p-8 rounded-2xl transition-all ${
-                  plan.popular
+                  planInfo.popular
                     ? "bg-slate-900 text-white shadow-2xl scale-105 z-10"
                     : "bg-white border border-slate-200 hover:shadow-lg"
                 }`}
               >
-                {plan.popular && (
+                {planInfo.popular && (
                   <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1.5 bg-red-500 text-white text-sm font-semibold rounded-full shadow-lg">
-                    Phổ biến nhất
+                    {t.pricing.popular}
                   </div>
                 )}
 
                 <div className="mb-6">
-                  <h3 className={`text-lg font-semibold ${plan.popular ? "text-white" : "text-slate-900"}`}>
+                  <h3 className={`text-lg font-semibold ${planInfo.popular ? "text-white" : "text-slate-900"}`}>
                     {plan.name}
                   </h3>
-                  <p className={`mt-1 text-sm ${plan.popular ? "text-slate-400" : "text-slate-500"}`}>
+                  <p className={`mt-1 text-sm ${planInfo.popular ? "text-slate-400" : "text-slate-500"}`}>
                     {plan.desc}
                   </p>
                 </div>
 
                 <div className="mb-6">
-                  <span className={`text-4xl font-bold ${plan.popular ? "text-white" : "text-slate-900"}`}>
+                  <span className={`text-4xl font-bold ${planInfo.popular ? "text-white" : "text-slate-900"}`}>
                     {plan.price}
                   </span>
-                  {plan.period && (
-                    <span className={`text-sm ${plan.popular ? "text-slate-400" : "text-slate-500"}`}>
+                  {"period" in plan && plan.period && (
+                    <span className={`text-sm ${planInfo.popular ? "text-slate-400" : "text-slate-500"}`}>
                       {plan.period}
                     </span>
                   )}
@@ -1068,8 +1188,8 @@ export default function LandingPage() {
                 <ul className="space-y-3 mb-8">
                   {plan.features.map((feature, j) => (
                     <li key={j} className="flex items-start gap-3">
-                      <Check className={`w-5 h-5 mt-0.5 shrink-0 ${plan.popular ? "text-red-400" : "text-green-500"}`} />
-                      <span className={`text-sm ${plan.popular ? "text-slate-300" : "text-slate-600"}`}>
+                      <Check className={`w-5 h-5 mt-0.5 shrink-0 ${planInfo.popular ? "text-red-400" : "text-green-500"}`} />
+                      <span className={`text-sm ${planInfo.popular ? "text-slate-300" : "text-slate-600"}`}>
                         {feature}
                       </span>
                     </li>
@@ -1079,7 +1199,7 @@ export default function LandingPage() {
                 <Link
                   href="/register"
                   className={`block w-full py-3.5 text-center font-semibold rounded-xl transition-all ${
-                    plan.popular
+                    planInfo.popular
                       ? "bg-red-500 hover:bg-red-600 text-white shadow-lg shadow-red-500/30"
                       : "bg-slate-900 hover:bg-slate-800 text-white"
                   }`}
@@ -1087,7 +1207,8 @@ export default function LandingPage() {
                   {plan.cta}
                 </Link>
               </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>
@@ -1104,11 +1225,10 @@ export default function LandingPage() {
 
         <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl lg:text-5xl font-bold text-white mb-6">
-            Sẵn sàng nâng tầm logistics<br />doanh nghiệp của bạn?
+            {t.cta.title}
           </h2>
           <p className="text-lg text-slate-300 mb-10 max-w-2xl mx-auto">
-            Tham gia cùng hơn 200 doanh nghiệp đã tin dùng 9log.
-            Triển khai nhanh chóng, hỗ trợ tận tình từ đội ngũ Việt Nam.
+            {t.cta.subtitle}
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -1116,7 +1236,7 @@ export default function LandingPage() {
               href="/register"
               className="group inline-flex items-center gap-2 px-8 py-4 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-xl transition-all shadow-xl shadow-red-500/30 hover:shadow-red-500/40"
             >
-              Bắt đầu miễn phí ngay
+              {t.cta.button1}
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Link>
             <button
@@ -1128,22 +1248,22 @@ export default function LandingPage() {
               className="inline-flex items-center gap-2 px-8 py-4 text-white border border-white/30 hover:bg-white/10 font-semibold rounded-xl transition-all"
             >
               <MessageCircle className="w-5 h-5" />
-              Chat với AI
+              {t.cta.button2}
             </button>
           </div>
 
           <div className="mt-12 flex flex-wrap items-center justify-center gap-8 text-slate-400">
             <span className="flex items-center gap-2">
               <Clock className="w-5 h-5" />
-              Triển khai 24h
+              {t.cta.features.deployment}
             </span>
             <span className="flex items-center gap-2">
               <Shield className="w-5 h-5" />
-              Bảo mật dữ liệu
+              {t.cta.features.security}
             </span>
             <span className="flex items-center gap-2">
               <Bot className="w-5 h-5" />
-              Hỗ trợ AI 24/7
+              {t.cta.features.support}
             </span>
           </div>
         </div>
@@ -1164,71 +1284,114 @@ export default function LandingPage() {
                 </span>
               </Link>
               <p className="mt-4 text-sm text-slate-400 max-w-xs">
-                Nền tảng Logistics ERP hàng đầu Việt Nam.
-                Vì Việt Nam phát triển.
+                {t.footer.tagline}
               </p>
               <p className="mt-4 text-xs text-slate-500">
-                🇻🇳 Proudly made in Vietnam
+                {t.footer.madeIn}
               </p>
             </div>
 
             {/* Links */}
             <div>
-              <h4 className="text-sm font-semibold text-white mb-4">Sản phẩm</h4>
+              <h4 className="text-sm font-semibold text-white mb-4">{t.footer.freeTools}</h4>
               <ul className="space-y-3">
-                {["Tính năng", "Modules", "Bảng giá", "API"].map((item) => (
-                  <li key={item}>
-                    <a href="#" className="text-sm text-slate-400 hover:text-white transition-colors">
-                      {item}
-                    </a>
-                  </li>
-                ))}
+                <li>
+                  <Link href="/tools/tariff-lookup" className="text-sm text-slate-400 hover:text-white transition-colors">
+                    {t.header.tariffLookup}
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/tools/freight-calculator" className="text-sm text-slate-400 hover:text-white transition-colors">
+                    {t.header.freightCalculator}
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/tools/port-lookup" className="text-sm text-slate-400 hover:text-white transition-colors">
+                    {t.header.portLookup}
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/tools/incoterms" className="text-sm text-slate-400 hover:text-white transition-colors">
+                    {t.header.incoterms}
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/tools" className="text-sm text-slate-400 hover:text-white transition-colors">
+                    {t.footer.viewAll} →
+                  </Link>
+                </li>
               </ul>
             </div>
 
             <div>
-              <h4 className="text-sm font-semibold text-white mb-4">Công ty</h4>
+              <h4 className="text-sm font-semibold text-white mb-4">{t.footer.company}</h4>
               <ul className="space-y-3">
                 <li>
                   <Link href="/9log.tech-profile" className="inline-flex items-center gap-1.5 text-sm text-slate-400 hover:text-white transition-colors">
                     <BookOpen className="w-3.5 h-3.5" />
-                    Company Profile
+                    {t.footer.companyProfile}
                   </Link>
                 </li>
-                {["Về chúng tôi", "Blog", "Tuyển dụng", "Liên hệ"].map((item) => (
-                  <li key={item}>
-                    <a href="#" className="text-sm text-slate-400 hover:text-white transition-colors">
-                      {item}
-                    </a>
-                  </li>
-                ))}
+                <li>
+                  <a href="#" className="text-sm text-slate-400 hover:text-white transition-colors">
+                    {t.footer.aboutUs}
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="text-sm text-slate-400 hover:text-white transition-colors">
+                    {t.footer.blog}
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="text-sm text-slate-400 hover:text-white transition-colors">
+                    {t.footer.careers}
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="text-sm text-slate-400 hover:text-white transition-colors">
+                    {t.footer.contact}
+                  </a>
+                </li>
               </ul>
             </div>
 
             <div>
-              <h4 className="text-sm font-semibold text-white mb-4">Hỗ trợ</h4>
+              <h4 className="text-sm font-semibold text-white mb-4">{t.footer.support}</h4>
               <ul className="space-y-3">
-                {["Tài liệu", "Help Center", "Status", "AI Chat"].map((item) => (
-                  <li key={item}>
-                    <a href="#" className="text-sm text-slate-400 hover:text-white transition-colors">
-                      {item}
-                    </a>
-                  </li>
-                ))}
+                <li>
+                  <a href="#" className="text-sm text-slate-400 hover:text-white transition-colors">
+                    {t.footer.documentation}
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="text-sm text-slate-400 hover:text-white transition-colors">
+                    {t.footer.helpCenter}
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="text-sm text-slate-400 hover:text-white transition-colors">
+                    {t.footer.status}
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="text-sm text-slate-400 hover:text-white transition-colors">
+                    {t.footer.aiChat}
+                  </a>
+                </li>
               </ul>
             </div>
           </div>
 
           <div className="mt-12 pt-8 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
             <p className="text-sm text-slate-500">
-              © 2025 9log.tech · Bản quyền thuộc Công ty TNHH Công nghệ 9Log
+              {t.footer.copyright}
             </p>
             <div className="flex gap-6">
               <a href="#" className="text-sm text-slate-500 hover:text-white transition-colors">
-                Điều khoản
+                {t.footer.terms}
               </a>
               <a href="#" className="text-sm text-slate-500 hover:text-white transition-colors">
-                Bảo mật
+                {t.footer.privacy}
               </a>
             </div>
           </div>

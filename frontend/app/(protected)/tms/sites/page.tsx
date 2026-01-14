@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { apiFetch } from "@/lib/api";
 import DataTable, { Column, TablePagination } from "@/components/DataTable";
@@ -84,6 +85,7 @@ const SITE_TYPE_COLORS: Record<string, string> = {
 // ============ Main Component ============
 export default function SitesPage() {
   const t = useTranslations("tms.sitesPage");
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState<Site[]>([]);
   const [locations, setLocations] = useState<Location[]>([]);
@@ -110,6 +112,26 @@ export default function SitesPage() {
     note: "",
     status: "ACTIVE",
   };
+
+  // Check URL params to auto-open create modal with pre-filled data
+  useEffect(() => {
+    const companyName = searchParams.get("company_name");
+    const siteType = searchParams.get("site_type");
+
+    if (companyName) {
+      setForm({
+        ...emptyForm,
+        company_name: companyName,
+        site_type: siteType === "PICKUP" || siteType === "DELIVERY" ? "CUSTOMER" : (siteType || "CUSTOMER"),
+      });
+      setMode("create");
+      setEditing(null);
+      setOpen(true);
+
+      // Clear URL params after opening modal
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, [searchParams]);
 
   const [form, setForm] = useState<SiteForm>(emptyForm);
 

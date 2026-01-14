@@ -144,6 +144,130 @@ def delete_site(
     return {"success": True}
 
 
+@router.post("/check")
+def check_sites_exist(
+    payload: dict,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Check if sites exist by search text (without auto-creating).
+    Used to warn user before creating orders from text.
+
+    payload:
+      - sites: list of {"search_text": "...", "type": "pickup" | "delivery"}
+
+    Returns: list of results with found status and suggestions
+    """
+    if current_user.role not in ("ADMIN", "DISPATCHER"):
+        raise HTTPException(403, "Only ADMIN or DISPATCHER can use this")
+
+    tenant_id = str(current_user.tenant_id)
+    sites_to_check = payload.get("sites", [])
+
+    # Load all sites and locations once for efficiency
+    all_sites = session.exec(
+        select(Site).where(
+            Site.tenant_id == tenant_id,
+            Site.status == "ACTIVE"
+        )
+    ).all()
+
+    all_locations = session.exec(
+        select(Location).where(
+            Location.tenant_id == tenant_id,
+            Location.is_active == True
+        )
+    ).all()
+
+    location_map = {loc.id: loc for loc in all_locations}
+
+    results = []
+    for item in sites_to_check:
+        search_text = item.get("search_text", "").strip()
+        site_type = item.get("type", "pickup")
+
+        if not search_text:
+            results.append({
+                "search_text": search_text,
+                "type": site_type,
+                "found": False,
+                "site": None,
+                "suggestions": []
+            })
+            continue
+
+        search_upper = search_text.upper()
+        search_lower = search_text.lower()
+
+        # Try to find matching site
+        found_site = None
+        suggestions = []
+
+        for site in all_sites:
+            # Exact code match
+            if site.code == search_upper:
+                found_site = site
+                break
+            # Partial match - add to suggestions
+            if (search_lower in site.company_name.lower() or
+                site.company_name.lower() in search_lower or
+                (site.code and search_upper in site.code)):
+                if found_site is None:
+                    found_site = site
+                else:
+                    suggestions.append({
+                        "id": site.id,
+                        "code": site.code,
+                        "company_name": site.company_name
+                    })
+
+        # Also check by location
+        if not found_site:
+            for loc in all_locations:
+                if (search_upper == loc.code or
+                    search_lower in loc.name.lower() or
+                    loc.name.lower() in search_lower):
+                    # Find site with this location
+                    for site in all_sites:
+                        if site.location_id == loc.id:
+                            found_site = site
+                            break
+                    break
+
+        if found_site:
+            location = location_map.get(found_site.location_id)
+            results.append({
+                "search_text": search_text,
+                "type": site_type,
+                "found": True,
+                "site": {
+                    "id": found_site.id,
+                    "code": found_site.code,
+                    "company_name": found_site.company_name,
+                    "location_name": location.name if location else None,
+                },
+                "suggestions": suggestions[:3]  # Max 3 suggestions
+            })
+        else:
+            # Not found - collect similar suggestions
+            for site in all_sites[:5]:
+                suggestions.append({
+                    "id": site.id,
+                    "code": site.code,
+                    "company_name": site.company_name
+                })
+            results.append({
+                "search_text": search_text,
+                "type": site_type,
+                "found": False,
+                "site": None,
+                "suggestions": suggestions
+            })
+
+    return {"results": results}
+
+
 @router.post("/find-or-create")
 def find_or_create_site(
     payload: dict,

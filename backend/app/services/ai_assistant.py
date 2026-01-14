@@ -86,6 +86,10 @@ class AIAssistant:
             return {"success": False, "error": "No AI providers configured", "order_data": None}
 
         system_prompt = self._build_system_prompt(context)
+        logger.info(f"System prompt length: {len(system_prompt)} chars")
+        logger.info(f"Context task: {context.get('task') if context else 'No context'}")
+        logger.info(f"Context has customers: {len(context.get('customers', [])) if context else 0}")
+        logger.info(f"Context has sites: {len(context.get('sites', [])) if context else 0}")
         last_error = None
 
         for provider in providers:
@@ -106,14 +110,24 @@ class AIAssistant:
 
                 if result.get("success"):
                     content = result.get("content", "")
+                    logger.info(f"AI raw response: {content[:500]}...")  # Log first 500 chars
                     order_data = self._parse_ai_response(content)
+                    logger.info(f"Parsed order_data: {order_data}")
+
+                    # Calculate cost estimate
+                    input_tokens = result.get("input_tokens", 0)
+                    output_tokens = result.get("output_tokens", 0)
+                    cost_estimate = (
+                        (input_tokens / 1_000_000) * provider.cost_per_1m_input_tokens +
+                        (output_tokens / 1_000_000) * provider.cost_per_1m_output_tokens
+                    )
 
                     self._log_usage(
                         feature_code=feature_code,
                         provider_code=provider.provider_code,
                         model_used=provider.default_model or "unknown",
-                        input_tokens=result.get("input_tokens", 0),
-                        output_tokens=result.get("output_tokens", 0),
+                        input_tokens=input_tokens,
+                        output_tokens=output_tokens,
                         latency_ms=latency_ms,
                         success=True,
                     )
@@ -124,6 +138,7 @@ class AIAssistant:
                         "raw_response": content,
                         "confidence": self._calculate_confidence(order_data),
                         "provider_used": provider.provider_code,
+                        "cost_estimate": cost_estimate,
                     }
                 else:
                     last_error = result.get("error", "Unknown error")
@@ -199,14 +214,24 @@ class AIAssistant:
 
                 if result.get("success"):
                     content = result.get("content", "")
+                    logger.info(f"AI raw response: {content[:500]}...")  # Log first 500 chars
                     order_data = self._parse_ai_response(content)
+                    logger.info(f"Parsed order_data: {order_data}")
+
+                    # Calculate cost estimate
+                    input_tokens = result.get("input_tokens", 0)
+                    output_tokens = result.get("output_tokens", 0)
+                    cost_estimate = (
+                        (input_tokens / 1_000_000) * provider.cost_per_1m_input_tokens +
+                        (output_tokens / 1_000_000) * provider.cost_per_1m_output_tokens
+                    )
 
                     self._log_usage(
                         feature_code=feature_code,
                         provider_code=provider.provider_code,
                         model_used=provider.default_model or "unknown",
-                        input_tokens=result.get("input_tokens", 0),
-                        output_tokens=result.get("output_tokens", 0),
+                        input_tokens=input_tokens,
+                        output_tokens=output_tokens,
                         latency_ms=latency_ms,
                         success=True,
                     )
@@ -217,6 +242,7 @@ class AIAssistant:
                         "raw_response": content,
                         "confidence": self._calculate_confidence(order_data),
                         "provider_used": provider.provider_code,
+                        "cost_estimate": cost_estimate,
                     }
                 else:
                     last_error = result.get("error", "Unknown error")
@@ -822,7 +848,181 @@ Hãy trả về JSON với format:
     def _build_system_prompt(self, context: Optional[Dict]) -> str:
         """Build system prompt for extraction"""
 
-        base_prompt = """Bạn là một AI assistant chuyên nghiệp cho hệ thống quản lý vận tải (TMS).
+        # Check if this is for order extraction with customer matching
+        task = context.get("task") if context else None
+        is_customer_match = task == "order_extraction_with_customer_match"
+
+        if is_customer_match:
+            # Enhanced prompt for customer matching + site auto-creation
+            base_prompt = """QUAN TRỌNG: Bạn PHẢI trả về ĐÚNG FORMAT JSON ARRAY bên dưới. KHÔNG BAO GIỜ trả về format khác.
+
+Bạn là AI assistant chuyên nghiệp cho hệ thống vận tải container (TMS).
+
+Nhiệm vụ: Phân tích văn bản đơn hàng và trích xuất thông tin chi tiết, TỰ ĐỘNG GÁN KHÁCH HÀNG dựa trên địa điểm.
+
+CẤU TRÚC OUTPUT BẮT BUỘC - JSON ARRAY (KHÔNG ĐƯỢC SAI FORMAT NÀY):
+
+```json
+[
+  {
+    "line_number": 1,
+    "driver_name": "A Tuyến",
+    "pickup_text": "CHÙA VẼ",
+    "delivery_text": "An Tảo, Hưng Yên",
+    "container_code": "GAOU6458814",
+    "equipment": "40",
+    "qty": 1,
+    "cargo_note": "HDPE-VN H5604F; 24.75T/cont; pallet",
+    "pickup_date": "2024-12-23",
+    "delivery_date": "2024-12-24",
+    "delivery_shift": "morning",
+    "customer_id": "uuid-xxx",
+    "customer_match_confidence": 0.95,
+    "ambiguous": false,
+    "pickup_site_data": {
+      "company_name": "CHÙA VẼ",
+      "address": "Hà Nội",
+      "district": null,
+      "city": "Hà Nội"
+    },
+    "delivery_site_data": {
+      "company_name": "Nhựa HY",
+      "address": "91 Nguyễn Văn Linh, P. An Tảo, Hưng Yên",
+      "district": "An Tảo",
+      "city": "Hưng Yên"
+    }
+  }
+]
+```
+
+⚠️ CẢNH BÁO FORMAT:
+- ❌ SAI: {"pickup": {...}, "delivery": {...}} - KHÔNG trả về nested objects
+- ❌ SAI: {"order_data": [...]} - KHÔNG wrap trong object
+- ✅ ĐÚNG: [{line_number: 1, driver_name: "...", pickup_text: "...", delivery_text: "...", ...}]
+- Phải là FLAT ARRAY với các field: line_number, driver_name, pickup_text, delivery_text, container_code, equipment
+
+QUY TẮC PHÂN TÍCH - HỖ TRỢ 2 FORMAT:
+
+**FORMAT 1** (có driver): "185) A Tuyến: CHÙA VẼ - An Tảo, Hưng Yên- GAOU6458814- Lấy 23/12, giao sáng 24/12- 01x40 HDPE-VN"
+- **line_number**: 185
+- **driver_name**: "A Tuyến" (text sau số và trước ":")
+- **pickup_text**: "CHÙA VẼ" (text trước dấu "-" đầu tiên)
+- **delivery_text**: "An Tảo, Hưng Yên" (text sau "-" và trước container code)
+- **container_code**: GAOU6458814 (pattern [A-Z]{4}\\d{7})
+- **equipment**: "40" (từ "01x40")
+- **pickup_date**: "2025-01-23" (từ "Lấy 23/12")
+- **delivery_date**: "2025-01-24" (từ "giao sáng 24/12")
+- **delivery_shift**: "morning" (từ "sáng")
+- **cargo_note**: "HDPE-VN H5604F; 27T/cont; pallet"
+
+**FORMAT 2** (không có driver, container): "1/ 1x40 HDPE-VN H5604F, 27T/cont, pallet, CHÙA VẼ - giao KCN Quất Động-Thường Tín -Hà Nội"
+- **line_number**: 1
+- **driver_name**: null (không có)
+- **equipment**: "40" (từ "1x40")
+- **cargo_note**: "HDPE-VN H5604F, 27T/cont, pallet"
+- **pickup_text**: "CHÙA VẼ" (text sau dấu phẩy cuối cùng của cargo, trước " - ")
+- **delivery_text**: "KCN Quất Động" hoặc "LIVABIN" (text sau " - ", bỏ từ "giao", "nhập", "xuất")
+- **container_code**: null (không có)
+- **pickup_date**: null
+- **delivery_date**: null
+- **delivery_shift**: null
+
+**CÁCH PHÂN TÍCH FORMAT 2:**
+- Tìm dấu phẩy cuối cùng: "...pallet, "
+- Text sau phẩy cuối = route: "CHÙA VẼ - giao KCN Quất Động"
+- Split route by " - ":
+  - Phần 1 = pickup_text: "CHÙA VẼ"
+  - Phần 2 = delivery part: "giao KCN Quất Động-Thường Tín -Hà Nội"
+  - Bỏ từ "giao", "nhập", "xuất" → delivery_text: "KCN Quất Động"
+
+**CONTAINER CODE**: Pattern [A-Z]{4}\\d{7} (VD: GAOU6458814, TEMU5432000)
+**EQUIPMENT**: "1x40" → "40", "2x20" → "20", "3x40" → "40" (qty=3)
+**SHIFTS**: "sáng" → "morning", "chiều" → "afternoon", "tối" → "evening"
+**DATES**: "Lấy 23/12" → "2025-01-23", "giao 24/12" → "2025-01-24"
+
+**VÍ DỤ CỤ THỂ FORMAT 2 (QUAN TRỌNG - PHẢI PARSE TỪNG DÒNG):**
+
+Input (2 dòng):
+```
+1/ 1x40 HDPE-VN H5604F, 27T/cont, pallet, CHÙA VẼ - giao KCN Quất Động-Thường Tín -Hà Nội
+2/ 3x40 LLDPE-US 2018.XBU (mã cũ LL1002XBU), 24.75T/cont, pallet, HATECO - nhập LIVABIN
+```
+
+Output PHẢI CÓ 2 PHẦN TỬ (MỖI DÒNG = 1 ORDER):
+```json
+[
+  {
+    "line_number": 1,
+    "driver_name": null,
+    "pickup_text": "CHÙA VẼ",
+    "delivery_text": "KCN Quất Động",
+    "container_code": null,
+    "equipment": "40",
+    "qty": 1,
+    "cargo_note": "HDPE-VN H5604F, 27T/cont, pallet",
+    "pickup_date": null,
+    "delivery_date": null,
+    "delivery_shift": null,
+    "customer_id": null,
+    "ambiguous": true,
+    "pickup_site_data": {"company_name": "CHÙA VẼ", "address": "", "city": "Hà Nội"},
+    "delivery_site_data": {"company_name": "KCN Quất Động", "address": "Thường Tín, Hà Nội", "city": "Hà Nội"}
+  },
+  {
+    "line_number": 2,
+    "driver_name": null,
+    "pickup_text": "HATECO",
+    "delivery_text": "LIVABIN",
+    "container_code": null,
+    "equipment": "40",
+    "qty": 3,
+    "cargo_note": "LLDPE-US 2018.XBU (mã cũ LL1002XBU), 24.75T/cont, pallet",
+    "pickup_date": null,
+    "delivery_date": null,
+    "delivery_shift": null,
+    "customer_id": null,
+    "ambiguous": true,
+    "pickup_site_data": {"company_name": "HATECO", "address": "", "city": null},
+    "delivery_site_data": {"company_name": "LIVABIN", "address": "", "city": null}
+  }
+]
+```
+
+⚠️ LƯU Ý: Mỗi dòng bắt đầu bằng "1/", "2/", "3/", etc. là MỘT ORDER riêng → Array PHẢI có 2 phần tử!
+
+SITE MATCHING - QUAN TRỌNG:
+
+1. Đọc danh sách ĐỊA ĐIỂM (SITES) có sẵn bên dưới
+2. **delivery_text** từ văn bản (VD: "LIVABIN") cần match với **company_name** trong danh sách Sites
+3. VD: "LIVABIN" trong văn bản → match với Site có company_name "nhập LIVABIN" hoặc "LIVABIN"
+4. **pickup_text** tương tự: "HATECO" → match với Site có company_name "Cảng HATECO"
+5. Dùng FUZZY MATCHING: bỏ qua từ "nhập", "xuất", "Cảng", so khớp phần còn lại
+6. Nếu match được Site, lấy customer_id của Site đó (nếu có)
+
+CUSTOMER ASSIGNMENT:
+
+1. Sau khi match Site, lấy customer_id từ Site đó
+2. Gán customer_id tự động với confidence score
+3. Nếu Site không có customer_id hoặc không match Site: customer_id = null, ambiguous = true
+
+SITE AUTO-CREATION:
+
+1. Nếu địa điểm KHÔNG match Site nào:
+   - Extract company_name (text ngắn gọn từ pickup/delivery), address, district, city từ văn bản
+   - Fill vào pickup_site_data / delivery_site_data
+   - Backend sẽ tự tạo Site mới
+
+QUAN TRỌNG - NHẮC LẠI:
+- ✅ CHỈ trả về JSON ARRAY theo đúng format trên
+- ✅ pickup_text và delivery_text phải là TEXT NGẮN GỌN (VD: "HATECO", "LIVABIN"), không phải địa chỉ đầy đủ
+- ✅ customer_id phải là UUID hợp lệ từ danh sách hoặc null
+- ✅ Tất cả dates theo format YYYY-MM-DD
+- ✅ Equipment là string: "20", "40", "45"
+- ❌ KHÔNG trả về format nested objects như {"pickup": {...}, "delivery": {...}}
+"""
+        else:
+            # Original prompt for general extraction
+            base_prompt = """Bạn là một AI assistant chuyên nghiệp cho hệ thống quản lý vận tải (TMS).
 
 Nhiệm vụ của bạn là phân tích tin nhắn hoặc hình ảnh và trích xuất thông tin đơn hàng vận chuyển.
 
@@ -845,7 +1045,7 @@ CẤU TRÚC DỮ LIỆU CẦN TRÍCH XUẤT:
     "contact_name": "Tên người nhận",
     "contact_phone": "Số điện thoại",
     "date": "YYYY-MM-DD",
-    "time": "HH:MM" (nếu có),
+    "time": "HH:MM" (nếu có)",
     "instructions": "Ghi chú đặc biệt (VD: chờ tiền mới hạ hàng, trước giờ nào)"
   },
   "cargo": {
@@ -882,27 +1082,66 @@ QUAN TRỌNG:
 
         if context:
             if "customers" in context:
-                base_prompt += f"\n\nKHÁCH HÀNG CÓ SẴN:\n{json.dumps(context['customers'], ensure_ascii=False, indent=2)}"
+                customers_list = context["customers"]
+                # Limit to first 20 customers to avoid token overflow
+                if len(customers_list) > 20:
+                    base_prompt += f"\n\nKHÁCH HÀNG CÓ SẴN ({len(customers_list)} total, showing first 20):\n"
+                    customers_list = customers_list[:20]
+                else:
+                    base_prompt += f"\n\nKHÁCH HÀNG CÓ SẴN ({len(customers_list)} customers):\n"
+
+                for c in customers_list:
+                    base_prompt += f"- ID: {c.get('id')}\n"
+                    base_prompt += f"  Name: {c.get('name')}\n"
+                    base_prompt += f"  Code: {c.get('code')}\n"
+                    if c.get('common_sites'):
+                        base_prompt += f"  Common sites: {', '.join([s['name'] for s in c['common_sites'][:3]])}\n"
+                    base_prompt += "\n"
+
             if "sites" in context:
-                base_prompt += f"\n\nĐỊA ĐIỂM CÓ SẴN:\n{json.dumps(context['sites'], ensure_ascii=False, indent=2)}"
+                sites_list = context["sites"]
+                # Limit to first 30 sites
+                if len(sites_list) > 30:
+                    base_prompt += f"\n\nĐỊA ĐIỂM CÓ SẴN ({len(sites_list)} total, showing first 30):\n"
+                    sites_list = sites_list[:30]
+                else:
+                    base_prompt += f"\n\nĐỊA ĐIỂM CÓ SẴN ({len(sites_list)} sites):\n"
+
+                for s in sites_list:
+                    base_prompt += f"- Code: {s.get('code')}\n"
+                    base_prompt += f"  Company: {s.get('company_name')}\n"
+                    base_prompt += f"  Address: {s.get('detailed_address')}\n"
+                    base_prompt += "\n"
 
         return base_prompt
 
     def _parse_ai_response(self, content: str) -> Dict[str, Any]:
-        """Parse AI response to extract JSON"""
+        """Parse AI response to extract JSON (supports both objects and arrays)"""
+        # Try to extract JSON from markdown code block
         json_match = re.search(r"```json\s*(.*?)\s*```", content, re.DOTALL)
         if json_match:
             json_str = json_match.group(1)
         else:
-            json_match = re.search(r"\{.*\}", content, re.DOTALL)
+            # Try to match JSON object {...} or array [...]
+            json_match = re.search(r"(\{.*\}|\[.*\])", content, re.DOTALL)
             if json_match:
                 json_str = json_match.group(0)
             else:
-                json_str = content
+                json_str = content.strip()
 
         try:
-            return json.loads(json_str)
-        except json.JSONDecodeError:
+            parsed = json.loads(json_str)
+
+            # If AI returns an array directly (new format), wrap it in order_data
+            if isinstance(parsed, list):
+                logger.info(f"AI returned array format with {len(parsed)} items")
+                return {"order_data": parsed}
+
+            # If AI returns object (old format or already wrapped), return as is
+            return parsed
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to parse AI JSON: {e}")
+            logger.error(f"Content: {json_str[:500]}...")
             return {"error": "Failed to parse JSON", "raw_content": content}
 
     def _calculate_confidence(self, order_data: Dict) -> float:

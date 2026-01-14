@@ -736,7 +736,7 @@ export default function ModulePage() {
       </section>
 
       {/* Screenshots Section */}
-      <section className="py-24 lg:py-32 bg-gradient-to-b from-slate-50 to-white">
+      <section className="py-24 lg:py-32 bg-slate-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <h2 className="text-3xl lg:text-4xl font-bold text-slate-900">
@@ -919,7 +919,7 @@ export default function ModulePage() {
       </section>
 
       {/* Features Grid */}
-      <section className="py-24 lg:py-32">
+      <section className="py-24 lg:py-32 bg-slate-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <h2 className="text-3xl lg:text-4xl font-bold text-slate-900">
@@ -984,7 +984,7 @@ export default function ModulePage() {
       </section>
 
       {/* Capabilities */}
-      <section className="py-24 lg:py-32">
+      <section className="py-24 lg:py-32 bg-slate-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             <div>

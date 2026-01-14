@@ -2382,7 +2382,8 @@
         "port": "Port",
         "icd": "ICD",
         "depot": "Depot",
-        "warehouse": "Warehouse"
+        "warehouse": "Warehouse",
+        "CUSTOMER": "Customer Site"
       },
       "status": {
         "deleted": "Deleted"
@@ -5453,6 +5454,187 @@
       "documents": "Documents",
       "folders": "Folders",
       "shared": "Shared"
+    }
+  },
+  "homepage": {
+    "loading": "Loading...",
+    "header": {
+      "solutions": "Solutions",
+      "features": "Features",
+      "pricing": "Pricing",
+      "customers": "Customers",
+      "tools": "Tools",
+      "allTools": "All tools",
+      "tariffLookup": "Import/Export Tariff 2026",
+      "freightCalculator": "Freight Calculator",
+      "portLookup": "Port Code Lookup",
+      "incoterms": "Incoterms 2020",
+      "unitConverter": "Unit Converter",
+      "importTax": "Import Tax Calculator",
+      "profile": "Profile",
+      "login": "Login",
+      "freeTrial": "Free Trial"
+    },
+    "hero": {
+      "badge": "AI-Powered Integration",
+      "headline1": "ERP",
+      "headline2": "Logistics",
+      "headline3": "Made in Vietnam",
+      "subtitle": "Comprehensive logistics enterprise management system. From road transport, warehousing, international freight forwarding to express delivery —",
+      "subtitleBold": "one single platform.",
+      "cta1": "Start for Free",
+      "cta2": "Explore Solutions"
+    },
+    "stats": {
+      "businesses": "Trusted Businesses",
+      "orders": "Orders Processed",
+      "provinces": "Provinces Covered",
+      "uptime": "Uptime Guaranteed"
+    },
+    "modules": {
+      "title": "13 Modules. One Ecosystem.",
+      "subtitle": "Specially designed for Vietnam's logistics industry, fully integrated from operations to management",
+      "groups": {
+        "operations": {
+          "title": "Operations",
+          "desc": "Core Operations"
+        },
+        "backOffice": {
+          "title": "Back-office",
+          "desc": "Internal Management"
+        },
+        "tools": {
+          "title": "Tools",
+          "desc": "Productivity Tools"
+        }
+      },
+      "names": {
+        "tms": "TMS",
+        "wms": "WMS",
+        "fms": "FMS",
+        "pms": "PMS",
+        "ems": "EMS",
+        "mes": "MES",
+        "crm": "CRM",
+        "hrm": "HRM",
+        "accounting": "Accounting",
+        "controlling": "Controlling",
+        "workflow": "Workflow",
+        "dms": "DMS",
+        "project": "Project"
+      }
+    },
+    "whyChoose": {
+      "title": "Why choose 9log?",
+      "subtitle": "Built by Vietnamese, for Vietnamese businesses, with the most advanced AI technology",
+      "items": {
+        "aiPowered": {
+          "title": "AI-Powered",
+          "desc": "Forecasting, route optimization, automatic anomaly detection"
+        },
+        "madeForVietnam": {
+          "title": "Made for Vietnam",
+          "desc": "Vietnam-standard operations, e-invoices, tax reports"
+        },
+        "scalable": {
+          "title": "Scale with You",
+          "desc": "From 5 to 5000 employees, the system scales flexibly"
+        },
+        "secure": {
+          "title": "Absolute Security",
+          "desc": "End-to-end encryption, automatic backup, 99.9% uptime"
+        }
+      },
+      "aiHighlight": {
+        "title": "AI Assistant - Smart Assistant",
+        "desc": "Integrated artificial intelligence helps forecast demand, optimize routes, detect anomalies, and suggest decisions. Save up to 30% operating costs with smart suggestions from AI."
+      }
+    },
+    "testimonials": {
+      "title": "Trusted by 200+ Vietnamese businesses",
+      "items": [
+        {
+          "quote": "Since using 9log, we've reduced operating costs by 40% and doubled the number of trips per day.",
+          "author": "Nguyen Van Minh",
+          "role": "Operations Director",
+          "company": "Phuong Nam Transport",
+          "location": "Ho Chi Minh City"
+        },
+        {
+          "quote": "One of the rare software that truly understands Vietnam logistics operations. Support responds quickly and resolves issues immediately.",
+          "author": "Tran Thu Huong",
+          "role": "Operations Manager",
+          "company": "Bac Viet Forwarding",
+          "location": "Hanoi"
+        },
+        {
+          "quote": "AI route suggestions help save 25% fuel costs. ROI achieved in just 3 months of implementation.",
+          "author": "Le Hoang Nam",
+          "role": "CTO",
+          "company": "Express Logistics",
+          "location": "Da Nang"
+        }
+      ]
+    },
+    "pricing": {
+      "title": "Optimize Costs",
+      "subtitle": "Free trial, Upgrade for more enterprise features",
+      "popular": "Most Popular",
+      "plans": {
+        "startup": {
+          "name": "Startup",
+          "price": "Free",
+          "desc": "For new businesses",
+          "features": ["5 users", "2 modules", "1GB storage", "Email support"],
+          "cta": "Get Started"
+        },
+        "business": {
+          "name": "Business",
+          "price": "$129",
+          "period": "/month",
+          "desc": "For growing businesses",
+          "features": ["20 users", "All modules", "50GB storage", "24/7 support", "Unlimited API", "AI Assistant"],
+          "cta": "14-day Free Trial"
+        },
+        "enterprise": {
+          "name": "Enterprise",
+          "price": "Contact Us",
+          "desc": "Custom solutions for large corporations",
+          "features": ["Unlimited users", "All modules", "Unlimited storage", "Dedicated support", "On-premise option", "Custom development"],
+          "cta": "Contact Sales"
+        }
+      }
+    },
+    "cta": {
+      "title": "Ready to elevate your logistics business?",
+      "subtitle": "Join over 200 businesses already using 9log. Quick deployment, dedicated support from the Vietnamese team.",
+      "button1": "Start Free Now",
+      "button2": "Chat with AI",
+      "features": {
+        "deployment": "24h Deployment",
+        "security": "Data Security",
+        "support": "24/7 AI Support"
+      }
+    },
+    "footer": {
+      "tagline": "Vietnam's leading Logistics ERP platform. For Vietnam's growth.",
+      "madeIn": "Proudly made in Vietnam",
+      "freeTools": "Free Tools",
+      "viewAll": "View all",
+      "company": "Company",
+      "companyProfile": "Company Profile",
+      "aboutUs": "About Us",
+      "blog": "Blog",
+      "careers": "Careers",
+      "contact": "Contact",
+      "support": "Support",
+      "documentation": "Documentation",
+      "helpCenter": "Help Center",
+      "status": "Status",
+      "aiChat": "AI Chat",
+      "copyright": "© 2025 9log.tech · All rights reserved to 9Log Technology Co., Ltd.",
+      "terms": "Terms",
+      "privacy": "Privacy"
     }
   }
 }

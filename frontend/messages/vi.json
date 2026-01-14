@@ -4249,7 +4249,8 @@
         "industrialZone": "KCN",
         "port": "Cảng",
         "ward": "Phường/Xã",
-        "warehouse": "Kho"
+        "warehouse": "Kho",
+        "CUSTOMER": "Địa điểm khách hàng"
       }
     },
     "maintenanceRecords": "Lịch sử bảo dưỡng",
@@ -5440,5 +5441,186 @@
     "runningWorkflows": "Workflow đang chạy",
     "stepsTransitions": "Bước & Chuyển đổi",
     "workflowHistory": "Lịch sử workflow"
+  },
+  "homepage": {
+    "loading": "Đang tải...",
+    "header": {
+      "solutions": "Giải pháp",
+      "features": "Tính năng",
+      "pricing": "Bảng giá",
+      "customers": "Khách hàng",
+      "tools": "Công cụ",
+      "allTools": "Tất cả công cụ",
+      "tariffLookup": "Biểu thuế XNK 2026",
+      "freightCalculator": "Tính cước vận tải",
+      "portLookup": "Tra cứu mã cảng",
+      "incoterms": "Incoterms 2020",
+      "unitConverter": "Chuyển đổi đơn vị",
+      "importTax": "Tính thuế nhập khẩu",
+      "profile": "Profile",
+      "login": "Đăng nhập",
+      "freeTrial": "Dùng thử miễn phí"
+    },
+    "hero": {
+      "badge": "Tích hợp AI thông minh",
+      "headline1": "ERP",
+      "headline2": "Logistics",
+      "headline3": "Made in Vietnam",
+      "subtitle": "Hệ thống quản trị doanh nghiệp logistics toàn diện. Từ vận tải đường bộ, kho bãi, giao nhận quốc tế đến chuyển phát nhanh —",
+      "subtitleBold": "một nền tảng duy nhất.",
+      "cta1": "Bắt đầu miễn phí",
+      "cta2": "Khám phá giải pháp"
+    },
+    "stats": {
+      "businesses": "Doanh nghiệp tin dùng",
+      "orders": "Đơn hàng đã xử lý",
+      "provinces": "Tỉnh thành phủ sóng",
+      "uptime": "Uptime cam kết"
+    },
+    "modules": {
+      "title": "13 Modules. Một hệ sinh thái.",
+      "subtitle": "Được thiết kế đặc biệt cho ngành logistics Việt Nam, tích hợp đầy đủ từ vận hành đến quản trị",
+      "groups": {
+        "operations": {
+          "title": "Vận hành",
+          "desc": "Core Operations"
+        },
+        "backOffice": {
+          "title": "Back-office",
+          "desc": "Quản trị nội bộ"
+        },
+        "tools": {
+          "title": "Công cụ",
+          "desc": "Productivity Tools"
+        }
+      },
+      "names": {
+        "tms": "TMS",
+        "wms": "WMS",
+        "fms": "FMS",
+        "pms": "PMS",
+        "ems": "EMS",
+        "mes": "MES",
+        "crm": "CRM",
+        "hrm": "HRM",
+        "accounting": "Kế toán",
+        "controlling": "Controlling",
+        "workflow": "Workflow",
+        "dms": "DMS",
+        "project": "Project"
+      }
+    },
+    "whyChoose": {
+      "title": "Tại sao chọn 9log?",
+      "subtitle": "Xây dựng bởi người Việt, cho doanh nghiệp Việt, với công nghệ AI tiên tiến nhất",
+      "items": {
+        "aiPowered": {
+          "title": "AI-Powered",
+          "desc": "Dự báo, tối ưu tuyến đường, phát hiện bất thường tự động"
+        },
+        "madeForVietnam": {
+          "title": "Made for Vietnam",
+          "desc": "Nghiệp vụ chuẩn Việt, hóa đơn điện tử, báo cáo thuế"
+        },
+        "scalable": {
+          "title": "Tăng trưởng cùng bạn",
+          "desc": "Từ 5 đến 5000 nhân viên, hệ thống mở rộng linh hoạt"
+        },
+        "secure": {
+          "title": "An toàn tuyệt đối",
+          "desc": "Mã hóa đầu cuối, backup tự động, uptime 99.9%"
+        }
+      },
+      "aiHighlight": {
+        "title": "AI Assistant - Trợ lý thông minh",
+        "desc": "Tích hợp trí tuệ nhân tạo giúp dự báo nhu cầu, tối ưu tuyến đường, phát hiện bất thường, và đề xuất quyết định. Tiết kiệm đến 30% chi phí vận hành với các gợi ý thông minh từ AI."
+      }
+    },
+    "testimonials": {
+      "title": "Được tin dùng bởi 200+ doanh nghiệp Việt Nam",
+      "items": [
+        {
+          "quote": "Từ khi dùng 9log, chúng tôi giảm 40% chi phí vận hành và tăng gấp đôi số chuyến xe mỗi ngày.",
+          "author": "Nguyễn Văn Minh",
+          "role": "Giám đốc Điều hành",
+          "company": "Vận tải Phương Nam",
+          "location": "TP. Hồ Chí Minh"
+        },
+        {
+          "quote": "Phần mềm hiếm hoi hiểu đúng nghiệp vụ logistics Việt Nam. Support phản hồi nhanh, giải quyết vấn đề ngay.",
+          "author": "Trần Thu Hương",
+          "role": "Trưởng phòng Vận hành",
+          "company": "Giao nhận Bắc Việt",
+          "location": "Hà Nội"
+        },
+        {
+          "quote": "AI gợi ý tuyến đường giúp tiết kiệm 25% nhiên liệu. ROI đạt được chỉ sau 3 tháng triển khai.",
+          "author": "Lê Hoàng Nam",
+          "role": "CTO",
+          "company": "Express Logistics",
+          "location": "Đà Nẵng"
+        }
+      ]
+    },
+    "pricing": {
+      "title": "Tối ưu chi phí",
+      "subtitle": "Dùng thử miễn phí, Nâng cấp nhiều tính năng cho Doanh nghiệp",
+      "popular": "Phổ biến nhất",
+      "plans": {
+        "startup": {
+          "name": "Khởi nghiệp",
+          "price": "Miễn phí",
+          "desc": "Dành cho doanh nghiệp mới",
+          "features": ["5 người dùng", "2 modules", "1GB lưu trữ", "Hỗ trợ email"],
+          "cta": "Bắt đầu ngay"
+        },
+        "business": {
+          "name": "Doanh nghiệp",
+          "price": "2.990.000đ",
+          "period": "/tháng",
+          "desc": "Dành cho doanh nghiệp đang phát triển",
+          "features": ["20 người dùng", "Tất cả modules", "50GB lưu trữ", "Hỗ trợ 24/7", "API không giới hạn", "AI Assistant"],
+          "cta": "Dùng thử 14 ngày"
+        },
+        "enterprise": {
+          "name": "Tập đoàn",
+          "price": "Liên hệ",
+          "desc": "Giải pháp tùy chỉnh cho tập đoàn lớn",
+          "features": ["Không giới hạn users", "Tất cả modules", "Không giới hạn lưu trữ", "Dedicated support", "On-premise option", "Custom development"],
+          "cta": "Liên hệ tư vấn"
+        }
+      }
+    },
+    "cta": {
+      "title": "Sẵn sàng nâng tầm logistics doanh nghiệp của bạn?",
+      "subtitle": "Tham gia cùng hơn 200 doanh nghiệp đã tin dùng 9log. Triển khai nhanh chóng, hỗ trợ tận tình từ đội ngũ Việt Nam.",
+      "button1": "Bắt đầu miễn phí ngay",
+      "button2": "Chat với AI",
+      "features": {
+        "deployment": "Triển khai 24h",
+        "security": "Bảo mật dữ liệu",
+        "support": "Hỗ trợ AI 24/7"
+      }
+    },
+    "footer": {
+      "tagline": "Nền tảng Logistics ERP hàng đầu Việt Nam. Vì Việt Nam phát triển.",
+      "madeIn": "Proudly made in Vietnam",
+      "freeTools": "Công cụ miễn phí",
+      "viewAll": "Xem tất cả",
+      "company": "Công ty",
+      "companyProfile": "Company Profile",
+      "aboutUs": "Về chúng tôi",
+      "blog": "Blog",
+      "careers": "Tuyển dụng",
+      "contact": "Liên hệ",
+      "support": "Hỗ trợ",
+      "documentation": "Tài liệu",
+      "helpCenter": "Help Center",
+      "status": "Status",
+      "aiChat": "AI Chat",
+      "copyright": "© 2025 9log.tech · Bản quyền thuộc Công ty TNHH Công nghệ 9Log",
+      "terms": "Điều khoản",
+      "privacy": "Bảo mật"
+    }
   }
 }

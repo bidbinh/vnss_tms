@@ -153,6 +153,21 @@ export default function OrdersPage() {
   const [showQuickCreateModal, setShowQuickCreateModal] = useState(false);
   const [quickCreateText, setQuickCreateText] = useState("");
   const [quickCreateStatus, setQuickCreateStatus] = useState<{creating: boolean; results: Array<{success: boolean; orderCode: string; error?: string}>}>({creating: false, results: []});
+
+  // AI parsing states
+  const [useAI, setUseAI] = useState(false); // AI OFF by default - use regex parser
+  const [aiProvider, setAiProvider] = useState<"gemini" | "claude-haiku" | "claude">("gemini");
+  const [isParsing, setIsParsing] = useState(false);
+
+  // Site validation states
+  const [missingSites, setMissingSites] = useState<Array<{
+    search_text: string;
+    type: "pickup" | "delivery";
+    suggestions: Array<{id: string; code: string; company_name: string}>;
+  }>>([]);
+  const [showMissingSitesModal, setShowMissingSitesModal] = useState(false);
+  const [siteCheckResults, setSiteCheckResults] = useState<Record<string, {found: boolean; site_id?: string}>>({});
+
   const [parsedOrders, setParsedOrders] = useState<Array<{
     line_number: number;
     driver_name: string;
@@ -160,6 +175,7 @@ export default function OrdersPage() {
     delivery_text: string;
     container_code: string;
     equipment: string;
+    qty?: number; // Quantity of containers (e.g., 1x40 = qty: 1)
     cargo_note: string;
     pickup_date: string;
     delivery_date: string;
@@ -167,38 +183,97 @@ export default function OrdersPage() {
     delivery_address: string;
     delivery_contact: string;
     customer_id: string;
+    selected?: boolean; // For checkbox selection
+    ambiguous?: boolean; // AI uncertain about customer
+    customer_match_confidence?: number; // AI confidence score
   }>>([]);
 
   // Parse text to extract order details
-  // Example format: "185) A Tuyến: CHÙA VẼ - An Tảo, Hưng Yên- GAOU6458814- Lấy 23/12, giao sáng 24/12- 01x40 HDPE-VN H5604F; 24.75T/cont; pallet; giao Nhựa HY (24/12): 91 Nguyễn Văn Linh , P. An Tảo, Tỉnh Hưng Yên (anh Giỏi 0977894678"
+  // NEW FORMAT: "1/ 1x40 HDPE-VN H5604F, 27T/cont, pallet, CHÙA VẼ - giao KCN Quất Động-Thường Tín -Hà Nội"
+  // OLD FORMAT: "185) A Tuyến: CHÙA VẼ - An Tảo, Hưng Yên- GAOU6458814- Lấy 23/12, giao sáng 24/12- 01x40 HDPE-VN"
   const parseOrderText = (text: string) => {
     const lines = text.split('\n').filter(line => line.trim());
     const orders: typeof parsedOrders = [];
     const currentYear = new Date().getFullYear();
 
     for (const line of lines) {
-      // Skip date header lines like "---------------23/12 ------------------------------"
       if (/^[-]+\d{1,2}\/\d{1,2}[-]+$/.test(line.trim().replace(/\s/g, ''))) continue;
-      if (!line.match(/^\d+\)/)) continue; // Skip lines that don't start with a number)
+      if (!line.match(/^\d+[\)\/]/)) continue;
 
       try {
-        // Extract line number
-        const lineNumMatch = line.match(/^(\d+)\)/);
+        const lineNumMatch = line.match(/^(\d+)[\)\/]/);
         const lineNumber = lineNumMatch ? parseInt(lineNumMatch[1]) : 0;
 
-        // Extract driver name: "A Tuyến:" or "A Vụ:"
-        const driverMatch = line.match(/\)\s*([^:]+):/);
-        const driverName = driverMatch ? driverMatch[1].trim() : '';
+        // Determine format
+        const isNewFormat = line.match(/^\d+\/\s+\d+x\d{2}/);
 
-        // Split by common delimiters after the driver name
-        const afterDriver = line.substring(line.indexOf(':') + 1);
-        const parts = afterDriver.split(/[-–]/).map(p => p.trim()).filter(p => p);
+        if (isNewFormat) {
+          // NEW FORMAT: "2/ 3x40 LLDPE-US 2018.XBU, 24.75T/cont, pallet, HATECO - nhập LIVABIN"
+          const afterLineNum = line.substring(line.indexOf('/') + 1).trim();
 
-        // First part is usually pickup location
-        const pickupText = parts[0] || '';
+          // Extract equipment and qty
+          const eqMatch = afterLineNum.match(/(\d+)x(\d{2})/);
+          const qty = eqMatch ? parseInt(eqMatch[1]) : 1;
+          const equipment = eqMatch ? eqMatch[2] : '40';
 
-        // Second part is usually delivery location (before container code)
-        let deliveryText = parts[1] || '';
+          // Find last comma (separator between cargo and route)
+          const lastCommaIndex = afterLineNum.lastIndexOf(',');
+          if (lastCommaIndex === -1) continue;
+
+          // Cargo note: from after equipment to last comma
+          const cargoStart = afterLineNum.indexOf(' ') + 1;
+          const cargoNote = afterLineNum.substring(cargoStart, lastCommaIndex).trim();
+
+          // Route: after last comma
+          const route = afterLineNum.substring(lastCommaIndex + 1).trim();
+
+          // Split route by " - "
+          const routeParts = route.split(/\s*-\s*/);
+          const pickupText = routeParts[0]?.trim() || '';
+          let deliveryText = '';
+
+          if (routeParts.length > 1) {
+            // Remove "giao", "nhập", "xuất" prefixes and extract main location
+            deliveryText = routeParts[1]
+              ?.replace(/^(giao|nhập|xuất)\s+/i, '')
+              .split(/[-,]/)[0]  // Get first part before dash or comma
+              .trim() || '';
+          }
+
+          // If qty > 1, create multiple separate orders (one per container)
+          // Example: 3x40 → create 3 orders, each with 1x40
+          // line_number is just for display - backend will auto-generate order_code
+          for (let i = 0; i < qty; i++) {
+            orders.push({
+              line_number: orders.length + 1, // Sequential counter for display only
+              driver_name: '',
+              pickup_text: pickupText,
+              delivery_text: deliveryText,
+              container_code: '',
+              equipment: equipment,
+              qty: 1, // Each order has 1 container
+              cargo_note: cargoNote,
+              pickup_date: '',
+              delivery_date: '',
+              delivery_shift: 'morning',
+              delivery_address: '',
+              delivery_contact: '',
+              customer_id: '',
+              selected: true,
+            });
+          }
+
+        } else {
+          // OLD FORMAT: "185) A Tuyến: CHÙA VẼ - An Tảo, Hưng Yên- GAOU6458814..."
+          const driverMatch = line.match(/\)\s*([^:]+):/);
+          const driverName = driverMatch ? driverMatch[1].trim() : '';
+
+          const colonIndex = line.indexOf(':');
+          const afterDriver = colonIndex >= 0 ? line.substring(colonIndex + 1) : '';
+
+          const parts = afterDriver.split(/[-–]/).map(p => p.trim()).filter(p => p);
+          const pickupText = parts[0] || '';
+          let deliveryText = parts[1] || '';
 
         // Third part is usually container code
         let containerCode = '';
@@ -272,6 +347,7 @@ export default function OrdersPage() {
           delivery_contact: deliveryContact,
           customer_id: '', // Will be selected by user
         });
+        }
       } catch (e) {
         console.error('Failed to parse line:', line, e);
       }
@@ -280,14 +356,197 @@ export default function OrdersPage() {
     return orders;
   };
 
-  const handleParseText = () => {
-    const orders = parseOrderText(quickCreateText);
-    setParsedOrders(orders);
+  // AI-powered parsing
+  const parseOrderTextWithAI = async (text: string) => {
+    setIsParsing(true);
+
+    try {
+      // Fetch customers and sites for AI context
+      const [customersData, sitesData] = await Promise.all([
+        apiFetch<Customer[]>("/customers/unified"),
+        apiFetch<Site[]>("/sites")
+      ]);
+
+      // Call AI parsing endpoint
+      const result = await apiFetch<{
+        success: boolean;
+        order_data: any[];
+        provider_used: string;
+        cost_estimate?: number;
+        error?: string;
+      }>("/ai-assistant/parse-message", {
+        method: "POST",
+        body: JSON.stringify({
+          message: text,
+          context: {
+            customers: customersData.map(c => ({
+              id: c.id,
+              code: c.code,
+              name: c.name,
+            })),
+            sites: sitesData.map(s => ({
+              id: s.id,
+              code: s.code,
+              company_name: s.company_name,
+              detailed_address: s.detailed_address
+            })),
+            task: "order_extraction_with_customer_match"
+          },
+          feature: "order_extraction",
+        })
+      });
+
+      if (!result.success) {
+        throw new Error(result.error || "AI parsing failed");
+      }
+
+      // Parse response - AI returns array directly
+      let aiOrders = result.order_data;
+      if (!Array.isArray(aiOrders)) {
+        // If AI returned single object, wrap in array
+        aiOrders = [aiOrders];
+      }
+
+      // Format for UI
+      const orders = aiOrders.map((order: any) => ({
+        line_number: order.line_number || 0,
+        driver_name: order.driver_name || "",
+        pickup_text: order.pickup_text || "",
+        delivery_text: order.delivery_text || "",
+        container_code: order.container_code || "",
+        equipment: order.equipment || "40",
+        cargo_note: order.cargo_note || "",
+        pickup_date: order.pickup_date || "",
+        delivery_date: order.delivery_date || "",
+        delivery_shift: order.delivery_shift || "morning",
+        delivery_address: order.delivery_address || "",
+        delivery_contact: order.delivery_contact || "",
+        customer_id: order.customer_id || "", // AUTO-ASSIGNED by AI!
+        selected: true,
+        ambiguous: order.ambiguous || false,
+        customer_match_confidence: order.customer_match_confidence || 0
+      }));
+
+      setParsedOrders(orders);
+
+      // Show success toast with cost
+      const cost = result.cost_estimate || 0;
+      const provider = result.provider_used || "AI";
+      alert(`✅ Parsed ${orders.length} orders using ${provider}. Cost: $${cost.toFixed(4)}`);
+
+      // Check if sites exist after AI parsing
+      await checkSitesExist(orders);
+
+    } catch (err: any) {
+      console.error("AI parsing failed:", err);
+      alert(`❌ AI parsing failed: ${err.message}. Falling back to regex parser...`);
+
+      // Fallback to old regex parser
+      const fallbackOrders = parseOrderText(text);
+      setParsedOrders(fallbackOrders);
+      // Check sites for fallback orders too
+      await checkSitesExist(fallbackOrders);
+    } finally {
+      setIsParsing(false);
+    }
+  };
+
+  const handleParseText = async () => {
+    if (!quickCreateText.trim()) {
+      alert("Vui lòng nhập văn bản đơn hàng");
+      return;
+    }
+
+    // Reset site check states
+    setMissingSites([]);
+    setSiteCheckResults({});
+
+    if (useAI) {
+      parseOrderTextWithAI(quickCreateText);
+    } else {
+      // Regex parser - hỗ trợ cả 2 format
+      const orders = parseOrderText(quickCreateText);
+      if (orders.length === 0) {
+        alert("Không parse được đơn hàng nào. Vui lòng kiểm tra format.");
+      } else {
+        setParsedOrders(orders);
+        // Check if sites exist after parsing
+        await checkSitesExist(orders);
+      }
+    }
+  };
+
+  // Helper function to check if sites exist (without auto-creating)
+  const checkSitesExist = async (orders: typeof parsedOrders) => {
+    // Collect unique site texts to check
+    const sitesToCheck: Array<{search_text: string; type: string}> = [];
+    const seenTexts = new Set<string>();
+
+    for (const order of orders) {
+      if (order.pickup_text && !seenTexts.has(`pickup:${order.pickup_text}`)) {
+        sitesToCheck.push({ search_text: order.pickup_text, type: "pickup" });
+        seenTexts.add(`pickup:${order.pickup_text}`);
+      }
+      if (order.delivery_text && !seenTexts.has(`delivery:${order.delivery_text}`)) {
+        sitesToCheck.push({ search_text: order.delivery_text, type: "delivery" });
+        seenTexts.add(`delivery:${order.delivery_text}`);
+      }
+    }
+
+    if (sitesToCheck.length === 0) return;
+
+    try {
+      const response = await apiFetch<{results: Array<{
+        search_text: string;
+        type: string;
+        found: boolean;
+        site: {id: string; code: string; company_name: string} | null;
+        suggestions: Array<{id: string; code: string; company_name: string}>;
+      }>}>("/sites/check", {
+        method: "POST",
+        body: JSON.stringify({ sites: sitesToCheck }),
+      });
+
+      // Build results map
+      const resultsMap: Record<string, {found: boolean; site_id?: string}> = {};
+      const missing: typeof missingSites = [];
+
+      for (const result of response.results) {
+        const key = `${result.type}:${result.search_text}`;
+        resultsMap[key] = {
+          found: result.found,
+          site_id: result.site?.id
+        };
+
+        if (!result.found) {
+          missing.push({
+            search_text: result.search_text,
+            type: result.type as "pickup" | "delivery",
+            suggestions: result.suggestions
+          });
+        }
+      }
+
+      setSiteCheckResults(resultsMap);
+
+      if (missing.length > 0) {
+        setMissingSites(missing);
+        setShowMissingSitesModal(true);
+      }
+    } catch (err) {
+      console.error('Failed to check sites:', err);
+    }
   };
 
   // Helper function to find or create site from text
   const findOrCreateSite = async (searchText: string, siteType: string): Promise<string | null> => {
     if (!searchText || searchText.trim() === '') return null;
+
+    // Check if we already have the result from pre-check
+    const key = `${siteType.toLowerCase()}:${searchText}`;
+    if (siteCheckResults[key]?.found && siteCheckResults[key]?.site_id) {
+      return siteCheckResults[key].site_id!;
+    }
 
     try {
       const result = await apiFetch<{site: {id: string} | null; created: boolean}>("/sites/find-or-create", {
@@ -330,15 +589,11 @@ export default function OrdersPage() {
         const pickupSiteId = await findOrCreateSite(order.pickup_text, "PICKUP");
         const deliverySiteId = await findOrCreateSite(order.delivery_text, "DELIVERY");
 
-        // Step 2: Create the order with order_code from customer_code + line_number
-        // Format: ADG-185 (customer_code-line_number)
-        const customer = customers.find(c => c.id === order.customer_id);
-        const customerCode = customer?.code || 'ORD';
-        const orderCode = `${customerCode}-${order.line_number}`;
-
+        // Step 2: Create the order
+        // Backend will auto-generate order_code using sequence (e.g., ADG-1, ADG-2, ADG-3, ...)
         const createPayload: Record<string, unknown> = {
           customer_id: order.customer_id,
-          order_code: orderCode, // Format: ADG-185
+          // order_code is NOT sent - backend will auto-generate from sequence
           pickup_text: order.pickup_text,
           delivery_text: order.delivery_text,
           pickup_site_id: pickupSiteId,
@@ -1156,7 +1411,11 @@ export default function OrdersPage() {
           </div>
           <div className="flex gap-2">
             <button
-              onClick={() => setShowQuickCreateModal(true)}
+              onClick={() => {
+                setShowQuickCreateModal(true);
+                setIsParsing(false); // Reset parsing state
+                setParsedOrders([]); // Clear previous results
+              }}
               className="px-3 py-1.5 text-sm bg-green-600 text-white rounded hover:bg-green-700"
             >
               {t("createFromText")}
@@ -2433,6 +2692,91 @@ export default function OrdersPage() {
       )}
 
       {/* Quick Create from Text Modal */}
+      {/* Missing Sites Warning Modal */}
+      {showMissingSitesModal && missingSites.length > 0 && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[60]">
+          <div className="bg-white rounded-lg shadow-xl max-w-lg w-full">
+            <div className="p-5">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-lg font-bold text-orange-600 flex items-center gap-2">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  Site chưa tồn tại
+                </h2>
+                <button
+                  onClick={() => setShowMissingSitesModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <p className="text-sm text-gray-600 mb-4">
+                Các địa điểm sau chưa có trong hệ thống. Bạn có thể tạo mới hoặc bỏ qua (hệ thống sẽ tự động tạo khi tạo đơn).
+              </p>
+
+              <div className="space-y-3 max-h-[300px] overflow-y-auto">
+                {missingSites.map((site, idx) => (
+                  <div key={idx} className="p-3 border rounded-lg bg-orange-50 border-orange-200">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <span className={`text-xs px-2 py-0.5 rounded ${site.type === 'pickup' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}`}>
+                          {site.type === 'pickup' ? 'Lấy hàng' : 'Giao hàng'}
+                        </span>
+                        <p className="font-medium mt-1">{site.search_text}</p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          // Open site creation page in new tab with pre-filled data
+                          const params = new URLSearchParams({
+                            company_name: site.search_text,
+                            site_type: site.type.toUpperCase()
+                          });
+                          window.open(`/tms/sites/new?${params.toString()}`, '_blank');
+                        }}
+                        className="text-xs px-3 py-1 bg-orange-500 text-white rounded hover:bg-orange-600"
+                      >
+                        Tạo Site
+                      </button>
+                    </div>
+                    {site.suggestions.length > 0 && (
+                      <div className="mt-2 text-xs text-gray-500">
+                        <span>Gợi ý: </span>
+                        {site.suggestions.slice(0, 3).map((s, i) => (
+                          <span key={s.id} className="text-blue-600">
+                            {s.company_name}{i < Math.min(site.suggestions.length, 3) - 1 ? ', ' : ''}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex justify-end gap-2 mt-4 pt-4 border-t">
+                <button
+                  onClick={() => setShowMissingSitesModal(false)}
+                  className="text-sm px-4 py-2 border rounded hover:bg-gray-50"
+                >
+                  Bỏ qua, tự động tạo
+                </button>
+                <button
+                  onClick={() => {
+                    setShowMissingSitesModal(false);
+                    // Refresh sites list in case user created new ones
+                    fetchSites();
+                  }}
+                  className="text-sm px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                >
+                  Đã tạo xong, tiếp tục
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showQuickCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
@@ -2445,11 +2789,46 @@ export default function OrdersPage() {
                     setQuickCreateText('');
                     setParsedOrders([]);
                     setQuickCreateStatus({ creating: false, results: [] });
+                    setMissingSites([]);
+                    setSiteCheckResults({});
                   }}
                   className="text-gray-400 hover:text-gray-600"
                 >
                   ✕
                 </button>
+              </div>
+
+              {/* AI Parsing Controls */}
+              <div className="mb-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                <div className="flex items-center gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={useAI}
+                      onChange={(e) => setUseAI(e.target.checked)}
+                      className="w-4 h-4 text-blue-600"
+                    />
+                    <span className="text-sm font-medium">🤖 Use AI Parsing</span>
+                  </label>
+
+                  {useAI && (
+                    <select
+                      value={aiProvider}
+                      onChange={(e) => setAiProvider(e.target.value as any)}
+                      className="text-xs border rounded px-2 py-1.5 bg-white"
+                    >
+                      <option value="gemini">Gemini Flash (Cheapest, ~$0.0001/batch)</option>
+                      <option value="claude-haiku">Claude Haiku (Fast, ~$0.001/batch)</option>
+                      <option value="claude">Claude Sonnet (Best, ~$0.01/batch)</option>
+                    </select>
+                  )}
+
+                  {useAI && (
+                    <span className="text-xs text-gray-500">
+                      ✅ Auto-assign customer & create sites
+                    </span>
+                  )}
+                </div>
               </div>
 
               <div className="mb-4">
@@ -2469,9 +2848,20 @@ export default function OrdersPage() {
                   <button
                     type="button"
                     onClick={handleParseText}
-                    className="text-sm px-4 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700"
+                    disabled={isParsing}
+                    className="text-sm px-4 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                   >
-                    Phân tích Text
+                    {isParsing ? (
+                      <>
+                        <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        {useAI ? "AI Parsing..." : "Parsing..."}
+                      </>
+                    ) : (
+                      "Phân tích Text"
+                    )}
                   </button>
                 </div>
               </div>
@@ -2479,6 +2869,26 @@ export default function OrdersPage() {
               {/* Parsed Orders Preview */}
               {parsedOrders.length > 0 && (
                 <div className="border-t pt-4">
+                  {/* Missing Sites Warning Banner */}
+                  {missingSites.length > 0 && (
+                    <div className="mb-3 p-3 bg-orange-50 border border-orange-200 rounded-lg flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <svg className="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        <span className="text-sm text-orange-700">
+                          <strong>{missingSites.length} địa điểm</strong> chưa tồn tại trong hệ thống (đánh dấu màu cam)
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => setShowMissingSitesModal(true)}
+                        className="text-xs px-3 py-1 bg-orange-500 text-white rounded hover:bg-orange-600"
+                      >
+                        Xem chi tiết
+                      </button>
+                    </div>
+                  )}
+
                   <div className="flex justify-between items-center mb-3">
                     <h3 className="text-sm font-semibold">
                       Đơn hàng được phân tích ({parsedOrders.length} đơn)
@@ -2524,11 +2934,17 @@ export default function OrdersPage() {
                           <tr key={idx} className="hover:bg-gray-50">
                             <td className="px-2 py-1.5 border-b">{order.line_number}</td>
                             <td className="px-2 py-1.5 border-b">{order.driver_name}</td>
-                            <td className="px-2 py-1.5 border-b max-w-[120px] truncate" title={order.pickup_text}>
+                            <td className={`px-2 py-1.5 border-b max-w-[120px] truncate ${!siteCheckResults[`pickup:${order.pickup_text}`]?.found && order.pickup_text ? 'bg-orange-100' : ''}`} title={order.pickup_text}>
                               {order.pickup_text}
+                              {!siteCheckResults[`pickup:${order.pickup_text}`]?.found && order.pickup_text && (
+                                <span className="text-orange-500 ml-1" title="Site chưa tồn tại">⚠</span>
+                              )}
                             </td>
-                            <td className="px-2 py-1.5 border-b max-w-[120px] truncate" title={order.delivery_text}>
+                            <td className={`px-2 py-1.5 border-b max-w-[120px] truncate ${!siteCheckResults[`delivery:${order.delivery_text}`]?.found && order.delivery_text ? 'bg-orange-100' : ''}`} title={order.delivery_text}>
                               {order.delivery_text}
+                              {!siteCheckResults[`delivery:${order.delivery_text}`]?.found && order.delivery_text && (
+                                <span className="text-orange-500 ml-1" title="Site chưa tồn tại">⚠</span>
+                              )}
                             </td>
                             <td className="px-2 py-1.5 border-b font-mono">{order.container_code}</td>
                             <td className="px-2 py-1.5 border-b">{order.equipment}ft</td>
