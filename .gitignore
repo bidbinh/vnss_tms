@@ -61,7 +61,6 @@ openapi_output.txt
 crm_sync_check.py
 web/
 docs/
-tools/
 
 # Ops - track deploy scripts but ignore .env
 ops/.env
