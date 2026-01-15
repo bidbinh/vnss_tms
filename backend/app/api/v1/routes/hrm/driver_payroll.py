@@ -20,7 +20,7 @@ from app.core.security import get_current_user
 from app.services.order_status_logger import get_delivered_date
 from app.services.salary_calculator import calculate_trip_salary
 from app.services.distance_calculator import get_distance_from_rates
-from app.services.workflow_integration import submit_for_approval
+from app.services.workflow_integration import WorkflowIntegrationService
 from app.models import DriverSalarySetting
 
 router = APIRouter(prefix="/hrm/driver-payroll", tags=["driver-payroll"])
@@ -250,8 +250,8 @@ def create_driver_payroll(
 
     # Submit for workflow approval
     try:
-        workflow_instance = submit_for_approval(
-            session=session,
+        workflow_service = WorkflowIntegrationService(session)
+        workflow_instance = workflow_service.submit_for_approval(
             entity_module="HRM",
             entity_type="DriverPayroll",
             entity_id=payroll.id,
