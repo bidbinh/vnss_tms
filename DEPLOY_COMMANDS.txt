@@ -1,0 +1,44 @@
+# Copy và paste từng block lệnh này vào terminal server
+
+# ============================================
+# BƯỚC 1: Pull code mới nhất
+# ============================================
+cd ~/apps/vnss_tms
+git pull origin main
+
+# ============================================
+# BƯỚC 2: Deploy Backend
+# ============================================
+cd ~/apps/vnss_tms/backend
+source venv/bin/activate
+pip install -r requirements.txt
+alembic upgrade head
+sudo systemctl restart vnss-tms-backend
+sudo systemctl status vnss-tms-backend
+
+# Xem logs nếu cần:
+# sudo journalctl -u vnss-tms-backend -f --lines=50
+
+# ============================================
+# BƯỚC 3: Deploy Frontend
+# ============================================
+cd ~/apps/vnss_tms/frontend
+npm install
+npm run build
+pm2 restart vnss-tms-frontend
+pm2 status
+
+# Xem logs nếu cần:
+# pm2 logs vnss-tms-frontend --lines 50
+
+# ============================================
+# BƯỚC 4: Verify
+# ============================================
+curl https://api.9log.tech/health
+curl -I https://9log.tech
+
+# ============================================
+# DONE! 🎉
+# ============================================
+# Frontend: https://9log.tech/hrm/driver-payroll
+# Backend API: https://api.9log.tech/api/v1/hrm/driver-payroll
