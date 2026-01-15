@@ -11,13 +11,12 @@ from app.models.base import BaseUUIDModel, TimestampMixin, TenantScoped
 
 
 class DriverPayrollStatus(str, Enum):
-    """Driver payroll status"""
-    DRAFT = "DRAFT"                                    # Nháp - Dispatcher tạo
-    PENDING_HR_REVIEW = "PENDING_HR_REVIEW"           # Chờ HR duyệt
-    PENDING_DRIVER_CONFIRM = "PENDING_DRIVER_CONFIRM" # Chờ tài xế xác nhận
-    CONFIRMED = "CONFIRMED"                            # Đã xác nhận - distance_km locked
-    PAID = "PAID"                                      # Đã chi trả
-    REJECTED = "REJECTED"                              # Bị từ chối
+    """Driver payroll status - Simplified workflow"""
+    DRAFT = "DRAFT"                    # Nháp - Dispatcher đang tạo/chỉnh sửa
+    PENDING_REVIEW = "PENDING_REVIEW"  # Đã gửi - Chờ Driver + HR review
+    CONFIRMED = "CONFIRMED"            # Driver đã xác nhận (hoặc auto sau 3 ngày)
+    PAID = "PAID"                      # Đã thanh toán
+    DISPUTED = "DISPUTED"              # Tài xế khiếu nại
 
 
 class DriverPayroll(BaseUUIDModel, TimestampMixin, TenantScoped, SQLModel, table=True):
@@ -37,32 +36,35 @@ class DriverPayroll(BaseUUIDModel, TimestampMixin, TenantScoped, SQLModel, table
 
     # Status & Workflow
     status: str = Field(default=DriverPayrollStatus.DRAFT.value, index=True, max_length=50)
-    workflow_instance_id: Optional[str] = Field(
-        default=None,
-        foreign_key="wf_instances.id",
-        index=True
-    )
+    # Note: workflow_instance_id has no FK constraint to avoid permission issues
+    workflow_instance_id: Optional[str] = Field(default=None, index=True)
 
     # Trip Snapshot (Locked distance_km)
     # JSON array of trips with locked distance_km values
-    # Format: [{"order_id": "xxx", "order_code": "ADG-123", "distance_km": 100, "calculated_salary": 500000, ...}, ...]
+    # Format: [{"order_id": "xxx", "order_code": "ADG-123", "distance_km": 100, "trip_salary": 500000, ...}, ...]
     trip_snapshot: dict = Field(default={}, sa_column=Column(JSON))
+
+    # Adjustments (điều chỉnh lương - thiếu/sai tháng trước, thưởng, phạt...)
+    # Format: [{"reason": "Thiếu chuyến T11", "amount": 500000}, {"reason": "Phạt vi phạm", "amount": -200000}]
+    adjustments: dict = Field(default=[], sa_column=Column(JSON))
 
     # Totals
     total_trips: int = Field(default=0)
     total_distance_km: int = Field(default=0)
-    total_salary: int = Field(default=0)              # Gross salary from trips
-    total_bonuses: int = Field(default=0)             # Monthly trip bonuses (45-50, 51-54, 55+ trips)
-    total_deductions: int = Field(default=0)          # Insurance, tax, advances
-    net_salary: int = Field(default=0)                # Total after deductions
+    total_trip_salary: int = Field(default=0)         # Lương từ các chuyến trong tháng
+    total_adjustments: int = Field(default=0)         # Tổng điều chỉnh (+/-)
+    total_bonuses: int = Field(default=0)             # Thưởng chuyến (45-50, 51-54, 55+)
+    total_deductions: int = Field(default=0)          # Khấu trừ (bảo hiểm, tạm ứng...)
+    net_salary: int = Field(default=0)                # Thực lĩnh = trip_salary + adjustments + bonuses - deductions
 
     # Workflow Timestamps
     created_by_id: str = Field(foreign_key="users.id", index=True, nullable=False)  # DISPATCHER
-    confirmed_by_driver_at: Optional[datetime] = Field(default=None)
-    confirmed_by_hr_at: Optional[datetime] = Field(default=None)
-    paid_at: Optional[datetime] = Field(default=None)
+    submitted_at: Optional[datetime] = Field(default=None)              # Thời điểm gửi review
+    confirmed_by_driver_at: Optional[datetime] = Field(default=None)    # Driver xác nhận
+    confirmed_by_hr_at: Optional[datetime] = Field(default=None)        # HR duyệt
+    paid_at: Optional[datetime] = Field(default=None)                   # Đã thanh toán
 
     # Notes
-    notes: Optional[str] = Field(default=None, max_length=2000)
-    driver_notes: Optional[str] = Field(default=None, max_length=2000)  # Driver's comments when rejecting
-    hr_notes: Optional[str] = Field(default=None, max_length=2000)      # HR's comments
+    notes: Optional[str] = Field(default=None, max_length=2000)         # Ghi chú của Dispatcher
+    driver_notes: Optional[str] = Field(default=None, max_length=2000)  # Ghi chú/khiếu nại của Driver
+    hr_notes: Optional[str] = Field(default=None, max_length=2000)      # Ghi chú của HR

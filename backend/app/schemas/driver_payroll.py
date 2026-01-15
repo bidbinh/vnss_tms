@@ -62,10 +62,14 @@ class DriverPayrollRead(BaseModel):
     # Trip snapshot
     trip_snapshot: Dict[str, Any] = {}
 
+    # Adjustments
+    adjustments: List[Dict[str, Any]] = []
+
     # Totals
     total_trips: int = 0
     total_distance_km: int = 0
-    total_salary: int = 0
+    total_trip_salary: int = 0
+    total_adjustments: int = 0
     total_bonuses: int = 0
     total_deductions: int = 0
     net_salary: int = 0
@@ -73,6 +77,7 @@ class DriverPayrollRead(BaseModel):
     # Workflow timestamps
     created_by_id: str
     created_by_name: Optional[str] = None  # Resolved from user
+    submitted_at: Optional[datetime] = None
     confirmed_by_driver_at: Optional[datetime] = None
     confirmed_by_hr_at: Optional[datetime] = None
     paid_at: Optional[datetime] = None
