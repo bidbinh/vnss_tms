@@ -124,6 +124,9 @@ import {
   Hammer,
   Cog,
   GitMerge,
+  // OMS Icons
+  ShoppingCart,
+  PackageOpen,
   type LucideIcon,
 } from "lucide-react";
 
@@ -314,7 +317,6 @@ const HRM_CONFIG: ModuleConfig = {
       labelKey: "nav.groups.payroll",
       items: [
         { labelKey: "hrm.payroll", href: "/hrm/payroll", icon: CreditCard },
-        { labelKey: "hrm.driverPayroll", href: "/hrm/driver-payroll", icon: Truck },
         { labelKey: "hrm.salaryStructure", href: "/hrm/salary-structure", icon: DollarSign },
         { labelKey: "hrm.incomeTaxSettings", href: "/hrm/income-tax-settings", icon: FileText },
         { labelKey: "hrm.bonuses", href: "/hrm/bonuses", icon: Award },
@@ -906,6 +908,39 @@ const DMS_CONFIG: ModuleConfig = {
   ],
 };
 
+const OMS_CONFIG: ModuleConfig = {
+  key: "oms",
+  labelKey: "nav.modules.oms",
+  icon: ShoppingCart,
+  dashboard: [{ labelKey: "nav.omsDashboard", href: "/oms", icon: ShoppingCart }],
+  groups: [
+    {
+      key: "omsOrders",
+      labelKey: "nav.groups.orders",
+      items: [
+        { labelKey: "oms.orders", href: "/oms/orders", icon: ShoppingCart },
+        { labelKey: "oms.allocations", href: "/oms/allocations", icon: Boxes },
+        { labelKey: "oms.shipments", href: "/oms/shipments", icon: Truck },
+      ],
+    },
+    {
+      key: "omsApprovals",
+      labelKey: "nav.groups.approvals",
+      items: [
+        { labelKey: "oms.priceApprovals", href: "/oms/price-approvals", icon: CheckSquare },
+      ],
+    },
+    {
+      key: "omsReports",
+      labelKey: "nav.groups.reports",
+      items: [
+        { labelKey: "oms.salesReport", href: "/oms/reports/sales", icon: BarChart3 },
+        { labelKey: "oms.orderAnalytics", href: "/oms/reports/analytics", icon: PieChart },
+      ],
+    },
+  ],
+};
+
 const SETTINGS_CONFIG: ModuleConfig = {
   key: "settings",
   labelKey: "nav.modules.settings",
@@ -928,15 +963,16 @@ const SETTINGS_CONFIG: ModuleConfig = {
 
 // All modules in default order
 const ALL_MODULES: ModuleConfig[] = [
-  ACCOUNTING_CONFIG,
-  CRM_CONFIG,
-  HRM_CONFIG,
   TMS_CONFIG,
+  OMS_CONFIG,
   WMS_CONFIG,
   FMS_CONFIG,
   PMS_CONFIG,
   EMS_CONFIG,
   MES_CONFIG,
+  CRM_CONFIG,
+  HRM_CONFIG,
+  ACCOUNTING_CONFIG,
   CONTROLLING_CONFIG,
   PROJECT_CONFIG,
   WORKFLOW_CONFIG,
@@ -1168,7 +1204,20 @@ export default function Sidebar() {
     if (savedModuleOrder) {
       try {
         const parsed = JSON.parse(savedModuleOrder);
-        setModuleOrder(parsed);
+        // Merge with ALL_MODULES to include any new modules
+        const allModuleKeys = ALL_MODULES.map(m => m.key);
+        const merged = [...parsed];
+
+        // Add new modules that don't exist in saved order
+        for (const key of allModuleKeys) {
+          if (!merged.includes(key)) {
+            // Find the position in ALL_MODULES and insert at same relative position
+            const defaultIndex = allModuleKeys.indexOf(key);
+            merged.splice(defaultIndex, 0, key);
+          }
+        }
+
+        setModuleOrder(merged);
       } catch (e) {
         console.error("Failed to parse module order", e);
       }

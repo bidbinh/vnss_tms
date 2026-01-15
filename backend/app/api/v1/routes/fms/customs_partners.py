@@ -82,8 +82,8 @@ def list_exporters(
     page_size: int = Query(50, ge=1, le=500),
     search: Optional[str] = None,
     is_active: Optional[bool] = None,
-    sort_by: str = Query("seq_no", regex="^(seq_no|name|country_code|created_at)$"),
-    sort_order: str = Query("asc", regex="^(asc|desc)$"),
+    sort_by: str = Query("seq_no", pattern="^(seq_no|name|country_code|created_at)$"),
+    sort_order: str = Query("asc", pattern="^(asc|desc)$"),
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
@@ -343,8 +343,8 @@ def list_importers(
     page_size: int = Query(50, ge=1, le=500),
     search: Optional[str] = None,
     is_active: Optional[bool] = None,
-    sort_by: str = Query("seq_no", regex="^(seq_no|name|tax_code|created_at)$"),
-    sort_order: str = Query("asc", regex="^(asc|desc)$"),
+    sort_by: str = Query("seq_no", pattern="^(seq_no|name|tax_code|created_at)$"),
+    sort_order: str = Query("asc", pattern="^(asc|desc)$"),
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
@@ -571,8 +571,8 @@ def list_locations(
     search: Optional[str] = None,
     location_type: Optional[str] = None,
     is_active: Optional[bool] = None,
-    sort_by: str = Query("seq_no", regex="^(seq_no|code|name|location_type|created_at)$"),
-    sort_order: str = Query("asc", regex="^(asc|desc)$"),
+    sort_by: str = Query("seq_no", pattern="^(seq_no|code|name|location_type|created_at)$"),
+    sort_order: str = Query("asc", pattern="^(asc|desc)$"),
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):

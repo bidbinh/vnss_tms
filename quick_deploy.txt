@@ -1,0 +1,15 @@
+================================================================================
+  QUICK DEPLOY - Copy toàn bộ và paste vào terminal server
+================================================================================
+
+cd ~/apps/vnss_tms && \
+git pull origin main && \
+chmod +x auto_deploy.sh && \
+./auto_deploy.sh
+
+================================================================================
+  Giải thích:
+  - Lệnh này sẽ tự động pull code mới và chạy deploy script
+  - Thời gian: 3-5 phút
+  - Nếu có lỗi, script sẽ dừng và báo chi tiết
+================================================================================

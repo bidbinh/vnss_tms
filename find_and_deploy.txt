@@ -1,0 +1,8 @@
+# Chạy lệnh này để tìm thư mục vnss_tms:
+find /home -name "vnss_tms" -type d 2>/dev/null
+
+# Hoặc:
+find / -name "vnss_tms" -type d 2>/dev/null | head -5
+
+# Sau khi tìm được đường dẫn, thay thế vào lệnh deploy:
+# cd /DUNG_DUONG_DAN_TIM_DUOC && git pull origin main && ...

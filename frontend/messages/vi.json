@@ -234,6 +234,8 @@
         "fixedAssetsDesc": "Quản lý tài sản và khấu hao",
         "journalEntries": "Bút toán nhật ký",
         "journalEntriesDesc": "Tạo và quản lý các bút toán kế toán",
+        "payrollPayments": "Thanh toán lương tài xế",
+        "payrollPaymentsDesc": "Xác nhận và thanh toán lương cho tài xế",
         "reports": "Báo cáo tài chính",
         "reportsDesc": "Bảng cân đối, Kết quả kinh doanh, Lưu chuyển tiền tệ",
         "tax": "Thuế",
@@ -2777,6 +2779,7 @@
       "fms": "FMS - Giao nhận",
       "hrm": "HRM - Nhân sự",
       "mes": "MES - Sản xuất",
+      "oms": "OMS - Đơn hàng",
       "pms": "PMS - Cảng/Depot",
       "project": "Project - Dự án",
       "settings": "Settings - Cài đặt",
@@ -2785,6 +2788,7 @@
       "workflow": "Workflow - Quy trình"
     },
     "myTasks": "Công việc của tôi",
+    "omsDashboard": "OMS Dashboard",
     "pmsDashboard": "PMS Dashboard",
     "project": "Dự án",
     "projectDashboard": "Project Dashboard",
@@ -3530,7 +3534,50 @@
       },
       "title": "Quản lý lương tài xế",
       "totalTripSalaryLabel": "TỔNG LƯƠNG CHUYẾN:",
-      "viewTrips": "Xem chuyến"
+      "viewTrips": "Xem chuyến",
+      "confirmGenerateAll": "Tạo bảng lương cho tất cả tài xế có chuyến trong tháng này?",
+      "confirmSubmit": "Gửi bảng lương này để review?",
+      "confirmDelete": "Xóa bảng lương này?",
+      "submitSuccess": "Đã gửi bảng lương thành công",
+      "confirmSuccess": "Đã xác nhận bảng lương",
+      "paidSuccess": "Đã đánh dấu thanh toán",
+      "status": {
+        "draft": "Nháp",
+        "pendingReview": "Chờ xác nhận",
+        "confirmed": "Đã xác nhận",
+        "paid": "Đã thanh toán",
+        "disputed": "Khiếu nại"
+      },
+      "payroll": {
+        "toggle": "Bảng kê lương",
+        "title": "Quản lý bảng kê lương",
+        "generateAll": "Tạo bảng lương tất cả",
+        "generating": "Đang tạo...",
+        "driver": "Tài xế",
+        "trips": "Chuyến",
+        "tripSalary": "Lương chuyến",
+        "adjustments": "Điều chỉnh",
+        "bonuses": "Thưởng",
+        "netSalary": "Thực lĩnh",
+        "status": "Trạng thái",
+        "actions": "Thao tác",
+        "edit": "Sửa",
+        "submit": "Gửi",
+        "delete": "Xóa",
+        "confirm": "Xác nhận",
+        "markPaid": "Đã thanh toán",
+        "noPayrolls": "Chưa có bảng kê lương. Bấm 'Tạo bảng lương tất cả' để tạo.",
+        "editTitle": "Chỉnh sửa bảng lương - {name}",
+        "adjustmentsLabel": "Điều chỉnh lương",
+        "addAdjustment": "Thêm điều chỉnh",
+        "reasonPlaceholder": "Lý do (VD: Thiếu chuyến T11, Phạt...)",
+        "amountPlaceholder": "Số tiền (+/-)",
+        "noAdjustments": "Chưa có điều chỉnh nào",
+        "notesLabel": "Ghi chú",
+        "notesPlaceholder": "Ghi chú cho bảng lương...",
+        "save": "Lưu",
+        "cancel": "Hủy"
+      }
     },
     "driverSalarySettingsPage": {
       "actions": {
@@ -4545,6 +4592,7 @@
         "cargoNote": "Ghi chú hàng",
         "container": "Cont",
         "containerCode": "Số Cont",
+        "km": "Km",
         "custDate": "Ngày KH",
         "driver": "Tài xế",
         "etaDelivery": "ETA Giao",
@@ -4634,7 +4682,14 @@
         "new": "Mới",
         "processing": "Đang xử lý"
       },
-      "title": "Đơn hàng"
+      "title": "Đơn hàng",
+      "searchPlaceholder": "Tìm mã đơn, container, điểm lấy/giao, tài xế...",
+      "dateFrom": "Từ",
+      "dateTo": "Đến",
+      "driver": "Tài xế",
+      "allDrivers": "Tất cả",
+      "clearFilters": "Xóa bộ lọc",
+      "filteredCount": "{count} / {total} đơn"
     },
     "plReports": "Báo cáo lãi/lỗ",
     "rates": "Bảng giá",
@@ -5690,6 +5745,21 @@
       "copyright": "© 2025 9log.tech · Bản quyền thuộc Công ty TNHH Công nghệ 9Log",
       "terms": "Điều khoản",
       "privacy": "Bảo mật"
+    }
+  },
+  "oms": {
+    "orders": "Đơn Hàng",
+    "allocations": "Phân Bổ Kho",
+    "shipments": "Vận Chuyển",
+    "priceApprovals": "Duyệt Giá",
+    "salesReport": "Báo Cáo Doanh Số",
+    "orderAnalytics": "Phân Tích Đơn Hàng"
+  },
+  "admin": {
+    "moduleGroups": {
+      "operations": "Vận hành",
+      "office": "Office",
+      "tools": "Công cụ"
     }
   }
 }

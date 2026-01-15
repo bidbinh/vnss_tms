@@ -18,6 +18,7 @@ import {
   ArrowDownRight,
   Database,
   Loader2,
+  Truck,
 } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 
@@ -32,6 +33,13 @@ interface DashboardData {
 }
 
 const QUICK_LINKS_CONFIG = [
+  {
+    titleKey: "quickLinks.payrollPayments",
+    descKey: "quickLinks.payrollPaymentsDesc",
+    href: "/accounting/payroll-payments",
+    icon: Truck,
+    color: "bg-green-600",
+  },
   {
     titleKey: "quickLinks.chartOfAccounts",
     descKey: "quickLinks.chartOfAccountsDesc",

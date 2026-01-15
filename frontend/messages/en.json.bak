@@ -5702,12 +5702,5 @@
     "priceApprovals": "Price Approvals",
     "salesReport": "Sales Report",
     "orderAnalytics": "Order Analytics"
-  },
-  "admin": {
-    "moduleGroups": {
-      "operations": "Operations",
-      "office": "Office",
-      "tools": "Tools"
-    }
   }
 }

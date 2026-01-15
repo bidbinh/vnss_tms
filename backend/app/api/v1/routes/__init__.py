@@ -64,6 +64,8 @@ from app.api.v1.routes.dispatcher_orders import router as dispatcher_orders_rout
 from app.api.v1.routes.ai_chat import router as ai_chat_router
 from app.api.v1.routes.user_tasks import router as user_tasks_router
 from app.api.v1.routes.ai_config import router as ai_config_router
+from app.api.v1.routes.bank_payment import router as bank_payment_router
+from app.api.v1.routes.oms import oms_router
 
 # Actor-Based Architecture Routes
 from app.api.v1.routes.actors import router as actors_router
@@ -141,3 +143,9 @@ api_router.include_router(unified_orders_router, tags=["Unified Orders"])
 
 # AI Configuration (Super Admin)
 api_router.include_router(ai_config_router, tags=["AI Configuration"])
+
+# Bank Payment Integration
+api_router.include_router(bank_payment_router, tags=["Bank Payment"])
+
+# OMS - Order Management System
+api_router.include_router(oms_router, prefix="/oms", tags=["OMS"])

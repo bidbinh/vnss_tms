@@ -13,6 +13,7 @@ const DEFAULT_COLUMN_WIDTHS = {
   route: 180,
   container: 60,
   containerCode: 100,
+  km: 50,
   cargoNote: 200,
   etaPickup: 80,
   etaDelivery: 80,
@@ -96,6 +97,7 @@ interface Order {
   customer_requested_date?: string;
   created_at: string;
   order_date: string;
+  distance_km?: number;  // Số km hành trình
   // Document fields
   container_receipt?: string;
   delivery_order_no?: string;
@@ -127,6 +129,12 @@ export default function OrdersPage() {
   // Sorting - default by customer_requested_date descending
   const [sortField, setSortField] = useState<SortField | null>("customer_requested_date");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
+
+  // Search and filters
+  const [searchKeyword, setSearchKeyword] = useState<string>("");
+  const [dateFrom, setDateFrom] = useState<string>("");
+  const [dateTo, setDateTo] = useState<string>("");
+  const [selectedDriverFilter, setSelectedDriverFilter] = useState<string>("");
 
   // Group by date - collapsed state (store date strings that are collapsed)
   const [collapsedDates, setCollapsedDates] = useState<Set<string>>(new Set());
@@ -736,7 +744,7 @@ export default function OrdersPage() {
 
   const fetchOrders = async () => {
     try {
-      const data = await apiFetch<Order[]>("/orders");
+      const data = await apiFetch<Order[]>("/orders?limit=500");
       setOrders(data);
       setError("");
     } catch (err: any) {
@@ -1245,15 +1253,66 @@ export default function OrdersPage() {
   };
 
 
-  // Filter by tab
+  // Filter by tab, search keyword, date range, and driver
   const filteredOrders = useMemo(() => {
-    if (activeTab === "ALL") return orders;
+    let result = orders;
+
+    // Filter by tab/status
     if (activeTab === "PROCESSING") {
-      // Đang xử lý = NEW + ASSIGNED + IN_TRANSIT (trước Delivered)
-      return orders.filter((o) => ["NEW", "ASSIGNED", "IN_TRANSIT"].includes(o.status));
+      result = result.filter((o) => ["NEW", "ASSIGNED", "IN_TRANSIT"].includes(o.status));
+    } else if (activeTab !== "ALL") {
+      result = result.filter((o) => o.status === activeTab);
     }
-    return orders.filter((o) => o.status === activeTab);
-  }, [orders, activeTab]);
+
+    // Filter by search keyword (order_code, container_code, cargo_note, pickup/delivery text, site codes)
+    if (searchKeyword.trim()) {
+      const keyword = searchKeyword.toLowerCase().trim();
+      result = result.filter((o) => {
+        const driverName = getDriverName(o.driver_id)?.toLowerCase() || "";
+        // Get site info for searching
+        const pickupSite = o.pickup_site_id ? sites.find(s => s.id === o.pickup_site_id) : null;
+        const deliverySite = o.delivery_site_id ? sites.find(s => s.id === o.delivery_site_id) : null;
+        const pickupSiteCode = pickupSite?.code?.toLowerCase() || "";
+        const pickupSiteName = pickupSite?.company_name?.toLowerCase() || "";
+        const deliverySiteCode = deliverySite?.code?.toLowerCase() || "";
+        const deliverySiteName = deliverySite?.company_name?.toLowerCase() || "";
+
+        return (
+          o.order_code?.toLowerCase().includes(keyword) ||
+          o.container_code?.toLowerCase().includes(keyword) ||
+          o.cargo_note?.toLowerCase().includes(keyword) ||
+          o.pickup_text?.toLowerCase().includes(keyword) ||
+          o.delivery_text?.toLowerCase().includes(keyword) ||
+          driverName.includes(keyword) ||
+          pickupSiteCode.includes(keyword) ||
+          pickupSiteName.includes(keyword) ||
+          deliverySiteCode.includes(keyword) ||
+          deliverySiteName.includes(keyword)
+        );
+      });
+    }
+
+    // Filter by date range (using customer_requested_date)
+    if (dateFrom) {
+      result = result.filter((o) => {
+        const orderDate = o.customer_requested_date || o.order_date;
+        return orderDate && orderDate >= dateFrom;
+      });
+    }
+    if (dateTo) {
+      result = result.filter((o) => {
+        const orderDate = o.customer_requested_date || o.order_date;
+        return orderDate && orderDate <= dateTo;
+      });
+    }
+
+    // Filter by driver
+    if (selectedDriverFilter) {
+      result = result.filter((o) => o.driver_id === selectedDriverFilter);
+    }
+
+    return result;
+  }, [orders, activeTab, searchKeyword, dateFrom, dateTo, selectedDriverFilter, sites]);
 
   // Sort
   const sortedOrders = useMemo(() => {
@@ -1385,7 +1444,7 @@ export default function OrdersPage() {
   // Reset to page 1 when filters or page size changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [activeTab, pageSize]);
+  }, [activeTab, pageSize, searchKeyword, dateFrom, dateTo, selectedDriverFilter]);
 
   const tabs = [
     { key: "ALL", label: t("tabs.all") },
@@ -1472,6 +1531,87 @@ export default function OrdersPage() {
           </div>
         </div>
 
+        {/* Filters Bar */}
+        <div className="px-6 py-2 bg-gray-50 border-b border-gray-200">
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Search */}
+            <div className="flex items-center gap-1">
+              <input
+                type="text"
+                value={searchKeyword}
+                onChange={(e) => setSearchKeyword(e.target.value)}
+                placeholder={t("searchPlaceholder") || "Tìm kiếm mã đơn, container, hàng..."}
+                className="text-xs border rounded px-2 py-1.5 w-56"
+              />
+              {searchKeyword && (
+                <button
+                  onClick={() => setSearchKeyword("")}
+                  className="text-gray-400 hover:text-gray-600 px-1"
+                  title="Xóa"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+
+            {/* Date Range */}
+            <div className="flex items-center gap-1">
+              <span className="text-xs text-gray-500">{t("dateFrom") || "Từ"}:</span>
+              <input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                className="text-xs border rounded px-2 py-1.5"
+              />
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="text-xs text-gray-500">{t("dateTo") || "Đến"}:</span>
+              <input
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                className="text-xs border rounded px-2 py-1.5"
+              />
+            </div>
+
+            {/* Driver Filter */}
+            <div className="flex items-center gap-1">
+              <span className="text-xs text-gray-500">{t("driver") || "Tài xế"}:</span>
+              <select
+                value={selectedDriverFilter}
+                onChange={(e) => setSelectedDriverFilter(e.target.value)}
+                className="text-xs border rounded px-2 py-1.5 min-w-[120px]"
+              >
+                <option value="">{t("allDrivers") || "Tất cả"}</option>
+                {drivers.map((d) => (
+                  <option key={d.id} value={d.id}>{d.short_name || d.name}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Clear All Filters */}
+            {(searchKeyword || dateFrom || dateTo || selectedDriverFilter) && (
+              <button
+                onClick={() => {
+                  setSearchKeyword("");
+                  setDateFrom("");
+                  setDateTo("");
+                  setSelectedDriverFilter("");
+                }}
+                className="text-xs text-blue-600 hover:text-blue-800 underline"
+              >
+                {t("clearFilters") || "Xóa bộ lọc"}
+              </button>
+            )}
+
+            {/* Results count */}
+            <div className="ml-auto text-xs text-gray-500">
+              {t("filteredCount", { count: filteredOrders.length, total: orders.length }) ||
+               `${filteredOrders.length} / ${orders.length} đơn`}
+            </div>
+          </div>
+        </div>
+
         <style jsx>{`
           .resizable-th {
             position: relative;
@@ -1531,6 +1671,10 @@ export default function OrdersPage() {
                 <th className="resizable-th px-2 py-2 text-left font-bold text-gray-700" style={{width: columnWidths.containerCode}}>
                   {t("columns.containerCode")}
                   <div className="resize-handle" onMouseDown={(e) => handleMouseDown(e, 'containerCode')} />
+                </th>
+                <th className="resizable-th px-2 py-2 text-right font-bold text-gray-700" style={{width: columnWidths.km}}>
+                  {t("columns.km") || "Km"}
+                  <div className="resize-handle" onMouseDown={(e) => handleMouseDown(e, 'km')} />
                 </th>
                 <th className="resizable-th px-2 py-2 text-left font-bold text-gray-700" style={{width: columnWidths.cargoNote}}>
                   {t("columns.cargoNote")}
@@ -1615,6 +1759,9 @@ export default function OrdersPage() {
                             </td>
                             <td className="px-2 py-2 wrap-cell font-mono text-gray-700" style={{width: columnWidths.containerCode}}>
                               {order.container_code || "—"}
+                            </td>
+                            <td className="px-2 py-2 text-right text-gray-700" style={{width: columnWidths.km}}>
+                              {order.distance_km || "—"}
                             </td>
                             <td className="px-2 py-2 text-gray-600 wrap-cell" style={{width: columnWidths.cargoNote}}>
                               {order.cargo_note || "—"}
@@ -1725,6 +1872,9 @@ export default function OrdersPage() {
                     </td>
                     <td className="px-2 py-2 wrap-cell font-mono text-gray-700" style={{width: columnWidths.containerCode}}>
                       {order.container_code || "—"}
+                    </td>
+                    <td className="px-2 py-2 text-right text-gray-700" style={{width: columnWidths.km}}>
+                      {order.distance_km || "—"}
                     </td>
                     <td className="px-2 py-2 text-gray-600 wrap-cell" style={{width: columnWidths.cargoNote}}>
                       {order.cargo_note || "—"}

@@ -33,7 +33,77 @@ const DEFAULT_COLUMN_WIDTHS: Record<string, number> = {
 interface Driver {
   id: string;
   name: string;
+  code?: string;
   short_name?: string;
+}
+
+interface Adjustment {
+  reason: string;
+  amount: number;
+}
+
+interface Payroll {
+  id: string;
+  driver_id: string;
+  driver_name: string | null;
+  driver_code: string | null;
+  year: number;
+  month: number;
+  status: string;
+  trip_snapshot: any;
+  adjustments: Adjustment[];
+  total_trips: number;
+  total_distance_km: number;
+  total_trip_salary: number;
+  total_adjustments: number;
+  total_bonuses: number;
+  total_deductions: number;
+  net_salary: number;
+  submitted_at: string | null;
+  confirmed_by_driver_at: string | null;
+  confirmed_by_hr_at: string | null;
+  paid_at: string | null;
+  notes: string | null;
+  driver_notes: string | null;
+  hr_notes: string | null;
+  created_at: string;
+  updated_at: string;
+  // Extended fields from salary report
+  base_salary?: number;
+  seniority_bonus?: number;
+  total_insurance?: number;
+  income_tax?: number;
+  advance_payment?: number;
+  gross_salary?: number;
+  final_net_salary?: number;  // Net salary after all deductions
+}
+
+interface DriverSalaryReport {
+  driver_id: string;
+  driver_name: string;
+  base_salary: number;
+  trips: any[];
+  trip_count: number;
+  total_trip_salary: number;
+  monthly_bonus: number;
+  seniority_bonus: number;
+  gross_salary: number;
+  deductions: {
+    gross_income: number;
+    social_insurance: number;
+    health_insurance: number;
+    unemployment_insurance: number;
+    total_insurance: number;
+    personal_deduction: number;
+    dependent_deduction: number;
+    total_deduction: number;
+    taxable_income: number;
+    income_tax: number;
+    advance_payment: number;
+    total_deductions: number;
+    net_salary: number;
+  };
+  total_salary: number;
 }
 
 interface DriverSalaryTrip {
@@ -81,13 +151,51 @@ interface DriverSalaryTrip {
 
 export default function DriverSalaryManagementPage() {
   const t = useTranslations("tms.driverSalaryPage");
-  const [year, setYear] = useState(new Date().getFullYear());
-  const [month, setMonth] = useState(new Date().getMonth() + 1);
+  // Default to previous month (if current month is January, go to December of previous year)
+  const [year, setYear] = useState(() => {
+    const now = new Date();
+    return now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
+  });
+  const [month, setMonth] = useState(() => {
+    const now = new Date();
+    return now.getMonth() === 0 ? 12 : now.getMonth(); // getMonth() is 0-indexed
+  });
   const [selectedDriver, setSelectedDriver] = useState("");
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [trips, setTrips] = useState<DriverSalaryTrip[]>([]);
+  const [payrolls, setPayrolls] = useState<Payroll[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState<string | null>(null);
+
+  // Payroll management state
+  const [showPayrollPanel, setShowPayrollPanel] = useState(false);
+  const [selectedPayroll, setSelectedPayroll] = useState<Payroll | null>(null);
+  const [adjustments, setAdjustments] = useState<Adjustment[]>([]);
+  const [payrollNotes, setPayrollNotes] = useState("");
+  const [generatingPayrolls, setGeneratingPayrolls] = useState(false);
+
+  // Missing KM modal state
+  const [showMissingKmModal, setShowMissingKmModal] = useState(false);
+  const [missingKmData, setMissingKmData] = useState<{
+    message: string;
+    total_missing: number;
+    missing_km_trips: Array<{
+      driver_id: string;
+      driver_name: string;
+      driver_code: string | null;
+      trips: Array<{
+        order_id: string;
+        order_code: string;
+        pickup_site: string | null;
+        delivery_site: string | null;
+        delivered_date: string | null;
+        container_code: string | null;
+      }>;
+    }>;
+  } | null>(null);
+
+  // Current user role
+  const [userRole, setUserRole] = useState<string | null>(null);
 
   // Sort state - default to customer_requested_date (Cust Date)
   const [sortField, setSortField] = useState<SortField>('customer_requested_date');
@@ -163,9 +271,21 @@ export default function DriverSalaryManagementPage() {
     };
   }, [resizing, handleResizeMove, handleResizeEnd]);
 
+  // Get user role on mount
+  useEffect(() => {
+    const user = localStorage.getItem("user");
+    if (user) {
+      try {
+        const userData = JSON.parse(user);
+        setUserRole(userData.role);
+      } catch {
+        // Ignore parse errors
+      }
+    }
+  }, []);
+
   useEffect(() => {
     fetchDrivers();
-    fetchTrips();
   }, []);
 
   async function fetchDrivers() {
@@ -237,6 +357,283 @@ export default function DriverSalaryManagementPage() {
       alert("Error: " + err.message);
     } finally {
       setSaving(null);
+    }
+  }
+
+  async function fetchPayrolls() {
+    try {
+      const params = new URLSearchParams({
+        year: year.toString(),
+        month: month.toString(),
+      });
+
+      if (selectedDriver) {
+        params.append("driver_id", selectedDriver);
+      }
+
+      // Fetch both payrolls and salary reports in parallel
+      const [payrollsRes, salaryReportsRes] = await Promise.all([
+        fetch(`${API_BASE_URL}/driver-salary-management/payrolls?${params}`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem("access_token")}` },
+        }),
+        fetch(`${API_BASE_URL}/driver-salary-reports/monthly?year=${year}&month=${month}`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem("access_token")}` },
+        }).catch(() => null)  // Fallback if salary reports fail
+      ]);
+
+      if (!payrollsRes.ok) return;
+      const payrollsData: Payroll[] = await payrollsRes.json();
+
+      // Parse salary reports if available
+      let salaryReports: DriverSalaryReport[] = [];
+      if (salaryReportsRes && salaryReportsRes.ok) {
+        const reportData = await salaryReportsRes.json();
+        salaryReports = reportData.drivers || [];
+      }
+
+      // Enrich payrolls with salary report data
+      const enrichedPayrolls = payrollsData.map(payroll => {
+        const report = salaryReports.find(r => String(r.driver_id) === String(payroll.driver_id));
+        if (report) {
+          return {
+            ...payroll,
+            base_salary: report.base_salary,
+            seniority_bonus: report.seniority_bonus,
+            total_insurance: report.deductions?.total_insurance || 0,
+            income_tax: report.deductions?.income_tax || 0,
+            advance_payment: report.deductions?.advance_payment || 0,
+            gross_salary: report.gross_salary,
+            final_net_salary: report.deductions?.net_salary || report.total_salary,
+            // Also update trip salary and bonuses from report for consistency
+            total_trip_salary: report.total_trip_salary,
+            total_bonuses: report.monthly_bonus,
+          };
+        }
+        return payroll;
+      });
+
+      setPayrolls(enrichedPayrolls);
+    } catch (err) {
+      console.error("Failed to fetch payrolls:", err);
+    }
+  }
+
+  async function generateAllPayrolls() {
+    if (!confirm(t("confirmGenerateAll"))) return;
+
+    setGeneratingPayrolls(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/driver-salary-management/payrolls/generate-all?year=${year}&month=${month}`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${localStorage.getItem("access_token")}` },
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+
+        // Check if this is a MISSING_KM error
+        if (error.detail && typeof error.detail === 'object' && error.detail.code === 'MISSING_KM') {
+          setMissingKmData(error.detail);
+          setShowMissingKmModal(true);
+          return;
+        }
+
+        throw new Error(typeof error.detail === 'string' ? error.detail : JSON.stringify(error.detail) || "Failed to generate payrolls");
+      }
+
+      const result = await res.json();
+      alert(result.message);
+      fetchPayrolls();
+    } catch (err: any) {
+      alert("Error: " + err.message);
+    } finally {
+      setGeneratingPayrolls(false);
+    }
+  }
+
+  async function createPayroll(driverId: string) {
+    try {
+      const res = await fetch(`${API_BASE_URL}/driver-salary-management/payrolls`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+        },
+        body: JSON.stringify({
+          driver_id: driverId,
+          year,
+          month,
+          adjustments: [],
+          notes: "",
+        }),
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.detail || "Failed to create payroll");
+      }
+
+      const newPayroll = await res.json();
+      setPayrolls([...payrolls, newPayroll]);
+      setSelectedPayroll(newPayroll);
+      setAdjustments(newPayroll.adjustments || []);
+      setPayrollNotes(newPayroll.notes || "");
+    } catch (err: any) {
+      alert("Error: " + err.message);
+    }
+  }
+
+  async function updatePayroll() {
+    if (!selectedPayroll) return;
+
+    setSaving(selectedPayroll.id);
+    try {
+      const res = await fetch(`${API_BASE_URL}/driver-salary-management/payrolls/${selectedPayroll.id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+        },
+        body: JSON.stringify({
+          adjustments,
+          notes: payrollNotes,
+        }),
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.detail || "Failed to update payroll");
+      }
+
+      const updated = await res.json();
+      setPayrolls(payrolls.map(p => p.id === updated.id ? updated : p));
+      setSelectedPayroll(updated);
+    } catch (err: any) {
+      alert("Error: " + err.message);
+    } finally {
+      setSaving(null);
+    }
+  }
+
+  async function submitPayroll(payrollId: string) {
+    if (!confirm(t("confirmSubmit"))) return;
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/driver-salary-management/payrolls/${payrollId}/submit`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${localStorage.getItem("access_token")}` },
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.detail || "Failed to submit payroll");
+      }
+
+      fetchPayrolls();
+      alert(t("submitSuccess"));
+    } catch (err: any) {
+      alert("Error: " + err.message);
+    }
+  }
+
+  async function confirmPayroll(payrollId: string) {
+    try {
+      const res = await fetch(`${API_BASE_URL}/driver-salary-management/payrolls/${payrollId}/confirm-driver`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${localStorage.getItem("access_token")}` },
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.detail || "Failed to confirm payroll");
+      }
+
+      fetchPayrolls();
+      alert(t("confirmSuccess"));
+    } catch (err: any) {
+      alert("Error: " + err.message);
+    }
+  }
+
+  async function markPaid(payrollId: string) {
+    try {
+      const res = await fetch(`${API_BASE_URL}/driver-salary-management/payrolls/${payrollId}/mark-paid`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${localStorage.getItem("access_token")}` },
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.detail || "Failed to mark as paid");
+      }
+
+      fetchPayrolls();
+      alert(t("paidSuccess"));
+    } catch (err: any) {
+      alert("Error: " + err.message);
+    }
+  }
+
+  async function deletePayroll(payrollId: string) {
+    if (!confirm(t("confirmDelete"))) return;
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/driver-salary-management/payrolls/${payrollId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${localStorage.getItem("access_token")}` },
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.detail || "Failed to delete payroll");
+      }
+
+      setPayrolls(payrolls.filter(p => p.id !== payrollId));
+      if (selectedPayroll?.id === payrollId) {
+        setSelectedPayroll(null);
+      }
+    } catch (err: any) {
+      alert("Error: " + err.message);
+    }
+  }
+
+  function addAdjustment() {
+    setAdjustments([...adjustments, { reason: "", amount: 0 }]);
+  }
+
+  function removeAdjustment(index: number) {
+    setAdjustments(adjustments.filter((_, i) => i !== index));
+  }
+
+  function updateAdjustment(index: number, field: 'reason' | 'amount', value: string | number) {
+    const updated = [...adjustments];
+    if (field === 'amount') {
+      updated[index].amount = typeof value === 'string' ? parseInt(value) || 0 : value;
+    } else {
+      updated[index].reason = value as string;
+    }
+    setAdjustments(updated);
+  }
+
+  function getStatusColor(status: string): string {
+    switch (status) {
+      case 'DRAFT': return 'bg-gray-100 text-gray-800';
+      case 'PENDING_REVIEW': return 'bg-yellow-100 text-yellow-800';
+      case 'CONFIRMED': return 'bg-green-100 text-green-800';
+      case 'PAID': return 'bg-blue-100 text-blue-800';
+      case 'DISPUTED': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  }
+
+  function getStatusLabel(status: string): string {
+    switch (status) {
+      case 'DRAFT': return t("status.draft");
+      case 'PENDING_REVIEW': return t("status.pendingReview");
+      case 'CONFIRMED': return t("status.confirmed");
+      case 'PAID': return t("status.paid");
+      case 'DISPUTED': return t("status.disputed");
+      default: return status;
     }
   }
 
@@ -461,17 +858,220 @@ export default function DriverSalaryManagementPage() {
             </select>
           </div>
 
-          <div className="flex items-end">
+          <div className="flex items-end gap-2">
             <button
-              onClick={fetchTrips}
+              onClick={() => { fetchTrips(); fetchPayrolls(); }}
               disabled={loading}
-              className="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:bg-gray-400"
+              className="flex-1 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:bg-gray-400"
             >
               {loading ? t("loading") : t("viewTrips")}
+            </button>
+            <button
+              onClick={() => setShowPayrollPanel(!showPayrollPanel)}
+              className={`px-4 py-2 rounded ${showPayrollPanel ? 'bg-purple-600 text-white' : 'bg-purple-100 text-purple-700'} hover:bg-purple-700 hover:text-white`}
+            >
+              {t("payroll.toggle")}
             </button>
           </div>
         </div>
       </div>
+
+      {/* Payroll Management Panel */}
+      {showPayrollPanel && (
+        <div className="bg-purple-50 p-4 rounded-lg shadow mb-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-bold text-purple-800">{t("payroll.title")}</h2>
+            <button
+              onClick={generateAllPayrolls}
+              disabled={generatingPayrolls}
+              className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 disabled:bg-gray-400"
+            >
+              {generatingPayrolls ? t("payroll.generating") : t("payroll.generateAll")}
+            </button>
+          </div>
+
+          {/* Payrolls List */}
+          {payrolls.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm border-collapse">
+                <thead className="bg-purple-100">
+                  <tr>
+                    <th className="px-2 py-2 text-left border">Tài xế</th>
+                    <th className="px-2 py-2 text-center border">Chuyến</th>
+                    <th className="px-2 py-2 text-right border">Lương CB</th>
+                    <th className="px-2 py-2 text-right border">Lương chuyến</th>
+                    <th className="px-2 py-2 text-right border">Thưởng</th>
+                    <th className="px-2 py-2 text-right border">Bảo hiểm</th>
+                    <th className="px-2 py-2 text-right border">Thuế TNCN</th>
+                    <th className="px-2 py-2 text-right border">Tạm ứng</th>
+                    <th className="px-2 py-2 text-right border">Thực lĩnh</th>
+                    <th className="px-2 py-2 text-center border">Trạng thái</th>
+                    <th className="px-2 py-2 text-center border">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {payrolls.map((p) => (
+                    <tr key={p.id} className={`hover:bg-purple-50 ${selectedPayroll?.id === p.id ? 'bg-purple-100' : ''}`}>
+                      <td className="px-2 py-2 border font-medium">{p.driver_name || p.driver_code}</td>
+                      <td className="px-2 py-2 border text-center">{p.total_trips}</td>
+                      <td className="px-2 py-2 border text-right">
+                        {p.base_salary ? formatCurrency(p.base_salary) : "-"}
+                      </td>
+                      <td className="px-2 py-2 border text-right">{formatCurrency(p.total_trip_salary)}</td>
+                      <td className="px-2 py-2 border text-right text-green-600">
+                        {formatCurrency(p.total_bonuses + (p.seniority_bonus || 0))}
+                      </td>
+                      <td className="px-2 py-2 border text-right text-red-600">
+                        {p.total_insurance ? `-${formatCurrency(p.total_insurance)}` : "-"}
+                      </td>
+                      <td className="px-2 py-2 border text-right text-red-600">
+                        {p.income_tax ? `-${formatCurrency(p.income_tax)}` : "-"}
+                      </td>
+                      <td className="px-2 py-2 border text-right text-red-600">
+                        {p.advance_payment ? `-${formatCurrency(p.advance_payment)}` : "-"}
+                      </td>
+                      <td className="px-2 py-2 border text-right font-bold text-blue-600">
+                        {formatCurrency(p.final_net_salary ?? p.net_salary)}
+                      </td>
+                      <td className="px-2 py-2 border text-center">
+                        <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(p.status)}`}>
+                          {getStatusLabel(p.status)}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2 border text-center">
+                        <div className="flex gap-1 justify-center">
+                          {p.status === 'DRAFT' && (
+                            <>
+                              <button
+                                onClick={() => {
+                                  setSelectedPayroll(p);
+                                  setAdjustments(p.adjustments || []);
+                                  setPayrollNotes(p.notes || "");
+                                }}
+                                className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+                              >
+                                {t("payroll.edit")}
+                              </button>
+                              <button
+                                onClick={() => submitPayroll(p.id)}
+                                className="px-2 py-1 text-xs bg-green-100 text-green-700 rounded hover:bg-green-200"
+                              >
+                                {t("payroll.submit")}
+                              </button>
+                              <button
+                                onClick={() => deletePayroll(p.id)}
+                                className="px-2 py-1 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200"
+                              >
+                                {t("payroll.delete")}
+                              </button>
+                            </>
+                          )}
+                          {p.status === 'PENDING_REVIEW' && (
+                            <button
+                              onClick={() => confirmPayroll(p.id)}
+                              className="px-2 py-1 text-xs bg-green-100 text-green-700 rounded hover:bg-green-200"
+                            >
+                              {t("payroll.confirm")}
+                            </button>
+                          )}
+                          {p.status === 'CONFIRMED' && (userRole === 'ACCOUNTANT' || userRole === 'ADMIN') && (
+                            <button
+                              onClick={() => markPaid(p.id)}
+                              className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+                              title="Chỉ Kế toán mới được đánh dấu đã thanh toán"
+                            >
+                              {t("payroll.markPaid")}
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="text-gray-500 text-center py-4">{t("payroll.noPayrolls")}</p>
+          )}
+
+          {/* Edit Payroll Modal */}
+          {selectedPayroll && selectedPayroll.status === 'DRAFT' && (
+            <div className="mt-4 p-4 bg-white rounded-lg border border-purple-200">
+              <h3 className="font-bold mb-3">{t("payroll.editTitle", { name: selectedPayroll.driver_name })}</h3>
+
+              {/* Adjustments */}
+              <div className="mb-4">
+                <div className="flex justify-between items-center mb-2">
+                  <label className="font-medium">{t("payroll.adjustmentsLabel")}</label>
+                  <button
+                    onClick={addAdjustment}
+                    className="px-3 py-1 text-sm bg-green-100 text-green-700 rounded hover:bg-green-200"
+                  >
+                    + {t("payroll.addAdjustment")}
+                  </button>
+                </div>
+
+                {adjustments.map((adj, idx) => (
+                  <div key={idx} className="flex gap-2 mb-2">
+                    <input
+                      type="text"
+                      value={adj.reason}
+                      onChange={(e) => updateAdjustment(idx, 'reason', e.target.value)}
+                      placeholder={t("payroll.reasonPlaceholder")}
+                      className="flex-1 border rounded px-3 py-2"
+                    />
+                    <input
+                      type="number"
+                      value={adj.amount}
+                      onChange={(e) => updateAdjustment(idx, 'amount', e.target.value)}
+                      placeholder={t("payroll.amountPlaceholder")}
+                      className="w-40 border rounded px-3 py-2"
+                    />
+                    <button
+                      onClick={() => removeAdjustment(idx)}
+                      className="px-3 py-2 bg-red-100 text-red-700 rounded hover:bg-red-200"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+
+                {adjustments.length === 0 && (
+                  <p className="text-gray-400 text-sm">{t("payroll.noAdjustments")}</p>
+                )}
+              </div>
+
+              {/* Notes */}
+              <div className="mb-4">
+                <label className="font-medium block mb-2">{t("payroll.notesLabel")}</label>
+                <textarea
+                  value={payrollNotes}
+                  onChange={(e) => setPayrollNotes(e.target.value)}
+                  placeholder={t("payroll.notesPlaceholder")}
+                  className="w-full border rounded px-3 py-2 h-20"
+                />
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-2">
+                <button
+                  onClick={updatePayroll}
+                  disabled={saving === selectedPayroll.id}
+                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400"
+                >
+                  {saving === selectedPayroll.id ? t("saving") : t("payroll.save")}
+                </button>
+                <button
+                  onClick={() => setSelectedPayroll(null)}
+                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
+                >
+                  {t("payroll.cancel")}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Summary */}
       {trips.length > 0 && (
@@ -597,6 +1197,132 @@ export default function DriverSalaryManagementPage() {
       {sortedTrips.length === 0 && !loading && (
         <div className="text-center text-gray-500 py-12">
           {t("noData")}
+        </div>
+      )}
+
+      {/* Missing KM Modal */}
+      {showMissingKmModal && missingKmData && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[80vh] flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b bg-red-50">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                  <svg className="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-red-800">Không thể tạo bảng lương</h3>
+                  <p className="text-sm text-red-600">Có {missingKmData.total_missing} chuyến thiếu thông tin Km</p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setShowMissingKmModal(false);
+                  setMissingKmData(null);
+                }}
+                className="p-2 hover:bg-red-100 rounded-lg"
+              >
+                <svg className="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-6">
+              <div className="mb-4 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <p className="text-yellow-800">
+                  <strong>Lưu ý:</strong> Vui lòng cập nhật km cho các chuyến bên dưới trước khi tạo bảng lương.
+                  Bạn có thể cập nhật km trong bảng Rates hoặc trực tiếp tại từng order.
+                </p>
+              </div>
+
+              {/* Grouped by Driver */}
+              <div className="space-y-6">
+                {missingKmData.missing_km_trips.map((driverGroup) => (
+                  <div key={driverGroup.driver_id} className="border rounded-lg overflow-hidden">
+                    {/* Driver Header */}
+                    <div className="bg-purple-100 px-4 py-3 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-purple-600 text-white rounded-full flex items-center justify-center text-sm font-bold">
+                          {driverGroup.driver_code || driverGroup.driver_name.charAt(0)}
+                        </div>
+                        <div>
+                          <span className="font-semibold text-purple-900">{driverGroup.driver_name}</span>
+                          {driverGroup.driver_code && (
+                            <span className="text-sm text-purple-600 ml-2">({driverGroup.driver_code})</span>
+                          )}
+                        </div>
+                      </div>
+                      <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm font-medium">
+                        {driverGroup.trips.length} chuyến thiếu km
+                      </span>
+                    </div>
+
+                    {/* Trips Table */}
+                    <table className="w-full text-sm">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-4 py-2 text-left font-medium text-gray-600">Mã đơn</th>
+                          <th className="px-4 py-2 text-left font-medium text-gray-600">Điểm lấy hàng</th>
+                          <th className="px-4 py-2 text-left font-medium text-gray-600">Điểm giao hàng</th>
+                          <th className="px-4 py-2 text-left font-medium text-gray-600">Cont/Xe</th>
+                          <th className="px-4 py-2 text-left font-medium text-gray-600">Ngày giao</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y">
+                        {driverGroup.trips.map((trip) => (
+                          <tr key={trip.order_id} className="hover:bg-gray-50">
+                            <td className="px-4 py-2">
+                              <span className="font-mono text-blue-600">{trip.order_code}</span>
+                            </td>
+                            <td className="px-4 py-2 text-gray-700">
+                              {trip.pickup_site || <span className="text-gray-400 italic">Chưa có</span>}
+                            </td>
+                            <td className="px-4 py-2 text-gray-700">
+                              {trip.delivery_site || <span className="text-gray-400 italic">Chưa có</span>}
+                            </td>
+                            <td className="px-4 py-2 text-gray-600">
+                              {trip.container_code || "-"}
+                            </td>
+                            <td className="px-4 py-2 text-gray-600">
+                              {trip.delivered_date
+                                ? new Date(trip.delivered_date).toLocaleDateString("vi-VN")
+                                : "-"}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex justify-end gap-3 px-6 py-4 border-t bg-gray-50">
+              <button
+                onClick={() => {
+                  setShowMissingKmModal(false);
+                  setMissingKmData(null);
+                }}
+                className="px-4 py-2 text-gray-700 bg-white border rounded-lg hover:bg-gray-50"
+              >
+                Đóng
+              </button>
+              <a
+                href="/tms/rates"
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+                Đi tới Bảng Rates
+              </a>
+            </div>
+          </div>
         </div>
       )}
     </div>

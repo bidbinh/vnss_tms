@@ -22,7 +22,8 @@
     "next-intl": "^4.7.0",
     "react": "19.2.1",
     "react-dom": "19.2.1",
-    "sonner": "^1.7.1"
+    "sonner": "^1.7.1",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -33,7 +34,6 @@
     "eslint": "^9",
     "eslint-config-next": "16.0.10",
     "tailwindcss": "^4",
-    "typescript": "^5",
-    "xlsx": "^0.18.5"
+    "typescript": "^5"
   }
 }

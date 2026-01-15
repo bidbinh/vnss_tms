@@ -298,8 +298,8 @@ def create_period(
     current_user: User = Depends(get_current_user),
 ):
     """Create payroll period"""
-    if current_user.role not in ("ADMIN", "HR_MANAGER"):
-        raise HTTPException(403, "Only ADMIN or HR_MANAGER can create periods")
+    if current_user.role not in ("ADMIN", "HR_MANAGER", "DISPATCHER"):
+        raise HTTPException(403, "Only ADMIN, HR_MANAGER or DISPATCHER can create periods")
 
     tenant_id = str(current_user.tenant_id)
 
@@ -314,8 +314,12 @@ def create_period(
     if existing:
         raise HTTPException(400, f"Period {payload.month}/{payload.year} already exists")
 
+    # Auto-generate code from year and month
+    code = f"{payload.year}-{payload.month:02d}"
+
     period = PayrollPeriod(
         tenant_id=tenant_id,
+        code=code,
         **payload.model_dump()
     )
 

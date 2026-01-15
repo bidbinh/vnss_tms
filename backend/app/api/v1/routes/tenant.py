@@ -116,10 +116,17 @@ MODULE_METADATA = {
         "color": "from-amber-500 to-amber-600",
         "href": "/dms",
     },
+    "oms": {
+        "name": "OMS",
+        "fullName": "Order Management",
+        "description": "Quản lý đơn hàng, chào giá, phân bổ kho và vận chuyển",
+        "color": "from-blue-500 to-blue-600",
+        "href": "/oms",
+    },
 }
 
 # All available modules in order
-ALL_MODULE_IDS = ["tms", "wms", "fms", "pms", "ems", "mes", "crm", "hrm", "accounting", "controlling", "project", "workflow", "dms"]
+ALL_MODULE_IDS = ["tms", "wms", "fms", "pms", "ems", "mes", "crm", "hrm", "accounting", "controlling", "project", "workflow", "dms", "oms"]
 
 
 class ModuleInfo(BaseModel):

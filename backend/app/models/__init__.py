@@ -51,6 +51,7 @@ from .hrm import (
     WorkShift, ShiftAssignment, AttendanceRecord, AttendanceStatus, OvertimeRequest, OvertimeStatus,
     LeaveType, LeaveBalance, LeaveRequest, LeaveStatus, LeaveApprovalFlow, LeaveApprover,
     SalaryStructure, SalaryComponent, ComponentType, EmployeeSalary, PayrollPeriod, PayrollRecord, PayrollItem, Deduction, DeductionType,
+    DriverPayroll, DriverPayrollStatus,
     AdvanceRequest, AdvanceStatus, AdvanceRepayment,
     InsuranceRecord, InsuranceType,
     Training, TrainingParticipant, Certificate,
@@ -609,6 +610,15 @@ from .audit import (
     ActorSession, LoginAttempt,
 )
 
+# OMS Models
+from .oms import (
+    OMSOrder, OMSOrderItem, OMSOrderStatus,
+    OMSAllocation, AllocationSourceType, AllocationStatus,
+    OMSShipment, OMSShipmentItem, ShipmentType as OMSShipmentType, ShipmentStatus as OMSShipmentStatus,
+    OMSStatusLog, StatusLogEntityType,
+    OMSPriceApproval, PriceApprovalStatus,
+)
+
 __all__ += [
     # Actor Core
     "Actor", "ActorType", "ActorStatus",
@@ -635,4 +645,10 @@ __all__ += [
     # Audit
     "AuditAction", "UnifiedAuditLog",
     "ActorSession", "LoginAttempt",
+    # OMS
+    "OMSOrder", "OMSOrderItem", "OMSOrderStatus",
+    "OMSAllocation", "AllocationSourceType", "AllocationStatus",
+    "OMSShipment", "OMSShipmentItem", "OMSShipmentType", "OMSShipmentStatus",
+    "OMSStatusLog", "StatusLogEntityType",
+    "OMSPriceApproval", "PriceApprovalStatus",
 ]

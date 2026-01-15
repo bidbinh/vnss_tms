@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   Building2,
   Plus,
@@ -27,6 +28,7 @@ import {
   Workflow,
   FolderOpen,
   Factory,
+  ShoppingCart,
 } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 
@@ -56,6 +58,7 @@ const MODULE_ICONS: Record<string, React.ElementType> = {
   project: FolderKanban,
   workflow: Workflow,
   dms: FolderOpen,
+  oms: ShoppingCart,
 };
 
 const MODULE_NAMES: Record<string, string> = {
@@ -72,14 +75,32 @@ const MODULE_NAMES: Record<string, string> = {
   project: "Project",
   workflow: "Workflow",
   dms: "DMS",
+  oms: "OMS",
 };
 
-const ALL_MODULES = ["tms", "wms", "fms", "pms", "ems", "mes", "crm", "hrm", "accounting", "controlling", "project", "workflow", "dms"];
+const ALL_MODULES = ["tms", "wms", "fms", "pms", "ems", "mes", "crm", "hrm", "accounting", "controlling", "project", "workflow", "dms", "oms"];
+
+// Module groups
+const MODULE_GROUPS = {
+  operations: {
+    labelKey: "admin.moduleGroups.operations",
+    modules: ["tms", "wms", "fms", "pms", "ems", "mes", "oms"],
+  },
+  office: {
+    labelKey: "admin.moduleGroups.office",
+    modules: ["crm", "hrm", "accounting", "controlling"],
+  },
+  tools: {
+    labelKey: "admin.moduleGroups.tools",
+    modules: ["project", "workflow", "dms"],
+  },
+};
 
 const SUBSCRIPTION_PLANS = ["FREE", "STARTER", "PROFESSIONAL", "ENTERPRISE"];
 
 export default function SuperAdminTenantsPage() {
   const router = useRouter();
+  const t = useTranslations();
   const [loading, setLoading] = useState(true);
   const [tenants, setTenants] = useState<TenantItem[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -424,38 +445,47 @@ export default function SuperAdminTenantsPage() {
                         </button>
                       </div>
 
-                      <div className="grid grid-cols-4 gap-2">
-                        {ALL_MODULES.map((moduleId) => {
-                          const Icon = MODULE_ICONS[moduleId] || Package;
-                          const isEnabled = currentModules.includes(moduleId);
-                          const isTMS = moduleId === "tms";
+                      <div className="space-y-4">
+                        {Object.entries(MODULE_GROUPS).map(([groupKey, group]) => (
+                          <div key={groupKey}>
+                            <h5 className="text-xs font-semibold text-gray-500 uppercase mb-2 px-1">
+                              {t(group.labelKey)}
+                            </h5>
+                            <div className="grid grid-cols-4 gap-2">
+                              {group.modules.map((moduleId) => {
+                                const Icon = MODULE_ICONS[moduleId] || Package;
+                                const isEnabled = currentModules.includes(moduleId);
+                                const isTMS = moduleId === "tms";
 
-                          return (
-                            <button
-                              key={moduleId}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                toggleModule(tenant.id, moduleId, tenant.enabled_modules);
-                              }}
-                              disabled={isTMS}
-                              className={`p-3 rounded-lg border flex items-center gap-2 transition-colors ${
-                                isEnabled
-                                  ? "bg-green-50 border-green-200 text-green-700"
-                                  : "bg-white border-gray-200 text-gray-400"
-                              } ${isTMS ? "opacity-60 cursor-not-allowed" : "hover:bg-gray-100"}`}
-                            >
-                              <Icon className="w-4 h-4" />
-                              <span className="text-sm font-medium">
-                                {MODULE_NAMES[moduleId]}
-                              </span>
-                              {isTMS && (
-                                <span className="text-xs bg-blue-100 text-blue-600 px-1 rounded">
-                                  Bắt buộc
-                                </span>
-                              )}
-                            </button>
-                          );
-                        })}
+                                return (
+                                  <button
+                                    key={moduleId}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      toggleModule(tenant.id, moduleId, tenant.enabled_modules);
+                                    }}
+                                    disabled={isTMS}
+                                    className={`p-3 rounded-lg border flex items-center gap-2 transition-colors ${
+                                      isEnabled
+                                        ? "bg-green-50 border-green-200 text-green-700"
+                                        : "bg-white border-gray-200 text-gray-400"
+                                    } ${isTMS ? "opacity-60 cursor-not-allowed" : "hover:bg-gray-100"}`}
+                                  >
+                                    <Icon className="w-4 h-4" />
+                                    <span className="text-sm font-medium">
+                                      {MODULE_NAMES[moduleId]}
+                                    </span>
+                                    {isTMS && (
+                                      <span className="text-xs bg-blue-100 text-blue-600 px-1 rounded">
+                                        Bắt buộc
+                                      </span>
+                                    )}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
 
