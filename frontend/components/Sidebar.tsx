@@ -314,6 +314,7 @@ const HRM_CONFIG: ModuleConfig = {
       labelKey: "nav.groups.payroll",
       items: [
         { labelKey: "hrm.payroll", href: "/hrm/payroll", icon: CreditCard },
+        { labelKey: "hrm.driverPayroll", href: "/hrm/driver-payroll", icon: Truck },
         { labelKey: "hrm.salaryStructure", href: "/hrm/salary-structure", icon: DollarSign },
         { labelKey: "hrm.incomeTaxSettings", href: "/hrm/income-tax-settings", icon: FileText },
         { labelKey: "hrm.bonuses", href: "/hrm/bonuses", icon: Award },

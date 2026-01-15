@@ -230,6 +230,7 @@
   },
   "hrm": {
     "title": "Human Resource Management",
+    "driverPayroll": "Driver Payroll",
     "dashboard": {
       "title": "HRM Dashboard",
       "subtitle": "Human Resource Management",

@@ -1273,6 +1273,7 @@
   },
   "hrm": {
     "advances": "Tạm ứng",
+    "driverPayroll": "Bảng lương tài xế",
     "advancesPage": {
       "actions": {
         "approve": "Duyệt",
@@ -2175,6 +2176,72 @@
       "year": "Năm"
     },
     "payrollReport": "Báo cáo lương",
+    "driverPayroll": {
+      "title": "Quản Lý Bảng Lương Tài Xế",
+      "subtitle": "Tạo và theo dõi bảng lương tài xế theo tháng",
+      "createPayroll": "Tạo Bảng Lương",
+      "viewDetail": "Xem chi tiết",
+      "filters": {
+        "year": "Năm",
+        "month": "Tháng",
+        "allMonths": "Tất cả",
+        "driver": "Tài xế",
+        "allDrivers": "Tất cả",
+        "status": "Trạng thái",
+        "allStatus": "Tất cả"
+      },
+      "columns": {
+        "month": "Tháng",
+        "driver": "Tài xế",
+        "totalTrips": "Số chuyến",
+        "totalDistance": "Tổng KM",
+        "netSalary": "Lương thực nhận",
+        "status": "Trạng thái",
+        "createdAt": "Ngày tạo",
+        "actions": "Thao tác"
+      },
+      "status": {
+        "DRAFT": "Nháp",
+        "PENDING_HR_REVIEW": "Chờ HR duyệt",
+        "PENDING_DRIVER_CONFIRM": "Chờ tài xế xác nhận",
+        "CONFIRMED": "Đã xác nhận",
+        "PAID": "Đã trả lương",
+        "REJECTED": "Bị từ chối"
+      },
+      "createModal": {
+        "title": "Tạo Bảng Lương Mới",
+        "driver": "Tài xế",
+        "selectDriver": "-- Chọn tài xế --",
+        "month": "Tháng",
+        "year": "Năm",
+        "notes": "Ghi chú",
+        "notesPlaceholder": "Ghi chú (tùy chọn)",
+        "cancel": "Hủy",
+        "create": "Tạo bảng lương",
+        "creating": "Đang tạo..."
+      },
+      "detailModal": {
+        "title": "Chi Tiết Bảng Lương",
+        "totalTrips": "Tổng số chuyến",
+        "totalDistance": "Tổng KM",
+        "netSalary": "Lương thực nhận",
+        "tripDetails": "Chi tiết các chuyến",
+        "orderCode": "Mã ĐH",
+        "deliveredDate": "Ngày giao",
+        "from": "Từ",
+        "to": "Đến",
+        "distance": "KM",
+        "salary": "Lương"
+      },
+      "messages": {
+        "noPayrolls": "Chưa có bảng lương nào",
+        "loading": "Đang tải...",
+        "selectDriver": "Vui lòng chọn tài xế",
+        "createSuccess": "Tạo bảng lương thành công!",
+        "createFailed": "Không thể tạo bảng lương. Vui lòng thử lại.",
+        "loadDetailFailed": "Không thể tải chi tiết bảng lương"
+      }
+    },
     "positions": "Chức vụ",
     "positionsPage": {
       "addPosition": "Thêm chức vụ",
