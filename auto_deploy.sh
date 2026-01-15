@@ -16,18 +16,14 @@ YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 
-# Change to app directory
-cd ~/apps/vnss_tms || { echo "❌ Failed to cd to ~/apps/vnss_tms"; exit 1; }
-
+# Already in the correct directory from the caller
 echo "📂 Current directory: $(pwd)"
 echo ""
 
 # ==========================================
-# STEP 1: Pull latest code
+# STEP 1: Code already pulled by caller
 # ==========================================
-echo "${YELLOW}[1/5] Pulling latest code from GitHub...${NC}"
-git pull origin main || { echo "${RED}❌ Git pull failed${NC}"; exit 1; }
-echo "${GREEN}✅ Code pulled successfully${NC}"
+echo "${GREEN}✅ Code already pulled${NC}"
 echo ""
 
 # ==========================================
