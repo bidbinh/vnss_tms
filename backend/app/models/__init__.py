@@ -1,6 +1,9 @@
 from .tenant import Tenant, TenantModule, TenantType, SubscriptionPlan, SubscriptionStatus, DeploymentType
 from .role import Role, Permission, UserRole as UserRoleLink, AVAILABLE_MODULES, MODULE_RESOURCES, DEFAULT_ROLE_TEMPLATES
 from .customer import Customer
+from .customer_address import CustomerAddress, AddressType
+from .customer_bank_account import CustomerBankAccount
+from .customer_contact import CustomerContact, ContactType
 from .order import Order
 from .order_sequence import OrderSequence
 from .shipment import Shipment

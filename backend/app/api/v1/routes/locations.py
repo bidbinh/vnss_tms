@@ -41,6 +41,7 @@ def create_location(
         code=payload["code"].strip().upper(),
         name=payload["name"].strip(),
         type=payload["type"],
+        ward=payload.get("ward"),
         district=payload.get("district"),
         province=payload.get("province"),
         note=payload.get("note"),
@@ -76,6 +77,8 @@ def update_location(
         location.name = payload["name"].strip()
     if "type" in payload:
         location.type = payload["type"]
+    if "ward" in payload:
+        location.ward = payload["ward"]
     if "district" in payload:
         location.district = payload["district"]
     if "province" in payload:

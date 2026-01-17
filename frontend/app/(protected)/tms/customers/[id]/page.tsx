@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import {
   ArrowLeft,
   Edit,
@@ -20,8 +21,7 @@ import {
   CheckCircle,
   XCircle,
   Briefcase,
-  RefreshCw,
-  Loader2,
+  X,
 } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 
@@ -67,24 +67,16 @@ interface Customer {
   updated_at: string | null;
 }
 
-const PAYMENT_TERMS_LABELS: Record<string, string> = {
-  COD: "Thanh toán khi giao hàng",
-  NET15: "Thanh toán sau 15 ngày",
-  NET30: "Thanh toán sau 30 ngày",
-  NET45: "Thanh toán sau 45 ngày",
-  NET60: "Thanh toán sau 60 ngày",
-  PREPAID: "Thanh toán trước",
-};
-
 export default function CustomerDetailPage() {
   const router = useRouter();
   const params = useParams();
   const id = params.id as string;
+  const t = useTranslations("tms.customerDetail");
+  const tCommon = useTranslations("common");
 
   const [loading, setLoading] = useState(true);
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [syncing, setSyncing] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("access_token");
@@ -113,24 +105,7 @@ export default function CustomerDetailPage() {
       router.push("/tms/customers");
     } catch (error) {
       console.error("Failed to delete customer:", error);
-      alert("Không thể xóa khách hàng này");
-    }
-  };
-
-  const handleSyncFromCRM = async () => {
-    if (!customer?.crm_account_id) return;
-    setSyncing(true);
-    try {
-      await apiFetch(`/crm/accounts/${customer.crm_account_id}/sync-to-tms`, {
-        method: "POST",
-      });
-      await fetchData();
-      alert("Đã cập nhật dữ liệu từ CRM!");
-    } catch (error) {
-      console.error("Failed to sync from CRM:", error);
-      alert("Không thể đồng bộ từ CRM. Vui lòng thử lại.");
-    } finally {
-      setSyncing(false);
+      alert(t("errors.deleteFailed"));
     }
   };
 
@@ -157,9 +132,9 @@ export default function CustomerDetailPage() {
   if (!customer) {
     return (
       <div className="p-6 text-center">
-        <p className="text-gray-600">Không tìm thấy khách hàng</p>
+        <p className="text-gray-600">{t("notFound")}</p>
         <Link href="/tms/customers" className="text-blue-600 hover:underline mt-2 inline-block">
-          Quay lại danh sách
+          {t("backToList")}
         </Link>
       </div>
     );
@@ -182,7 +157,7 @@ export default function CustomerDetailPage() {
           className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4"
         >
           <ArrowLeft className="w-4 h-4" />
-          Quay lại danh sách
+          {t("backToList")}
         </Link>
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-4">
@@ -195,12 +170,12 @@ export default function CustomerDetailPage() {
                 {customer.is_active ? (
                   <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700 flex items-center gap-1">
                     <CheckCircle className="w-3 h-3" />
-                    Hoạt động
+                    {t("status.active")}
                   </span>
                 ) : (
                   <span className="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-700 flex items-center gap-1">
                     <XCircle className="w-3 h-3" />
-                    Ngừng HĐ
+                    {t("status.inactive")}
                   </span>
                 )}
                 {customer.crm_account_id && (
@@ -216,33 +191,19 @@ export default function CustomerDetailPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {customer.crm_account_id && (
-              <button
-                onClick={handleSyncFromCRM}
-                disabled={syncing}
-                className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
-              >
-                {syncing ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <RefreshCw className="w-4 h-4" />
-                )}
-                Cập nhật từ CRM
-              </button>
-            )}
             <Link
               href={`/tms/customers/${id}/edit`}
               className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
             >
               <Edit className="w-4 h-4" />
-              Sửa
+              {tCommon("edit")}
             </Link>
             <button
               onClick={() => setShowDeleteModal(true)}
               className="flex items-center gap-2 px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50"
             >
               <Trash2 className="w-4 h-4" />
-              Xóa
+              {tCommon("delete")}
             </button>
           </div>
         </div>
@@ -253,7 +214,7 @@ export default function CustomerDetailPage() {
         <div className="lg:col-span-2 space-y-6">
           {/* Thông tin liên hệ */}
           <div className="bg-white rounded-lg shadow border border-gray-200 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Thông tin liên hệ</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">{t("sections.contactInfo")}</h2>
             <div className="grid grid-cols-2 gap-4">
               {customer.phone && (
                 <div className="flex items-center gap-3">
@@ -290,10 +251,10 @@ export default function CustomerDetailPage() {
 
           {/* Địa chỉ */}
           <div className="bg-white rounded-lg shadow border border-gray-200 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Địa chỉ</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">{t("sections.address")}</h2>
             <div className="space-y-4">
               <div>
-                <div className="text-sm text-gray-500 mb-1">Địa chỉ công ty</div>
+                <div className="text-sm text-gray-500 mb-1">{t("fields.companyAddress")}</div>
                 <div className="flex items-start gap-3">
                   <MapPin className="w-5 h-5 text-gray-400 mt-0.5" />
                   <span className="text-gray-700">{fullAddress || "-"}</span>
@@ -301,7 +262,7 @@ export default function CustomerDetailPage() {
               </div>
               {shippingAddress && (
                 <div>
-                  <div className="text-sm text-gray-500 mb-1">Địa chỉ giao hàng mặc định</div>
+                  <div className="text-sm text-gray-500 mb-1">{t("fields.shippingAddress")}</div>
                   <div className="flex items-start gap-3">
                     <MapPin className="w-5 h-5 text-green-500 mt-0.5" />
                     <span className="text-gray-700">{shippingAddress}</span>
@@ -313,22 +274,22 @@ export default function CustomerDetailPage() {
 
           {/* Thông tin pháp lý */}
           <div className="bg-white rounded-lg shadow border border-gray-200 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Thông tin pháp lý</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">{t("sections.legalInfo")}</h2>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <div className="text-sm text-gray-500">Mã số thuế</div>
+                <div className="text-sm text-gray-500">{t("fields.taxCode")}</div>
                 <div className="font-medium">{customer.tax_code || "-"}</div>
               </div>
               <div>
-                <div className="text-sm text-gray-500">Số ĐKKD</div>
+                <div className="text-sm text-gray-500">{t("fields.businessLicense")}</div>
                 <div className="font-medium">{customer.business_license || "-"}</div>
               </div>
               <div>
-                <div className="text-sm text-gray-500">Ngành nghề</div>
+                <div className="text-sm text-gray-500">{t("fields.industry")}</div>
                 <div className="font-medium">{customer.industry || "-"}</div>
               </div>
               <div>
-                <div className="text-sm text-gray-500">Nguồn khách hàng</div>
+                <div className="text-sm text-gray-500">{t("fields.source")}</div>
                 <div className="font-medium">{customer.source || "-"}</div>
               </div>
             </div>
@@ -338,23 +299,21 @@ export default function CustomerDetailPage() {
           <div className="bg-white rounded-lg shadow border border-gray-200 p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
               <CreditCard className="w-5 h-5" />
-              Thông tin tài chính
+              {t("sections.financialInfo")}
             </h2>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <div className="text-sm text-gray-500">Điều khoản thanh toán</div>
+                <div className="text-sm text-gray-500">{t("fields.paymentTerms")}</div>
                 <div className="font-medium">
-                  {customer.payment_terms
-                    ? PAYMENT_TERMS_LABELS[customer.payment_terms] || customer.payment_terms
-                    : "-"}
+                  {customer.payment_terms || "-"}
                 </div>
               </div>
               <div>
-                <div className="text-sm text-gray-500">Số ngày công nợ</div>
-                <div className="font-medium">{customer.credit_days} ngày</div>
+                <div className="text-sm text-gray-500">{t("fields.creditDays")}</div>
+                <div className="font-medium">{customer.credit_days} {t("fields.days")}</div>
               </div>
               <div>
-                <div className="text-sm text-gray-500">Hạn mức công nợ</div>
+                <div className="text-sm text-gray-500">{t("fields.creditLimit")}</div>
                 <div className="font-medium text-green-600">{formatCurrency(customer.credit_limit)}</div>
               </div>
             </div>
@@ -365,23 +324,23 @@ export default function CustomerDetailPage() {
             <div className="bg-white rounded-lg shadow border border-gray-200 p-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
                 <Landmark className="w-5 h-5" />
-                Thông tin ngân hàng
+                {t("sections.bankInfo")}
               </h2>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <div className="text-sm text-gray-500">Ngân hàng</div>
+                  <div className="text-sm text-gray-500">{t("fields.bankName")}</div>
                   <div className="font-medium">{customer.bank_name || "-"}</div>
                 </div>
                 <div>
-                  <div className="text-sm text-gray-500">Chi nhánh</div>
+                  <div className="text-sm text-gray-500">{t("fields.bankBranch")}</div>
                   <div className="font-medium">{customer.bank_branch || "-"}</div>
                 </div>
                 <div>
-                  <div className="text-sm text-gray-500">Số tài khoản</div>
+                  <div className="text-sm text-gray-500">{t("fields.bankAccount")}</div>
                   <div className="font-medium font-mono">{customer.bank_account || "-"}</div>
                 </div>
                 <div>
-                  <div className="text-sm text-gray-500">Tên tài khoản</div>
+                  <div className="text-sm text-gray-500">{t("fields.bankAccountName")}</div>
                   <div className="font-medium">{customer.bank_account_name || "-"}</div>
                 </div>
               </div>
@@ -393,7 +352,7 @@ export default function CustomerDetailPage() {
             <div className="bg-white rounded-lg shadow border border-gray-200 p-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
                 <FileText className="w-5 h-5" />
-                Ghi chú
+                {t("sections.notes")}
               </h2>
               <p className="text-gray-600 whitespace-pre-wrap">{customer.notes}</p>
             </div>
@@ -407,7 +366,7 @@ export default function CustomerDetailPage() {
             <div className="bg-white rounded-lg shadow border border-gray-200 p-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
                 <User className="w-5 h-5" />
-                Liên hệ chính
+                {t("sections.primaryContact")}
               </h2>
               <div className="space-y-3">
                 <div>
@@ -441,19 +400,19 @@ export default function CustomerDetailPage() {
             <div className="bg-white rounded-lg shadow border border-gray-200 p-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
                 <Briefcase className="w-5 h-5" />
-                Tích hợp CRM
+                {t("sections.crmIntegration")}
               </h2>
               <div className="space-y-3">
                 <div className="flex items-center gap-2 text-purple-600">
                   <CheckCircle className="w-5 h-5" />
-                  <span className="font-medium">Đã liên kết CRM</span>
+                  <span className="font-medium">{t("crmLinked")}</span>
                 </div>
                 <Link
                   href={`/crm/accounts/${customer.crm_account_id}`}
                   className="flex items-center gap-2 w-full px-3 py-2 text-center text-purple-700 bg-purple-50 hover:bg-purple-100 rounded-lg"
                 >
                   <Briefcase className="w-4 h-4" />
-                  Xem trên CRM
+                  {t("viewOnCRM")}
                 </Link>
               </div>
             </div>
@@ -461,21 +420,21 @@ export default function CustomerDetailPage() {
 
           {/* Thông tin hệ thống */}
           <div className="bg-white rounded-lg shadow border border-gray-200 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Thông tin hệ thống</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">{t("sections.systemInfo")}</h2>
             <div className="space-y-3">
               <div>
-                <div className="text-sm text-gray-500">Trạng thái</div>
+                <div className="text-sm text-gray-500">{t("fields.status")}</div>
                 <span
                   className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
                     customer.is_active ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
                   }`}
                 >
-                  {customer.is_active ? "Đang hoạt động" : "Ngừng hoạt động"}
+                  {customer.is_active ? t("status.active") : t("status.inactive")}
                 </span>
               </div>
               {customer.customer_since && (
                 <div>
-                  <div className="text-sm text-gray-500">Là khách hàng từ</div>
+                  <div className="text-sm text-gray-500">{t("fields.customerSince")}</div>
                   <div className="flex items-center gap-2 text-gray-700">
                     <Calendar className="w-4 h-4" />
                     {customer.customer_since}
@@ -483,7 +442,7 @@ export default function CustomerDetailPage() {
                 </div>
               )}
               <div>
-                <div className="text-sm text-gray-500">Ngày tạo</div>
+                <div className="text-sm text-gray-500">{t("fields.createdAt")}</div>
                 <div className="flex items-center gap-2 text-gray-700">
                   <Calendar className="w-4 h-4" />
                   {formatDate(customer.created_at)}
@@ -491,7 +450,7 @@ export default function CustomerDetailPage() {
               </div>
               {customer.updated_at && (
                 <div>
-                  <div className="text-sm text-gray-500">Cập nhật lần cuối</div>
+                  <div className="text-sm text-gray-500">{t("fields.updatedAt")}</div>
                   <div className="flex items-center gap-2 text-gray-700">
                     <Calendar className="w-4 h-4" />
                     {formatDate(customer.updated_at)}
@@ -507,27 +466,28 @@ export default function CustomerDetailPage() {
       {showDeleteModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Xác nhận xóa</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">{t("deleteModal.title")}</h3>
             <p className="text-gray-600 mb-6">
-              Bạn có chắc muốn xóa khách hàng <strong>{customer.name}</strong>?
+              {t("deleteModal.message", { name: customer.name })}
             </p>
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => setShowDeleteModal(false)}
                 className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
               >
-                Hủy
+                {tCommon("cancel")}
               </button>
               <button
                 onClick={handleDelete}
                 className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
               >
-                Xóa
+                {tCommon("delete")}
               </button>
             </div>
           </div>
         </div>
       )}
+
     </div>
   );
 }

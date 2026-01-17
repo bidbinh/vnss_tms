@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { apiFetch } from "@/lib/api";
 import { TablePagination } from "@/components/DataTable";
-import { Building2, Plus, Search, FileText, ArrowUpDown, ArrowUp, ArrowDown, Eye, Edit, Phone, Mail } from "lucide-react";
+import { Building2, Plus, Search, FileText, ArrowUpDown, ArrowUp, ArrowDown, Eye, Edit, Phone, Mail, Trash2, RotateCcw } from "lucide-react";
 
 // ============ Types ============
 type Customer = {
@@ -64,6 +64,7 @@ export default function CustomersPage() {
   const [rows, setRows] = useState<Customer[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [showInactive, setShowInactive] = useState(false);
   const [pageSize, setPageSize] = useState<number>(50);
   const [currentPage, setCurrentPage] = useState<number>(1);
 
@@ -88,7 +89,8 @@ export default function CustomersPage() {
     setLoading(true);
     setError(null);
     try {
-      const data = await apiFetch<Customer[]>("/api/v1/customers");
+      const url = showInactive ? "/api/v1/customers?include_inactive=true" : "/api/v1/customers";
+      const data = await apiFetch<Customer[]>(url);
       setRows(data);
     } catch (e: any) {
       setError(e?.message || t("errors.loadFailed"));
@@ -99,7 +101,29 @@ export default function CustomersPage() {
 
   useEffect(() => {
     load();
-  }, []);
+  }, [showInactive]);
+
+  // ============ Delete Handler ============
+  async function handleDelete(id: string) {
+    if (!confirm(t("confirmations.deleteCustomer"))) return;
+
+    try {
+      await apiFetch(`/api/v1/customers/${id}`, { method: "DELETE" });
+      await load();
+    } catch (e: any) {
+      alert(e?.message || t("errors.deleteFailed"));
+    }
+  }
+
+  // ============ Restore Handler ============
+  async function handleRestore(id: string) {
+    try {
+      await apiFetch(`/api/v1/customers/${id}/restore`, { method: "PATCH" });
+      await load();
+    } catch (e: any) {
+      alert(e?.message || t("errors.restoreFailed"));
+    }
+  }
 
   // ============ Filtering & Pagination ============
   const filteredRows = useMemo(() => {
@@ -233,14 +257,19 @@ export default function CustomersPage() {
     switch (key) {
       case "code":
         return (
-          <Link href={`/tms/customers/${row.id}`} className="font-semibold text-blue-600 hover:underline">
-            {row.code}
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link href={`/tms/customers/${row.id}`} className="font-semibold text-blue-600 hover:underline">
+              {row.code}
+            </Link>
+            {row.is_active === false && (
+              <span className="px-1.5 py-0.5 text-xs bg-red-100 text-red-600 rounded">{t("status.deleted")}</span>
+            )}
+          </div>
         );
       case "name":
         return (
           <div>
-            <Link href={`/tms/customers/${row.id}`} className="font-medium hover:text-blue-600">
+            <Link href={`/tms/customers/${row.id}`} className={`font-medium hover:text-blue-600 ${row.is_active === false ? "text-gray-400" : ""}`}>
               {row.name}
             </Link>
             {row.short_name && <div className="text-xs text-gray-400">{row.short_name}</div>}
@@ -288,23 +317,44 @@ export default function CustomersPage() {
           <span className="text-gray-400">-</span>
         );
       case "actions":
-        return (
-          <div className="flex items-center gap-2">
+        return row.is_active !== false ? (
+          <div className="flex items-center gap-1">
             <Link
               href={`/tms/customers/${row.id}`}
-              className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded"
+              className="p-1.5 rounded-lg text-gray-500 hover:text-blue-600 hover:bg-blue-50 transition-colors"
               title={t("actions.viewDetails")}
             >
               <Eye className="w-4 h-4" />
             </Link>
             <Link
               href={`/tms/customers/${row.id}/edit`}
-              className="p-1.5 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded"
+              className="p-1.5 rounded-lg text-gray-500 hover:text-green-600 hover:bg-green-50 transition-colors"
               title={t("actions.edit")}
             >
               <Edit className="w-4 h-4" />
             </Link>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDelete(row.id);
+              }}
+              className="p-1.5 rounded-lg text-gray-500 hover:text-red-600 hover:bg-red-50 transition-colors"
+              title={t("actions.delete")}
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
           </div>
+        ) : (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleRestore(row.id);
+            }}
+            className="p-1.5 rounded-lg text-green-600 hover:bg-green-50 hover:text-green-800 transition-colors"
+            title={t("actions.restore")}
+          >
+            <RotateCcw className="w-4 h-4" />
+          </button>
         );
       default:
         return (row as any)[key] ?? "-";
@@ -345,14 +395,25 @@ export default function CustomersPage() {
         {/* Search Bar */}
         <div className="border-y border-gray-200 px-6 py-3">
           <div className="flex items-center gap-3 justify-between">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <input
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder={t("search.placeholder")}
-                className="w-full pl-10 pr-4 py-2 rounded-xl border border-gray-300 outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 text-sm"
-              />
+            <div className="flex items-center gap-3">
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <input
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder={t("search.placeholder")}
+                  className="w-full pl-10 pr-4 py-2 rounded-xl border border-gray-300 outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 text-sm"
+                />
+              </div>
+              <label className="flex items-center gap-2 text-sm text-gray-600 whitespace-nowrap">
+                <input
+                  type="checkbox"
+                  checked={showInactive}
+                  onChange={(e) => setShowInactive(e.target.checked)}
+                  className="rounded"
+                />
+                {t("search.showDeleted")}
+              </label>
             </div>
             <div className="text-sm text-gray-500">{loading ? t("search.loading") : `${filteredRows.length} ${t("search.customers")}`}</div>
           </div>

@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { apiFetch } from "@/lib/api";
 import DataTable, { Column, TablePagination } from "@/components/DataTable";
-import { MapPin, Plus, Search, Factory, Building, Anchor, Warehouse, Trash2, RotateCcw, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { MapPin, Plus, Search, Factory, Building, Anchor, Warehouse, Trash2, RotateCcw, ArrowUpDown, ArrowUp, ArrowDown, Pencil } from "lucide-react";
 
 // ============ Types ============
 type Location = {
@@ -332,24 +332,26 @@ export default function LocationsPage() {
         return row.province || <span className="text-gray-400">-</span>;
       case "actions":
         return row.is_active ? (
-          <div className="flex items-center justify-center gap-2">
+          <div className="flex items-center justify-center gap-1">
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 openEdit(row);
               }}
-              className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+              className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 hover:text-blue-800 transition-colors"
+              title={t("actions.edit")}
             >
-              {t("actions.edit")}
+              <Pencil className="w-4 h-4" />
             </button>
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 handleDelete(row.id);
               }}
-              className="text-red-600 hover:text-red-800 text-sm font-medium"
+              className="p-1.5 rounded-lg text-red-600 hover:bg-red-50 hover:text-red-800 transition-colors"
+              title={t("actions.delete")}
             >
-              {t("actions.delete")}
+              <Trash2 className="w-4 h-4" />
             </button>
           </div>
         ) : (
@@ -358,10 +360,10 @@ export default function LocationsPage() {
               e.stopPropagation();
               handleRestore(row.id);
             }}
-            className="text-green-600 hover:text-green-800 text-sm font-medium flex items-center gap-1"
+            className="p-1.5 rounded-lg text-green-600 hover:bg-green-50 hover:text-green-800 transition-colors"
+            title={t("actions.restore")}
           >
-            <RotateCcw className="w-3 h-3" />
-            {t("actions.restore")}
+            <RotateCcw className="w-4 h-4" />
           </button>
         );
       default:
@@ -426,24 +428,26 @@ export default function LocationsPage() {
       align: "center",
       render: (r) =>
         r.is_active ? (
-          <div className="flex items-center justify-center gap-2">
+          <div className="flex items-center justify-center gap-1">
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 openEdit(r);
               }}
-              className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+              className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 hover:text-blue-800 transition-colors"
+              title={t("actions.edit")}
             >
-              {t("actions.edit")}
+              <Pencil className="w-4 h-4" />
             </button>
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 handleDelete(r.id);
               }}
-              className="text-red-600 hover:text-red-800 text-sm font-medium"
+              className="p-1.5 rounded-lg text-red-600 hover:bg-red-50 hover:text-red-800 transition-colors"
+              title={t("actions.delete")}
             >
-              {t("actions.delete")}
+              <Trash2 className="w-4 h-4" />
             </button>
           </div>
         ) : (
@@ -452,10 +456,10 @@ export default function LocationsPage() {
               e.stopPropagation();
               handleRestore(r.id);
             }}
-            className="text-green-600 hover:text-green-800 text-sm font-medium flex items-center gap-1"
+            className="p-1.5 rounded-lg text-green-600 hover:bg-green-50 hover:text-green-800 transition-colors"
+            title={t("actions.restore")}
           >
-            <RotateCcw className="w-3 h-3" />
-            {t("actions.restore")}
+            <RotateCcw className="w-4 h-4" />
           </button>
         ),
     },

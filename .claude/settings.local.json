@@ -272,7 +272,10 @@
       "Bash(D:\\\\vnss_tms\\\\backend\\\\.venv\\\\Scripts\\\\pip install:*)",
       "Bash(.venvScriptspython.exe:*)",
       "Bash(d:vnss_tmsrestart_backend.bat)",
-      "Bash(del \"d:\\\\vnss_tms\\\\backend\\\\alembic\\\\versions\\\\20260115_0001_update_driver_payroll_columns.py\")"
+      "Bash(del \"d:\\\\vnss_tms\\\\backend\\\\alembic\\\\versions\\\\20260115_0001_update_driver_payroll_columns.py\")",
+      "Bash(source venv/Scripts/activate)",
+      "Bash(source:*)",
+      "Bash(py -c:*)"
     ]
   }
 }

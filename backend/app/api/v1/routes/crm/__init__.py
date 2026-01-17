@@ -4,6 +4,9 @@ CRM Module API Routes
 from fastapi import APIRouter
 from app.api.v1.routes.crm.accounts import router as accounts_router
 from app.api.v1.routes.crm.contacts import router as contacts_router
+from app.api.v1.routes.crm.account_addresses import router as account_addresses_router
+from app.api.v1.routes.crm.account_bank_accounts import router as account_bank_accounts_router
+from app.api.v1.routes.crm.account_contacts import router as account_contacts_router
 from app.api.v1.routes.crm.leads import router as leads_router
 from app.api.v1.routes.crm.opportunities import router as opportunities_router
 from app.api.v1.routes.crm.quotes import router as quotes_router
@@ -20,6 +23,9 @@ crm_router = APIRouter(prefix="/crm", tags=["CRM"])
 
 crm_router.include_router(dashboard_router)
 crm_router.include_router(accounts_router)
+crm_router.include_router(account_addresses_router)
+crm_router.include_router(account_bank_accounts_router)
+crm_router.include_router(account_contacts_router)
 crm_router.include_router(contacts_router)
 crm_router.include_router(leads_router)
 crm_router.include_router(opportunities_router)

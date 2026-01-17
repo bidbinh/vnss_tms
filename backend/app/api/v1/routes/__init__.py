@@ -1,6 +1,9 @@
 from fastapi import APIRouter
 from app.api.v1.routes.auth import router as auth_router
 from app.api.v1.routes.customers import router as customers_router
+from app.api.v1.routes.customer_addresses import router as customer_addresses_router
+from app.api.v1.routes.customer_bank_accounts import router as customer_bank_accounts_router
+from app.api.v1.routes.customer_contacts import router as customer_contacts_router
 from app.api.v1.routes.locations import router as locations_router
 from app.api.v1.routes.sites import router as sites_router
 from app.api.v1.routes.orders import router as orders_router
@@ -74,6 +77,9 @@ from app.api.v1.routes.unified_orders import router as unified_orders_router
 api_router = APIRouter()
 api_router.include_router(auth_router)
 api_router.include_router(customers_router)
+api_router.include_router(customer_addresses_router)
+api_router.include_router(customer_bank_accounts_router)
+api_router.include_router(customer_contacts_router)
 api_router.include_router(locations_router)
 api_router.include_router(sites_router)
 api_router.include_router(orders_router)

@@ -141,9 +141,42 @@ def delete_site(
     if str(site.tenant_id) != tenant_id:
         raise HTTPException(403, "Access denied")
 
-    session.delete(site)
-    session.commit()
-    return {"success": True}
+    # Check if site is referenced by orders
+    from app.models.order import Order
+    from sqlalchemy import select, func, or_
+
+    order_count = session.exec(
+        select(func.count()).where(
+            Order.tenant_id == tenant_id,
+            or_(
+                Order.pickup_site_id == site_id,
+                Order.delivery_site_id == site_id,
+                Order.port_site_id == site_id,
+            ),
+        )
+    ).one()
+
+    if order_count > 0:
+        raise HTTPException(
+            400,
+            f"Cannot delete site. This site is currently being used in {order_count} order(s). "
+            f"Please update or delete those orders first."
+        )
+
+    try:
+        session.delete(site)
+        session.commit()
+        return {"success": True}
+    except Exception as e:
+        session.rollback()
+        error_str = str(e)
+        if "ForeignKeyViolation" in error_str or "foreign key constraint" in error_str.lower():
+            raise HTTPException(
+                400,
+                "Cannot delete site. This site is currently being used in one or more orders. "
+                "Please update or delete those orders first."
+            )
+        raise
 
 
 @router.post("/check")

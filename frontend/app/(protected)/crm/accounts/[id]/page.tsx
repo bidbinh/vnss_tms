@@ -206,28 +206,6 @@ export default function AccountDetailPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {account.tms_customer_id ? (
-              <Link
-                href={`/tms/customers?id=${account.tms_customer_id}`}
-                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-              >
-                <Truck className="w-4 h-4" />
-                Xem trên TMS
-              </Link>
-            ) : (
-              <button
-                onClick={handleSyncToTMS}
-                disabled={syncing}
-                className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50"
-              >
-                {syncing ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <RefreshCw className="w-4 h-4" />
-                )}
-                Sync sang TMS
-              </button>
-            )}
             <Link
               href={`/crm/accounts/${id}/edit`}
               className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
@@ -405,13 +383,6 @@ export default function AccountDetailPage() {
                   <CheckCircle className="w-5 h-5" />
                   <span className="font-medium">Đã đồng bộ</span>
                 </div>
-                <Link
-                  href={`/tms/customers?id=${account.tms_customer_id}`}
-                  className="flex items-center gap-2 w-full px-3 py-2 text-center text-green-700 bg-green-50 hover:bg-green-100 rounded-lg"
-                >
-                  <Truck className="w-4 h-4" />
-                  Xem trên TMS
-                </Link>
                 <button
                   onClick={handleSyncToTMS}
                   disabled={syncing}

@@ -15,6 +15,9 @@ from app.models.crm.contact import Contact
 from app.models.crm.opportunity import Opportunity
 from app.models.crm.quote import Quote
 from app.models.customer import Customer
+from app.models.customer_address import CustomerAddress, AddressType
+from app.models.customer_bank_account import CustomerBankAccount
+from app.models.customer_contact import CustomerContact, ContactType
 from app.core.security import get_current_user
 from app.api.v1.routes.crm.activity_logs import log_activity
 import json
@@ -181,6 +184,7 @@ def create_account(
 ):
     """Create a new account"""
     tenant_id = str(current_user.tenant_id)
+    import logging
 
     # Check unique code
     existing = session.exec(
@@ -202,16 +206,139 @@ def create_account(
     session.commit()
     session.refresh(account)
 
+    # Auto-create TMS Customer if account_type is CUSTOMER
+    if payload.account_type == "CUSTOMER":
+        try:
+            # Check if TMS Customer with same code exists
+            existing_customer = session.exec(
+                select(Customer).where(
+                    Customer.tenant_id == tenant_id,
+                    Customer.code == payload.code
+                )
+            ).first()
+
+            if existing_customer:
+                # Link existing customer to this account
+                existing_customer.crm_account_id = account.id
+                session.add(existing_customer)
+                account.tms_customer_id = existing_customer.id
+            else:
+                # Create new TMS Customer
+                customer = Customer(
+                    tenant_id=tenant_id,
+                    code=payload.code,
+                    name=payload.name,
+                    tax_code=payload.tax_code,
+                    phone=payload.phone,
+                    email=payload.email,
+                    website=payload.website,
+                    address=payload.address,
+                    city=payload.city,
+                    country=payload.country or "Việt Nam",
+                    payment_terms=payload.payment_terms,
+                    credit_limit=payload.credit_limit,
+                    credit_days=payload.credit_days,
+                    bank_name=payload.bank_name,
+                    bank_account=payload.bank_account,
+                    industry=payload.industry,
+                    source=payload.source,
+                    assigned_to=payload.assigned_to,
+                    notes=payload.notes,
+                    is_active=True,
+                    crm_account_id=account.id,
+                )
+                session.add(customer)
+                session.commit()
+                session.refresh(customer)
+                account.tms_customer_id = customer.id
+
+            # Update sync status
+            account.synced_to_tms = True
+            account.synced_at = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+            session.add(account)
+            session.commit()
+            session.refresh(account)
+
+            # Sync bank account and contacts to TMS
+            from app.services.crm_sync_service import sync_crm_to_tms
+            sync_crm_to_tms(account.id, session)
+        except Exception as e:
+            logging.warning(f"Failed to auto-create TMS Customer for CRM Account {account.code}: {str(e)}")
+
     return account
+
+
+@router.post("/sync-all-to-tms")
+def sync_all_accounts_to_tms(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Sync all CUSTOMER accounts to TMS.
+    This will:
+    1. Auto-link accounts to existing TMS customers by code
+    2. Sync all data (bank accounts, contacts) to TMS
+    """
+    tenant_id = str(current_user.tenant_id)
+
+    # Get all CUSTOMER accounts
+    accounts = session.exec(
+        select(Account).where(
+            Account.tenant_id == tenant_id,
+            Account.account_type == "CUSTOMER"
+        )
+    ).all()
+
+    synced = 0
+    linked = 0
+    errors = []
+
+    for account in accounts:
+        try:
+            # Auto-link if not linked
+            if not account.tms_customer_id:
+                existing_customer = session.exec(
+                    select(Customer).where(
+                        Customer.tenant_id == tenant_id,
+                        Customer.code == account.code
+                    )
+                ).first()
+
+                if existing_customer:
+                    account.tms_customer_id = existing_customer.id
+                    existing_customer.crm_account_id = account.id
+                    account.synced_to_tms = True
+                    account.synced_at = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+                    session.add(existing_customer)
+                    session.add(account)
+                    session.commit()
+                    linked += 1
+
+            # Sync data if linked
+            if account.tms_customer_id:
+                from app.services.crm_sync_service import sync_crm_to_tms
+                if sync_crm_to_tms(account.id, session):
+                    synced += 1
+        except Exception as e:
+            errors.append(f"{account.code}: {str(e)}")
+
+    return {
+        "success": True,
+        "total_accounts": len(accounts),
+        "newly_linked": linked,
+        "synced": synced,
+        "errors": errors
+    }
 
 
 @router.get("/{account_id}")
 def get_account(
     account_id: str,
+    include_relations: bool = Query(True, description="Include addresses, bank_accounts, contacts"),
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
-    """Get account by ID"""
+    """Get account by ID with nested data (addresses, bank_accounts, contacts)"""
     tenant_id = str(current_user.tenant_id)
 
     account = session.get(Account, account_id)
@@ -221,18 +348,18 @@ def get_account(
     # Get customer group
     group = session.get(CustomerGroup, account.customer_group_id) if account.customer_group_id else None
 
-    # Get contacts
-    contacts = session.exec(
+    # Get CRM contacts (existing behavior)
+    crm_contacts = session.exec(
         select(Contact).where(Contact.account_id == account_id)
     ).all()
 
-    return {
+    result = {
         **account.model_dump(),
         "customer_group": {
             "id": group.id,
             "name": group.name,
         } if group else None,
-        "contacts": [
+        "crm_contacts": [
             {
                 "id": c.id,
                 "full_name": c.full_name or f"{c.first_name} {c.last_name or ''}".strip(),
@@ -242,11 +369,55 @@ def get_account(
                 "email": c.email,
                 "is_primary": c.is_primary,
             }
-            for c in contacts
+            for c in crm_contacts
         ],
         "created_at": str(account.created_at) if account.created_at else None,
         "updated_at": str(account.updated_at) if account.updated_at else None,
     }
+
+    # Include nested data if requested
+    if include_relations:
+        # Addresses - query by account_id OR customer_id for backward compatibility
+        addr_query = select(CustomerAddress).where(
+            CustomerAddress.tenant_id == tenant_id,
+            CustomerAddress.is_active == True,
+            or_(
+                CustomerAddress.account_id == account_id,
+                CustomerAddress.customer_id == account.tms_customer_id
+            ) if account.tms_customer_id else CustomerAddress.account_id == account_id
+        ).order_by(CustomerAddress.address_type, CustomerAddress.is_default.desc())
+
+        addresses = session.exec(addr_query).all()
+
+        # Bank accounts
+        bank_query = select(CustomerBankAccount).where(
+            CustomerBankAccount.tenant_id == tenant_id,
+            CustomerBankAccount.is_active == True,
+            or_(
+                CustomerBankAccount.account_id == account_id,
+                CustomerBankAccount.customer_id == account.tms_customer_id
+            ) if account.tms_customer_id else CustomerBankAccount.account_id == account_id
+        ).order_by(CustomerBankAccount.is_primary.desc())
+
+        bank_accounts = session.exec(bank_query).all()
+
+        # Customer contacts (different from CRM contacts)
+        contact_query = select(CustomerContact).where(
+            CustomerContact.tenant_id == tenant_id,
+            CustomerContact.is_active == True,
+            or_(
+                CustomerContact.account_id == account_id,
+                CustomerContact.customer_id == account.tms_customer_id
+            ) if account.tms_customer_id else CustomerContact.account_id == account_id
+        ).order_by(CustomerContact.is_primary.desc(), CustomerContact.name)
+
+        contacts = session.exec(contact_query).all()
+
+        result["addresses"] = [addr.model_dump() for addr in addresses]
+        result["bank_accounts"] = [acc.model_dump() for acc in bank_accounts]
+        result["contacts"] = [c.model_dump() for c in contacts]
+
+    return result
 
 
 @router.put("/{account_id}")
@@ -269,9 +440,28 @@ def update_account(
 
     account.updated_at = datetime.utcnow()
 
+    # Auto-link to TMS Customer if not linked yet
+    if not account.tms_customer_id and account.account_type == "CUSTOMER":
+        existing_customer = session.exec(
+            select(Customer).where(
+                Customer.tenant_id == tenant_id,
+                Customer.code == account.code
+            )
+        ).first()
+        if existing_customer:
+            account.tms_customer_id = existing_customer.id
+            existing_customer.crm_account_id = account.id
+            account.synced_to_tms = True
+            account.synced_at = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+            session.add(existing_customer)
+
     session.add(account)
     session.commit()
     session.refresh(account)
+
+    # Sync to TMS if linked
+    from app.services.crm_sync_service import sync_crm_to_tms
+    sync_crm_to_tms(account_id, session)
 
     return account
 
@@ -361,11 +551,18 @@ def sync_account_to_tms(
         raise HTTPException(404, "Account not found")
 
     if account.synced_to_tms and account.tms_customer_id:
-        # Already synced, return existing info
+        # Already linked - re-sync all data
         customer = session.get(Customer, account.tms_customer_id)
+        if customer:
+            from app.services.crm_sync_service import sync_crm_to_tms
+            sync_crm_to_tms(account_id, session)
+            account.synced_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            session.add(account)
+            session.commit()
+
         return {
             "success": True,
-            "message": "Account already synced to TMS",
+            "message": "Account re-synced to TMS",
             "tms_customer_id": account.tms_customer_id,
             "tms_customer": {
                 "id": customer.id,
@@ -446,6 +643,10 @@ def sync_account_to_tms(
     session.commit()
     session.refresh(account)
 
+    # Sync full data (bank accounts, contacts) to TMS
+    from app.services.crm_sync_service import sync_crm_to_tms
+    sync_crm_to_tms(account_id, session)
+
     return {
         "success": True,
         "message": "Account synced to TMS successfully",
@@ -491,3 +692,711 @@ def get_account_tms_info(
         "tms_customer": tms_customer,
         "synced_at": account.synced_at
     }
+
+
+# ============================================================================
+# ADDRESSES - CRUD for CRM Account Addresses
+# ============================================================================
+
+class AddressCreate(BaseModel):
+    address_type: str = "SHIPPING"
+    name: Optional[str] = None
+    address: str
+    ward: Optional[str] = None
+    district: Optional[str] = None
+    city: Optional[str] = None
+    country: str = "Việt Nam"
+    postal_code: Optional[str] = None
+    contact_name: Optional[str] = None
+    contact_phone: Optional[str] = None
+    contact_email: Optional[str] = None
+    is_default: bool = False
+    is_same_as_operating: bool = False
+    notes: Optional[str] = None
+
+
+class AddressUpdate(AddressCreate):
+    pass
+
+
+@router.get("/{account_id}/addresses")
+def list_account_addresses(
+    account_id: str,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """List all addresses for an account"""
+    tenant_id = str(current_user.tenant_id)
+
+    account = session.get(Account, account_id)
+    if not account or str(account.tenant_id) != tenant_id:
+        raise HTTPException(404, "Account not found")
+
+    # Query by account_id OR customer_id for backward compatibility
+    query = select(CustomerAddress).where(
+        CustomerAddress.tenant_id == tenant_id,
+        CustomerAddress.is_active == True,
+        or_(
+            CustomerAddress.account_id == account_id,
+            CustomerAddress.customer_id == account.tms_customer_id
+        ) if account.tms_customer_id else CustomerAddress.account_id == account_id
+    ).order_by(CustomerAddress.address_type, CustomerAddress.is_default.desc())
+
+    addresses = session.exec(query).all()
+    return [addr.model_dump() for addr in addresses]
+
+
+@router.post("/{account_id}/addresses")
+def create_account_address(
+    account_id: str,
+    payload: AddressCreate,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Create a new address for an account"""
+    tenant_id = str(current_user.tenant_id)
+
+    account = session.get(Account, account_id)
+    if not account or str(account.tenant_id) != tenant_id:
+        raise HTTPException(404, "Account not found")
+
+    # If setting as default, unset other defaults of same type
+    if payload.is_default and payload.address_type == "SHIPPING":
+        existing_defaults = session.exec(
+            select(CustomerAddress).where(
+                CustomerAddress.tenant_id == tenant_id,
+                CustomerAddress.is_active == True,
+                CustomerAddress.address_type == payload.address_type,
+                CustomerAddress.is_default == True,
+                or_(
+                    CustomerAddress.account_id == account_id,
+                    CustomerAddress.customer_id == account.tms_customer_id
+                ) if account.tms_customer_id else CustomerAddress.account_id == account_id
+            )
+        ).all()
+        for addr in existing_defaults:
+            addr.is_default = False
+            session.add(addr)
+
+    address = CustomerAddress(
+        tenant_id=tenant_id,
+        account_id=account_id,
+        customer_id=account.tms_customer_id,  # Also link to TMS customer if exists
+        **payload.model_dump(),
+        is_active=True,
+    )
+
+    session.add(address)
+    session.commit()
+    session.refresh(address)
+
+    return address.model_dump()
+
+
+@router.put("/{account_id}/addresses/{address_id}")
+def update_account_address(
+    account_id: str,
+    address_id: str,
+    payload: AddressUpdate,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Update an address"""
+    tenant_id = str(current_user.tenant_id)
+
+    account = session.get(Account, account_id)
+    if not account or str(account.tenant_id) != tenant_id:
+        raise HTTPException(404, "Account not found")
+
+    address = session.get(CustomerAddress, address_id)
+    if not address or str(address.tenant_id) != tenant_id:
+        raise HTTPException(404, "Address not found")
+
+    # Verify address belongs to this account
+    if address.account_id != account_id and address.customer_id != account.tms_customer_id:
+        raise HTTPException(404, "Address not found")
+
+    # If setting as default, unset other defaults
+    if payload.is_default and payload.address_type == "SHIPPING" and not address.is_default:
+        existing_defaults = session.exec(
+            select(CustomerAddress).where(
+                CustomerAddress.tenant_id == tenant_id,
+                CustomerAddress.is_active == True,
+                CustomerAddress.address_type == payload.address_type,
+                CustomerAddress.is_default == True,
+                CustomerAddress.id != address_id,
+                or_(
+                    CustomerAddress.account_id == account_id,
+                    CustomerAddress.customer_id == account.tms_customer_id
+                ) if account.tms_customer_id else CustomerAddress.account_id == account_id
+            )
+        ).all()
+        for addr in existing_defaults:
+            addr.is_default = False
+            session.add(addr)
+
+    update_data = payload.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(address, key, value)
+
+    # Ensure both FKs are set
+    address.account_id = account_id
+    if account.tms_customer_id:
+        address.customer_id = account.tms_customer_id
+
+    session.add(address)
+    session.commit()
+    session.refresh(address)
+
+    return address.model_dump()
+
+
+@router.delete("/{account_id}/addresses/{address_id}")
+def delete_account_address(
+    account_id: str,
+    address_id: str,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Delete (soft) an address"""
+    tenant_id = str(current_user.tenant_id)
+
+    account = session.get(Account, account_id)
+    if not account or str(account.tenant_id) != tenant_id:
+        raise HTTPException(404, "Account not found")
+
+    address = session.get(CustomerAddress, address_id)
+    if not address or str(address.tenant_id) != tenant_id:
+        raise HTTPException(404, "Address not found")
+
+    # Verify address belongs to this account
+    if address.account_id != account_id and address.customer_id != account.tms_customer_id:
+        raise HTTPException(404, "Address not found")
+
+    address.is_active = False
+    session.add(address)
+    session.commit()
+
+    return {"success": True, "message": "Address deleted"}
+
+
+@router.patch("/{account_id}/addresses/{address_id}/set-default")
+def set_default_address(
+    account_id: str,
+    address_id: str,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Set an address as default"""
+    tenant_id = str(current_user.tenant_id)
+
+    account = session.get(Account, account_id)
+    if not account or str(account.tenant_id) != tenant_id:
+        raise HTTPException(404, "Account not found")
+
+    address = session.get(CustomerAddress, address_id)
+    if not address or str(address.tenant_id) != tenant_id:
+        raise HTTPException(404, "Address not found")
+
+    # Verify address belongs to this account
+    if address.account_id != account_id and address.customer_id != account.tms_customer_id:
+        raise HTTPException(404, "Address not found")
+
+    # Unset other defaults of same type
+    existing_defaults = session.exec(
+        select(CustomerAddress).where(
+            CustomerAddress.tenant_id == tenant_id,
+            CustomerAddress.is_active == True,
+            CustomerAddress.address_type == address.address_type,
+            CustomerAddress.is_default == True,
+            CustomerAddress.id != address_id,
+            or_(
+                CustomerAddress.account_id == account_id,
+                CustomerAddress.customer_id == account.tms_customer_id
+            ) if account.tms_customer_id else CustomerAddress.account_id == account_id
+        )
+    ).all()
+    for addr in existing_defaults:
+        addr.is_default = False
+        session.add(addr)
+
+    address.is_default = True
+    session.add(address)
+    session.commit()
+
+    return {"success": True, "message": "Address set as default"}
+
+
+# ============================================================================
+# BANK ACCOUNTS - CRUD for CRM Account Bank Accounts
+# ============================================================================
+
+class BankAccountCreate(BaseModel):
+    bank_name: str
+    bank_code: Optional[str] = None
+    bank_bin: Optional[str] = None
+    bank_branch: Optional[str] = None
+    account_number: str
+    account_holder: str
+    is_primary: bool = False
+    notes: Optional[str] = None
+
+
+class BankAccountUpdate(BankAccountCreate):
+    pass
+
+
+@router.get("/{account_id}/bank-accounts")
+def list_account_bank_accounts(
+    account_id: str,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """List all bank accounts for an account"""
+    tenant_id = str(current_user.tenant_id)
+
+    account = session.get(Account, account_id)
+    if not account or str(account.tenant_id) != tenant_id:
+        raise HTTPException(404, "Account not found")
+
+    query = select(CustomerBankAccount).where(
+        CustomerBankAccount.tenant_id == tenant_id,
+        CustomerBankAccount.is_active == True,
+        or_(
+            CustomerBankAccount.account_id == account_id,
+            CustomerBankAccount.customer_id == account.tms_customer_id
+        ) if account.tms_customer_id else CustomerBankAccount.account_id == account_id
+    ).order_by(CustomerBankAccount.is_primary.desc())
+
+    bank_accounts = session.exec(query).all()
+    return [acc.model_dump() for acc in bank_accounts]
+
+
+@router.post("/{account_id}/bank-accounts")
+def create_account_bank_account(
+    account_id: str,
+    payload: BankAccountCreate,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Create a new bank account"""
+    tenant_id = str(current_user.tenant_id)
+
+    account = session.get(Account, account_id)
+    if not account or str(account.tenant_id) != tenant_id:
+        raise HTTPException(404, "Account not found")
+
+    # If setting as primary, unset other primaries
+    if payload.is_primary:
+        existing_primaries = session.exec(
+            select(CustomerBankAccount).where(
+                CustomerBankAccount.tenant_id == tenant_id,
+                CustomerBankAccount.is_active == True,
+                CustomerBankAccount.is_primary == True,
+                or_(
+                    CustomerBankAccount.account_id == account_id,
+                    CustomerBankAccount.customer_id == account.tms_customer_id
+                ) if account.tms_customer_id else CustomerBankAccount.account_id == account_id
+            )
+        ).all()
+        for acc in existing_primaries:
+            acc.is_primary = False
+            session.add(acc)
+
+    # Check if this is the first bank account
+    existing_count = session.exec(
+        select(func.count()).where(
+            CustomerBankAccount.tenant_id == tenant_id,
+            CustomerBankAccount.is_active == True,
+            or_(
+                CustomerBankAccount.account_id == account_id,
+                CustomerBankAccount.customer_id == account.tms_customer_id
+            ) if account.tms_customer_id else CustomerBankAccount.account_id == account_id
+        )
+    ).one()
+
+    bank_account = CustomerBankAccount(
+        tenant_id=tenant_id,
+        account_id=account_id,
+        customer_id=account.tms_customer_id,
+        **payload.model_dump(),
+        is_primary=payload.is_primary or existing_count == 0,  # First account is primary
+        is_active=True,
+    )
+
+    session.add(bank_account)
+    session.commit()
+    session.refresh(bank_account)
+
+    return bank_account.model_dump()
+
+
+@router.put("/{account_id}/bank-accounts/{bank_account_id}")
+def update_account_bank_account(
+    account_id: str,
+    bank_account_id: str,
+    payload: BankAccountUpdate,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Update a bank account"""
+    tenant_id = str(current_user.tenant_id)
+
+    account = session.get(Account, account_id)
+    if not account or str(account.tenant_id) != tenant_id:
+        raise HTTPException(404, "Account not found")
+
+    bank_account = session.get(CustomerBankAccount, bank_account_id)
+    if not bank_account or str(bank_account.tenant_id) != tenant_id:
+        raise HTTPException(404, "Bank account not found")
+
+    # Verify bank account belongs to this account
+    if bank_account.account_id != account_id and bank_account.customer_id != account.tms_customer_id:
+        raise HTTPException(404, "Bank account not found")
+
+    # If setting as primary, unset other primaries
+    if payload.is_primary and not bank_account.is_primary:
+        existing_primaries = session.exec(
+            select(CustomerBankAccount).where(
+                CustomerBankAccount.tenant_id == tenant_id,
+                CustomerBankAccount.is_active == True,
+                CustomerBankAccount.is_primary == True,
+                CustomerBankAccount.id != bank_account_id,
+                or_(
+                    CustomerBankAccount.account_id == account_id,
+                    CustomerBankAccount.customer_id == account.tms_customer_id
+                ) if account.tms_customer_id else CustomerBankAccount.account_id == account_id
+            )
+        ).all()
+        for acc in existing_primaries:
+            acc.is_primary = False
+            session.add(acc)
+
+    update_data = payload.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(bank_account, key, value)
+
+    # Ensure both FKs are set
+    bank_account.account_id = account_id
+    if account.tms_customer_id:
+        bank_account.customer_id = account.tms_customer_id
+
+    session.add(bank_account)
+    session.commit()
+    session.refresh(bank_account)
+
+    return bank_account.model_dump()
+
+
+@router.delete("/{account_id}/bank-accounts/{bank_account_id}")
+def delete_account_bank_account(
+    account_id: str,
+    bank_account_id: str,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Delete (soft) a bank account"""
+    tenant_id = str(current_user.tenant_id)
+
+    account = session.get(Account, account_id)
+    if not account or str(account.tenant_id) != tenant_id:
+        raise HTTPException(404, "Account not found")
+
+    bank_account = session.get(CustomerBankAccount, bank_account_id)
+    if not bank_account or str(bank_account.tenant_id) != tenant_id:
+        raise HTTPException(404, "Bank account not found")
+
+    # Verify bank account belongs to this account
+    if bank_account.account_id != account_id and bank_account.customer_id != account.tms_customer_id:
+        raise HTTPException(404, "Bank account not found")
+
+    bank_account.is_active = False
+    session.add(bank_account)
+    session.commit()
+
+    return {"success": True, "message": "Bank account deleted"}
+
+
+@router.patch("/{account_id}/bank-accounts/{bank_account_id}/set-primary")
+def set_primary_bank_account(
+    account_id: str,
+    bank_account_id: str,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Set a bank account as primary"""
+    tenant_id = str(current_user.tenant_id)
+
+    account = session.get(Account, account_id)
+    if not account or str(account.tenant_id) != tenant_id:
+        raise HTTPException(404, "Account not found")
+
+    bank_account = session.get(CustomerBankAccount, bank_account_id)
+    if not bank_account or str(bank_account.tenant_id) != tenant_id:
+        raise HTTPException(404, "Bank account not found")
+
+    # Verify bank account belongs to this account
+    if bank_account.account_id != account_id and bank_account.customer_id != account.tms_customer_id:
+        raise HTTPException(404, "Bank account not found")
+
+    # Unset other primaries
+    existing_primaries = session.exec(
+        select(CustomerBankAccount).where(
+            CustomerBankAccount.tenant_id == tenant_id,
+            CustomerBankAccount.is_active == True,
+            CustomerBankAccount.is_primary == True,
+            CustomerBankAccount.id != bank_account_id,
+            or_(
+                CustomerBankAccount.account_id == account_id,
+                CustomerBankAccount.customer_id == account.tms_customer_id
+            ) if account.tms_customer_id else CustomerBankAccount.account_id == account_id
+        )
+    ).all()
+    for acc in existing_primaries:
+        acc.is_primary = False
+        session.add(acc)
+
+    bank_account.is_primary = True
+    session.add(bank_account)
+    session.commit()
+
+    return {"success": True, "message": "Bank account set as primary"}
+
+
+# ============================================================================
+# CONTACTS - CRUD for CRM Account Contacts (CustomerContact, not CRM Contact)
+# ============================================================================
+
+class ContactCreate(BaseModel):
+    contact_type: str = "GENERAL"
+    name: str
+    title: Optional[str] = None
+    department: Optional[str] = None
+    phone: Optional[str] = None
+    mobile: Optional[str] = None
+    email: Optional[str] = None
+    zalo: Optional[str] = None
+    is_primary: bool = False
+    is_decision_maker: bool = False
+    notes: Optional[str] = None
+
+
+class ContactUpdate(ContactCreate):
+    pass
+
+
+@router.get("/{account_id}/contacts")
+def list_account_contacts(
+    account_id: str,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """List all contacts for an account"""
+    tenant_id = str(current_user.tenant_id)
+
+    account = session.get(Account, account_id)
+    if not account or str(account.tenant_id) != tenant_id:
+        raise HTTPException(404, "Account not found")
+
+    query = select(CustomerContact).where(
+        CustomerContact.tenant_id == tenant_id,
+        CustomerContact.is_active == True,
+        or_(
+            CustomerContact.account_id == account_id,
+            CustomerContact.customer_id == account.tms_customer_id
+        ) if account.tms_customer_id else CustomerContact.account_id == account_id
+    ).order_by(CustomerContact.is_primary.desc(), CustomerContact.name)
+
+    contacts = session.exec(query).all()
+    return [c.model_dump() for c in contacts]
+
+
+@router.post("/{account_id}/contacts")
+def create_account_contact(
+    account_id: str,
+    payload: ContactCreate,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Create a new contact"""
+    tenant_id = str(current_user.tenant_id)
+
+    account = session.get(Account, account_id)
+    if not account or str(account.tenant_id) != tenant_id:
+        raise HTTPException(404, "Account not found")
+
+    # If setting as primary, unset other primaries
+    if payload.is_primary:
+        existing_primaries = session.exec(
+            select(CustomerContact).where(
+                CustomerContact.tenant_id == tenant_id,
+                CustomerContact.is_active == True,
+                CustomerContact.is_primary == True,
+                or_(
+                    CustomerContact.account_id == account_id,
+                    CustomerContact.customer_id == account.tms_customer_id
+                ) if account.tms_customer_id else CustomerContact.account_id == account_id
+            )
+        ).all()
+        for c in existing_primaries:
+            c.is_primary = False
+            session.add(c)
+
+    # Check if this is the first contact
+    existing_count = session.exec(
+        select(func.count()).where(
+            CustomerContact.tenant_id == tenant_id,
+            CustomerContact.is_active == True,
+            or_(
+                CustomerContact.account_id == account_id,
+                CustomerContact.customer_id == account.tms_customer_id
+            ) if account.tms_customer_id else CustomerContact.account_id == account_id
+        )
+    ).one()
+
+    contact = CustomerContact(
+        tenant_id=tenant_id,
+        account_id=account_id,
+        customer_id=account.tms_customer_id,
+        **payload.model_dump(),
+        is_primary=payload.is_primary or existing_count == 0,  # First contact is primary
+        is_active=True,
+    )
+
+    session.add(contact)
+    session.commit()
+    session.refresh(contact)
+
+    return contact.model_dump()
+
+
+@router.put("/{account_id}/contacts/{contact_id}")
+def update_account_contact(
+    account_id: str,
+    contact_id: str,
+    payload: ContactUpdate,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Update a contact"""
+    tenant_id = str(current_user.tenant_id)
+
+    account = session.get(Account, account_id)
+    if not account or str(account.tenant_id) != tenant_id:
+        raise HTTPException(404, "Account not found")
+
+    contact = session.get(CustomerContact, contact_id)
+    if not contact or str(contact.tenant_id) != tenant_id:
+        raise HTTPException(404, "Contact not found")
+
+    # Verify contact belongs to this account
+    if contact.account_id != account_id and contact.customer_id != account.tms_customer_id:
+        raise HTTPException(404, "Contact not found")
+
+    # If setting as primary, unset other primaries
+    if payload.is_primary and not contact.is_primary:
+        existing_primaries = session.exec(
+            select(CustomerContact).where(
+                CustomerContact.tenant_id == tenant_id,
+                CustomerContact.is_active == True,
+                CustomerContact.is_primary == True,
+                CustomerContact.id != contact_id,
+                or_(
+                    CustomerContact.account_id == account_id,
+                    CustomerContact.customer_id == account.tms_customer_id
+                ) if account.tms_customer_id else CustomerContact.account_id == account_id
+            )
+        ).all()
+        for c in existing_primaries:
+            c.is_primary = False
+            session.add(c)
+
+    update_data = payload.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(contact, key, value)
+
+    # Ensure both FKs are set
+    contact.account_id = account_id
+    if account.tms_customer_id:
+        contact.customer_id = account.tms_customer_id
+
+    session.add(contact)
+    session.commit()
+    session.refresh(contact)
+
+    return contact.model_dump()
+
+
+@router.delete("/{account_id}/contacts/{contact_id}")
+def delete_account_contact(
+    account_id: str,
+    contact_id: str,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Delete (soft) a contact"""
+    tenant_id = str(current_user.tenant_id)
+
+    account = session.get(Account, account_id)
+    if not account or str(account.tenant_id) != tenant_id:
+        raise HTTPException(404, "Account not found")
+
+    contact = session.get(CustomerContact, contact_id)
+    if not contact or str(contact.tenant_id) != tenant_id:
+        raise HTTPException(404, "Contact not found")
+
+    # Verify contact belongs to this account
+    if contact.account_id != account_id and contact.customer_id != account.tms_customer_id:
+        raise HTTPException(404, "Contact not found")
+
+    contact.is_active = False
+    session.add(contact)
+    session.commit()
+
+    return {"success": True, "message": "Contact deleted"}
+
+
+@router.patch("/{account_id}/contacts/{contact_id}/set-primary")
+def set_primary_contact(
+    account_id: str,
+    contact_id: str,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Set a contact as primary"""
+    tenant_id = str(current_user.tenant_id)
+
+    account = session.get(Account, account_id)
+    if not account or str(account.tenant_id) != tenant_id:
+        raise HTTPException(404, "Account not found")
+
+    contact = session.get(CustomerContact, contact_id)
+    if not contact or str(contact.tenant_id) != tenant_id:
+        raise HTTPException(404, "Contact not found")
+
+    # Verify contact belongs to this account
+    if contact.account_id != account_id and contact.customer_id != account.tms_customer_id:
+        raise HTTPException(404, "Contact not found")
+
+    # Unset other primaries
+    existing_primaries = session.exec(
+        select(CustomerContact).where(
+            CustomerContact.tenant_id == tenant_id,
+            CustomerContact.is_active == True,
+            CustomerContact.is_primary == True,
+            CustomerContact.id != contact_id,
+            or_(
+                CustomerContact.account_id == account_id,
+                CustomerContact.customer_id == account.tms_customer_id
+            ) if account.tms_customer_id else CustomerContact.account_id == account_id
+        )
+    ).all()
+    for c in existing_primaries:
+        c.is_primary = False
+        session.add(c)
+
+    contact.is_primary = True
+    session.add(contact)
+    session.commit()
+
+    return {"success": True, "message": "Contact set as primary"}

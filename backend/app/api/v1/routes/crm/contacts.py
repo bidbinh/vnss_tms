@@ -195,6 +195,10 @@ def create_contact(
     session.commit()
     session.refresh(contact)
 
+    # Sync to TMS if account is linked
+    from app.services.crm_sync_service import sync_crm_to_tms
+    sync_crm_to_tms(payload.account_id, session)
+
     return contact
 
 
@@ -268,6 +272,10 @@ def update_contact(
     session.add(contact)
     session.commit()
     session.refresh(contact)
+
+    # Sync to TMS if account is linked
+    from app.services.crm_sync_service import sync_crm_to_tms
+    sync_crm_to_tms(contact.account_id, session)
 
     return contact
 
@@ -350,7 +358,12 @@ def delete_contact(
             new_primary.is_primary = True
             session.add(new_primary)
 
+    account_id = contact.account_id
     session.delete(contact)
     session.commit()
+
+    # Sync to TMS if account is linked
+    from app.services.crm_sync_service import sync_crm_to_tms
+    sync_crm_to_tms(account_id, session)
 
     return {"success": True, "message": "Contact deleted"}
