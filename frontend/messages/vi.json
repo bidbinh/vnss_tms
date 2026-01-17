@@ -3251,12 +3251,71 @@
       "shortName": "Tên ngắn",
       "taxCode": "Mã số thuế",
       "title": "Khách hàng",
-      "type": "Loại khách hàng"
+      "type": "Loại khách hàng",
+      "addresses": {
+        "title": "Địa chỉ",
+        "add": "Thêm địa chỉ",
+        "edit": "Sửa địa chỉ",
+        "types": {
+          "operating": "Địa chỉ hoạt động",
+          "businessRegistration": "Địa chỉ ĐKKD",
+          "billing": "Địa chỉ hoá đơn",
+          "shipping": "Địa chỉ giao hàng",
+          "branch": "Chi nhánh",
+          "warehouse": "Kho hàng"
+        },
+        "sameAsOperating": "Giống địa chỉ hoạt động",
+        "contactPerson": "Người liên hệ nhận hàng",
+        "setDefault": "Đặt làm mặc định",
+        "default": "Mặc định",
+        "noAddresses": "Chưa có địa chỉ nào"
+      },
+      "bankAccounts": {
+        "title": "Tài khoản ngân hàng",
+        "add": "Thêm tài khoản",
+        "edit": "Sửa tài khoản",
+        "bank": "Ngân hàng",
+        "branch": "Chi nhánh",
+        "accountNumber": "Số tài khoản",
+        "accountHolder": "Chủ tài khoản",
+        "primary": "Chính",
+        "setPrimary": "Đặt làm chính",
+        "noBankAccounts": "Chưa có tài khoản ngân hàng nào"
+      },
+      "contacts": {
+        "title": "Người liên hệ",
+        "add": "Thêm liên hệ",
+        "edit": "Sửa liên hệ",
+        "name": "Họ tên",
+        "title": "Chức danh",
+        "department": "Phòng ban",
+        "phone": "Điện thoại",
+        "mobile": "Di động",
+        "email": "Email",
+        "primary": "Chính",
+        "setPrimary": "Đặt làm chính",
+        "decisionMaker": "Người quyết định",
+        "noContacts": "Chưa có người liên hệ nào",
+        "types": {
+          "general": "Liên hệ chung",
+          "billing": "Thanh toán",
+          "shipping": "Giao hàng",
+          "sales": "Kinh doanh",
+          "purchasing": "Mua hàng",
+          "technical": "Kỹ thuật",
+          "management": "Quản lý"
+        }
+      }
     },
     "customersPage": {
       "actions": {
+        "delete": "Xoá",
         "edit": "Sửa",
+        "restore": "Khôi phục",
         "viewDetails": "Xem chi tiết"
+      },
+      "confirmations": {
+        "deleteCustomer": "Bạn có chắc chắn muốn xoá khách hàng này?"
       },
       "addCustomer": "Thêm khách hàng",
       "columns": {
@@ -3271,7 +3330,9 @@
       },
       "errors": {
         "codeAndNameRequired": "Code và Name là bắt buộc.",
+        "deleteFailed": "Xoá thất bại",
         "loadFailed": "Tải dữ liệu thất bại",
+        "restoreFailed": "Khôi phục thất bại",
         "saveFailed": "Lưu thất bại"
       },
       "modal": {
@@ -3296,7 +3357,8 @@
       "search": {
         "customers": "khách hàng",
         "loading": "Đang tải...",
-        "placeholder": "Tìm theo mã, tên, MST, SĐT, tỉnh/TP..."
+        "placeholder": "Tìm theo mã, tên, MST, SĐT, tỉnh/TP...",
+        "showDeleted": "Hiển thị đã xoá"
       },
       "stats": {
         "active": "Đang hoạt động",
@@ -3307,6 +3369,7 @@
       "status": {
         "active": "HĐ",
         "crm": "CRM",
+        "deleted": "Đã xoá",
         "inactive": "Ngừng"
       },
       "subtitle": "Quản lý danh sách khách hàng vận tải (Master Data)",
@@ -3315,6 +3378,276 @@
         "noData": "Chưa có khách hàng nào"
       },
       "title": "Quản lý Khách hàng"
+    },
+    "customerEdit": {
+      "title": "Chỉnh sửa khách hàng",
+      "backToCustomer": "Quay lại",
+      "save": "Lưu",
+      "saveChanges": "Lưu thay đổi",
+      "cancel": "Hủy",
+      "validation": {
+        "codeRequired": "Mã và Tên khách hàng là bắt buộc!"
+      },
+      "errors": {
+        "saveFailed": "Không thể lưu. Vui lòng thử lại."
+      },
+      "tabs": {
+        "general": "Thông tin chung",
+        "addresses": "Địa chỉ",
+        "bankAccounts": "Ngân hàng",
+        "contacts": "Liên hệ",
+        "financial": "Tài chính",
+        "notes": "Ghi chú"
+      },
+      "general": {
+        "code": "Mã khách hàng",
+        "shortName": "Tên viết tắt",
+        "name": "Tên khách hàng",
+        "taxCode": "Mã số thuế",
+        "businessLicense": "Số ĐKKD",
+        "phone": "Điện thoại",
+        "email": "Email",
+        "fax": "Fax",
+        "website": "Website",
+        "industry": "Ngành nghề",
+        "source": "Nguồn khách hàng",
+        "customerSince": "Là khách hàng từ",
+        "isActive": "Đang hoạt động"
+      },
+      "financial": {
+        "title": "Điều khoản thanh toán",
+        "paymentTerms": "Điều khoản",
+        "creditDays": "Số ngày công nợ",
+        "creditLimit": "Hạn mức công nợ",
+        "bankNote": "Lưu ý: Thông tin ngân hàng đã được chuyển sang tab \"Ngân hàng\" để quản lý nhiều tài khoản."
+      },
+      "notes": {
+        "label": "Ghi chú",
+        "placeholder": "Nhập ghi chú về khách hàng..."
+      },
+      "paymentTermsOptions": {
+        "select": "-- Chọn --",
+        "cod": "COD - Thanh toán khi giao hàng",
+        "prepaid": "Thanh toán trước",
+        "net15": "NET15 - Thanh toán sau 15 ngày",
+        "net30": "NET30 - Thanh toán sau 30 ngày",
+        "net45": "NET45 - Thanh toán sau 45 ngày",
+        "net60": "NET60 - Thanh toán sau 60 ngày"
+      },
+      "industryOptions": {
+        "select": "-- Chọn ngành nghề --",
+        "logistics": "Logistics",
+        "manufacturing": "Sản xuất",
+        "retail": "Bán lẻ",
+        "ecommerce": "Thương mại điện tử",
+        "fmcg": "FMCG",
+        "construction": "Xây dựng",
+        "other": "Khác"
+      },
+      "sourceOptions": {
+        "select": "-- Chọn nguồn --",
+        "referral": "Giới thiệu",
+        "website": "Website",
+        "coldCall": "Cold Call",
+        "exhibition": "Triển lãm",
+        "social": "Mạng xã hội",
+        "other": "Khác"
+      },
+      "addressManager": {
+        "title": "Địa chỉ",
+        "addAddress": "Thêm địa chỉ",
+        "editAddress": "Sửa địa chỉ",
+        "addNewAddress": "Thêm địa chỉ mới",
+        "noAddresses": "Chưa có địa chỉ nào",
+        "addressRequired": "Địa chỉ là bắt buộc",
+        "saveError": "Lỗi khi lưu địa chỉ",
+        "deleteConfirm": "Bạn có chắc muốn xoá địa chỉ này?",
+        "deleteError": "Lỗi khi xoá địa chỉ",
+        "setDefaultError": "Lỗi khi đặt mặc định",
+        "sameAsOperating": "Giống địa chỉ hoạt động",
+        "setAsDefault": "Đặt làm địa chỉ giao hàng mặc định",
+        "default": "Mặc định",
+        "equalOperating": "= Địa chỉ HĐ",
+        "contact": "Liên hệ",
+        "edit": "Sửa",
+        "delete": "Xoá",
+        "cancel": "Huỷ",
+        "saving": "Đang lưu...",
+        "save": "Lưu",
+        "types": {
+          "OPERATING": "Địa chỉ hoạt động",
+          "BUSINESS_REGISTRATION": "Địa chỉ ĐKKD",
+          "BILLING": "Địa chỉ hoá đơn",
+          "SHIPPING": "Địa chỉ giao hàng",
+          "BRANCH": "Chi nhánh",
+          "WAREHOUSE": "Kho hàng"
+        },
+        "form": {
+          "addressType": "Loại địa chỉ",
+          "nameLabel": "Tên/Nhãn (tuỳ chọn)",
+          "namePlaceholder": "VD: Kho Bình Dương, CN Hà Nội...",
+          "address": "Địa chỉ",
+          "addressPlaceholder": "Số nhà, đường...",
+          "ward": "Phường/Xã",
+          "district": "Quận/Huyện",
+          "city": "Tỉnh/TP",
+          "shippingContact": "Người liên hệ nhận hàng",
+          "contactName": "Tên",
+          "contactPhone": "Điện thoại",
+          "contactEmail": "Email",
+          "notes": "Ghi chú"
+        }
+      },
+      "bankAccountManager": {
+        "title": "Tài khoản ngân hàng",
+        "addAccount": "Thêm tài khoản",
+        "editAccount": "Sửa tài khoản",
+        "addBankAccount": "Thêm tài khoản ngân hàng",
+        "noAccounts": "Chưa có tài khoản ngân hàng nào",
+        "addFirstAccount": "+ Thêm tài khoản đầu tiên",
+        "saveError": "Lỗi khi lưu tài khoản ngân hàng",
+        "deleteConfirm": "Bạn có chắc muốn xoá tài khoản này?",
+        "deleteError": "Lỗi khi xoá tài khoản",
+        "setPrimaryError": "Lỗi khi đặt làm tài khoản chính",
+        "primary": "Chính",
+        "setPrimary": "Đặt làm chính",
+        "accountNumber": "STK:",
+        "accountHolder": "Chủ TK:",
+        "branch": "Chi nhánh:",
+        "copyAccount": "Copy số tài khoản",
+        "edit": "Sửa",
+        "delete": "Xoá",
+        "cancel": "Huỷ",
+        "saving": "Đang lưu...",
+        "update": "Cập nhật",
+        "add": "Thêm",
+        "form": {
+          "bank": "Ngân hàng",
+          "bankPlaceholder": "Chọn ngân hàng...",
+          "branch": "Chi nhánh",
+          "branchPlaceholder": "VD: Chi nhánh Quận 1",
+          "accountNumber": "Số tài khoản",
+          "accountNumberPlaceholder": "VD: 0123456789",
+          "accountHolder": "Chủ tài khoản",
+          "accountHolderPlaceholder": "VD: NGUYEN VAN A",
+          "notes": "Ghi chú",
+          "notesPlaceholder": "VD: Tài khoản nhận thanh toán",
+          "setPrimary": "Đặt làm tài khoản chính"
+        }
+      },
+      "contactManager": {
+        "title": "Người liên hệ",
+        "addContact": "Thêm liên hệ",
+        "editContact": "Sửa liên hệ",
+        "addNewContact": "Thêm người liên hệ",
+        "noContacts": "Chưa có người liên hệ nào",
+        "addFirstContact": "+ Thêm liên hệ đầu tiên",
+        "saveError": "Lỗi khi lưu thông tin liên hệ",
+        "deleteConfirm": "Bạn có chắc muốn xoá liên hệ này?",
+        "deleteError": "Lỗi khi xoá liên hệ",
+        "setPrimaryError": "Lỗi khi đặt làm liên hệ chính",
+        "primary": "Chính",
+        "setPrimary": "Đặt làm chính",
+        "decisionMaker": "Người quyết định",
+        "edit": "Sửa",
+        "delete": "Xoá",
+        "cancel": "Huỷ",
+        "saving": "Đang lưu...",
+        "update": "Cập nhật",
+        "add": "Thêm",
+        "contactTypes": {
+          "GENERAL": "Liên hệ chung",
+          "BILLING": "Thanh toán",
+          "SHIPPING": "Giao hàng",
+          "SALES": "Kinh doanh",
+          "PURCHASING": "Mua hàng",
+          "TECHNICAL": "Kỹ thuật",
+          "MANAGEMENT": "Quản lý"
+        },
+        "form": {
+          "contactType": "Loại liên hệ",
+          "name": "Họ tên",
+          "namePlaceholder": "VD: Nguyễn Văn A",
+          "title": "Chức danh",
+          "titlePlaceholder": "VD: Giám đốc",
+          "department": "Phòng ban",
+          "departmentPlaceholder": "VD: Phòng Kinh doanh",
+          "phone": "Điện thoại",
+          "phonePlaceholder": "VD: 028 1234 5678",
+          "mobile": "Di động",
+          "mobilePlaceholder": "VD: 0912 345 678",
+          "email": "Email",
+          "emailPlaceholder": "VD: email@company.com",
+          "notes": "Ghi chú",
+          "notesPlaceholder": "Ghi chú về liên hệ này...",
+          "isPrimary": "Liên hệ chính",
+          "isDecisionMaker": "Người quyết định (có thể phê duyệt, ký hợp đồng)"
+        }
+      }
+    },
+    "customerDetail": {
+      "backToList": "Quay lại danh sách",
+      "notFound": "Không tìm thấy khách hàng",
+      "syncFromCRM": "Cập nhật từ CRM",
+      "syncSuccess": "Đã cập nhật dữ liệu từ CRM!",
+      "crmLinked": "Đã liên kết CRM",
+      "viewOnCRM": "Xem trên CRM",
+      "linkToCRM": "Liên kết CRM",
+      "unlinkCRM": "Huỷ liên kết CRM",
+      "linkSuccess": "Đã liên kết khách hàng với CRM Account thành công!",
+      "unlinkSuccess": "Đã huỷ liên kết khách hàng với CRM Account!",
+      "unlinkConfirm": "Bạn có chắc muốn huỷ liên kết khách hàng này với CRM? Việc đồng bộ sẽ ngừng hoạt động.",
+      "linkModal": {
+        "title": "Liên kết với CRM Account",
+        "description": "Chọn một CRM Account để liên kết với khách hàng này. Sau khi liên kết, địa chỉ, tài khoản ngân hàng và liên hệ sẽ được tự động đồng bộ.",
+        "searchPlaceholder": "Tìm theo tên hoặc mã...",
+        "noAccounts": "Không tìm thấy CRM Account khả dụng"
+      },
+      "status": {
+        "active": "Hoạt động",
+        "inactive": "Ngừng HĐ"
+      },
+      "sections": {
+        "contactInfo": "Thông tin liên hệ",
+        "address": "Địa chỉ",
+        "legalInfo": "Thông tin pháp lý",
+        "financialInfo": "Thông tin tài chính",
+        "bankInfo": "Thông tin ngân hàng",
+        "notes": "Ghi chú",
+        "primaryContact": "Liên hệ chính",
+        "crmIntegration": "Tích hợp CRM",
+        "systemInfo": "Thông tin hệ thống"
+      },
+      "fields": {
+        "companyAddress": "Địa chỉ công ty",
+        "shippingAddress": "Địa chỉ giao hàng mặc định",
+        "taxCode": "Mã số thuế",
+        "businessLicense": "Số ĐKKD",
+        "industry": "Ngành nghề",
+        "source": "Nguồn khách hàng",
+        "paymentTerms": "Điều khoản thanh toán",
+        "creditDays": "Số ngày công nợ",
+        "creditLimit": "Hạn mức công nợ",
+        "days": "ngày",
+        "bankName": "Ngân hàng",
+        "bankBranch": "Chi nhánh",
+        "bankAccount": "Số tài khoản",
+        "bankAccountName": "Tên tài khoản",
+        "status": "Trạng thái",
+        "customerSince": "Là khách hàng từ",
+        "createdAt": "Ngày tạo",
+        "updatedAt": "Cập nhật lần cuối"
+      },
+      "deleteModal": {
+        "title": "Xác nhận xóa",
+        "message": "Bạn có chắc muốn xóa khách hàng {name}?"
+      },
+      "errors": {
+        "deleteFailed": "Không thể xóa khách hàng này",
+        "syncFailed": "Không thể đồng bộ từ CRM. Vui lòng thử lại.",
+        "linkFailed": "Không thể liên kết với CRM. Vui lòng thử lại.",
+        "unlinkFailed": "Không thể huỷ liên kết CRM. Vui lòng thử lại."
+      }
     },
     "dashboard": {
       "activeTrips": "Chuyến đang chạy",
@@ -4729,7 +5062,15 @@
       "filters": {
         "all": "Tất cả",
         "container": "Cont",
-        "trip": "Trip"
+        "trip": "Trip",
+        "pickupLocation": "Điểm đi",
+        "deliveryLocation": "Điểm đến",
+        "listView": "Danh sách",
+        "groupedView": "Nhóm theo khu vực"
+      },
+      "searchableSelect": {
+        "search": "Tìm kiếm...",
+        "noResults": "Không tìm thấy"
       },
       "modal": {
         "allCustomers": "Tất cả khách hàng",
@@ -4986,7 +5327,7 @@
       },
       "errors": {
         "companyLocationRequired": "Tên công ty và Location là bắt buộc.",
-        "deleteFailed": "Xóa thất bại",
+        "deleteFailed": "Không thể xóa site",
         "loadFailed": "Tải dữ liệu thất bại",
         "saveFailed": "Lưu thất bại"
       },
@@ -5023,6 +5364,7 @@
         "noteSection": "Ghi chú",
         "save": "Lưu",
         "saving": "Đang lưu...",
+        "searchLocation": "Tìm kiếm location...",
         "selectLocation": "-- Chọn location --",
         "siteCode": "Mã site",
         "siteCodePlaceholder": "Tự động nếu để trống",

@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState, useMemo, useRef } from "react";
+import { useEffect, useState, useMemo, useRef, Fragment } from "react";
 import { useTranslations } from "next-intl";
 import { apiFetch } from "@/lib/api";
 import DataTable, { Column, TablePagination } from "@/components/DataTable";
-import { DollarSign, Plus, Search, MapPin, TrendingUp, CheckCircle, Clock, Copy, ChevronDown, X, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { Plus, Search, MapPin, Copy, ChevronDown, X, ArrowUpDown, ArrowUp, ArrowDown, Layers, List } from "lucide-react";
 
 // ============ Types ============
 type Location = {
@@ -57,30 +57,6 @@ type RateForm = {
   end_date: string;
   status: string;
 };
-
-// ============ Stats Card Component ============
-function StatCard({ icon: Icon, label, value, color }: { icon: any; label: string; value: number | string; color: string }) {
-  const colorClasses: Record<string, string> = {
-    blue: "bg-blue-50 text-blue-600 border-blue-100",
-    green: "bg-green-50 text-green-600 border-green-100",
-    gray: "bg-gray-50 text-gray-600 border-gray-100",
-    yellow: "bg-yellow-50 text-yellow-600 border-yellow-100",
-  };
-
-  return (
-    <div className={`rounded-xl border p-4 ${colorClasses[color] || colorClasses.blue}`}>
-      <div className="flex items-center gap-3">
-        <div className="p-2 rounded-lg bg-white/60">
-          <Icon className="w-5 h-5" />
-        </div>
-        <div>
-          <div className="text-2xl font-bold">{value}</div>
-          <div className="text-xs opacity-80">{label}</div>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 // ============ Currency Formatter ============
 function formatCurrency(amount?: number): string {
@@ -255,6 +231,13 @@ export default function RatesPage() {
   const [sortField, setSortField] = useState<string>("pickup_location_name");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 
+  // View mode: "list" for normal view, "grouped" for grouped by region
+  const [viewMode, setViewMode] = useState<"list" | "grouped">("list");
+
+  // Hover highlight state for comparing similar regions
+  const [highlightPickup, setHighlightPickup] = useState<string | null>(null);
+  const [highlightDelivery, setHighlightDelivery] = useState<string | null>(null);
+
   // ============ Data Fetching ============
   async function load() {
     setLoading(true);
@@ -379,20 +362,58 @@ export default function RatesPage() {
     setCurrentPage(1);
   }, [searchTerm, filterType, filterPickup, filterDelivery, pageSize]);
 
-  // ============ Stats ============
-  const stats = useMemo(() => {
-    const active = rows.filter((r) => r.status === "ACTIVE").length;
-    const container = rows.filter((r) => r.pricing_type === "CONTAINER").length;
-    const trip = rows.filter((r) => r.pricing_type === "TRIP").length;
-    const expiringSoon = rows.filter((r) => {
-      if (!r.end_date) return false;
-      const endDate = new Date(r.end_date);
-      const today = new Date();
-      const thirtyDaysLater = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000);
-      return endDate <= thirtyDaysLater && endDate >= today;
-    }).length;
-    return { total: rows.length, active, container, trip, expiringSoon };
-  }, [rows]);
+  // ============ Grouped Data for Review Mode ============
+  // Two-level grouping: Pickup Location → Delivery Location
+  const groupedData = useMemo(() => {
+    if (viewMode !== "grouped") return null;
+
+    // First level: Group by pickup location code
+    const pickupGroups: Record<string, Rate[]> = {};
+    paginatedRows.forEach((row) => {
+      const key = row.pickup_location_code || "Unknown";
+      if (!pickupGroups[key]) pickupGroups[key] = [];
+      pickupGroups[key].push(row);
+    });
+
+    // Second level: Within each pickup group, group by delivery location
+    return Object.entries(pickupGroups)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([pickupKey, pickupItems]) => {
+        // Group by delivery within this pickup
+        const deliveryGroups: Record<string, Rate[]> = {};
+        pickupItems.forEach((row) => {
+          const delKey = row.delivery_location_code || "Unknown";
+          if (!deliveryGroups[delKey]) deliveryGroups[delKey] = [];
+          deliveryGroups[delKey].push(row);
+        });
+
+        const deliverySubgroups = Object.entries(deliveryGroups)
+          .sort(([a], [b]) => a.localeCompare(b))
+          .map(([delKey, items]) => ({
+            key: delKey,
+            name: items[0]?.delivery_location_name || delKey,
+            items: items.sort((a, b) => (a.pricing_type || "").localeCompare(b.pricing_type || "")),
+          }));
+
+        return {
+          key: pickupKey,
+          name: pickupItems[0]?.pickup_location_name || pickupKey,
+          totalItems: pickupItems.length,
+          deliveryGroups: deliverySubgroups,
+        };
+      });
+  }, [paginatedRows, viewMode]);
+
+  // Get highlight class for row based on hover state
+  function getRowHighlightClass(row: Rate): string {
+    if (highlightPickup && row.pickup_location_code === highlightPickup) {
+      return "bg-blue-50";
+    }
+    if (highlightDelivery && row.delivery_location_code === highlightDelivery) {
+      return "bg-green-50";
+    }
+    return "";
+  }
 
   // ============ Modal Functions ============
   function openCreate() {
@@ -806,9 +827,8 @@ export default function RatesPage() {
 
   return (
     <div className="h-[calc(100vh-64px)] overflow-auto">
-      {/* Phần 1: Header & Stats - Cuộn đi */}
-      <div className="p-6 pb-4 space-y-4">
-        {/* Header */}
+      {/* Phần 1: Header */}
+      <div className="px-6 pt-6 pb-4">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">{t("title")}</h1>
@@ -822,15 +842,6 @@ export default function RatesPage() {
             <Plus className="w-4 h-4" />
             {t("addRate")}
           </button>
-        </div>
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          <StatCard icon={DollarSign} label={t("stats.totalRates")} value={stats.total} color="blue" />
-          <StatCard icon={CheckCircle} label={t("stats.active")} value={stats.active} color="green" />
-          <StatCard icon={TrendingUp} label={t("stats.containerPricing")} value={stats.container} color="blue" />
-          <StatCard icon={MapPin} label={t("stats.tripPricing")} value={stats.trip} color="gray" />
-          <StatCard icon={Clock} label={t("stats.expiringSoon")} value={stats.expiringSoon} color="yellow" />
         </div>
       </div>
 
@@ -893,6 +904,24 @@ export default function RatesPage() {
                   className="pl-10 pr-4 py-2 rounded-xl border border-gray-300 outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 text-sm w-56"
                 />
               </div>
+
+              {/* View Mode Toggle */}
+              <div className="flex bg-gray-100 rounded-lg p-0.5">
+                <button
+                  onClick={() => setViewMode("list")}
+                  className={`p-1.5 rounded ${viewMode === "list" ? "bg-white shadow-sm text-blue-600" : "text-gray-500 hover:text-gray-700"}`}
+                  title={t("filters.listView") || "Danh sách"}
+                >
+                  <List className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setViewMode("grouped")}
+                  className={`p-1.5 rounded ${viewMode === "grouped" ? "bg-white shadow-sm text-blue-600" : "text-gray-500 hover:text-gray-700"}`}
+                  title={t("filters.groupedView") || "Nhóm theo khu vực"}
+                >
+                  <Layers className="w-4 h-4" />
+                </button>
+              </div>
             </div>
 
             <div className="text-sm text-gray-500">{loading ? t("search.loading") : `${filteredRows.length} ${t("search.rates")}`}</div>
@@ -948,9 +977,81 @@ export default function RatesPage() {
                     {t("table.noData")}
                   </td>
                 </tr>
+              ) : viewMode === "grouped" && groupedData ? (
+                // Grouped View - Two level: Pickup → Delivery
+                groupedData.map((pickupGroup) => (
+                  <Fragment key={`pickup-${pickupGroup.key}`}>
+                    {/* Pickup Group Header (Level 1) */}
+                    <tr className="bg-blue-100 border-t-2 border-blue-300">
+                      <td colSpan={columnDefs.length} className="px-4 py-2.5">
+                        <div className="flex items-center gap-2">
+                          <MapPin className="w-4 h-4 text-blue-700" />
+                          <span className="font-bold text-blue-900 text-sm">Điểm đi: {pickupGroup.key}</span>
+                          <span className="text-blue-700">- {pickupGroup.name}</span>
+                          <span className="text-xs bg-blue-200 text-blue-800 px-2 py-0.5 rounded-full ml-2">
+                            {pickupGroup.totalItems} tuyến
+                          </span>
+                        </div>
+                      </td>
+                    </tr>
+                    {/* Delivery Subgroups (Level 2) */}
+                    {pickupGroup.deliveryGroups.map((deliveryGroup) => (
+                      <Fragment key={`delivery-${pickupGroup.key}-${deliveryGroup.key}`}>
+                        {/* Delivery Group Header */}
+                        <tr className="bg-green-50 border-t border-green-200">
+                          <td colSpan={columnDefs.length} className="px-6 py-1.5">
+                            <div className="flex items-center gap-2">
+                              <span className="text-green-600">→</span>
+                              <span className="font-semibold text-green-800 text-xs">Điểm đến: {deliveryGroup.key}</span>
+                              <span className="text-green-600 text-xs">- {deliveryGroup.name}</span>
+                              <span className="text-xs text-green-500">({deliveryGroup.items.length})</span>
+                            </div>
+                          </td>
+                        </tr>
+                        {/* Rate Items */}
+                        {deliveryGroup.items.map((row) => (
+                          <tr
+                            key={row.id}
+                            className={`border-t hover:bg-gray-50 ${getRowHighlightClass(row)}`}
+                            onMouseEnter={() => {
+                              setHighlightPickup(row.pickup_location_code || null);
+                              setHighlightDelivery(row.delivery_location_code || null);
+                            }}
+                            onMouseLeave={() => {
+                              setHighlightPickup(null);
+                              setHighlightDelivery(null);
+                            }}
+                          >
+                            {columnDefs.map((col) => (
+                              <td
+                                key={col.key}
+                                className={`px-4 py-3 text-${col.align || "left"}`}
+                                style={{ width: col.width }}
+                              >
+                                {renderCell(row, col.key)}
+                              </td>
+                            ))}
+                          </tr>
+                        ))}
+                      </Fragment>
+                    ))}
+                  </Fragment>
+                ))
               ) : (
+                // List View - normal table
                 paginatedRows.map((row) => (
-                  <tr key={row.id} className="border-t hover:bg-gray-50">
+                  <tr
+                    key={row.id}
+                    className={`border-t hover:bg-gray-50 ${getRowHighlightClass(row)}`}
+                    onMouseEnter={() => {
+                      setHighlightPickup(row.pickup_location_code || null);
+                      setHighlightDelivery(row.delivery_location_code || null);
+                    }}
+                    onMouseLeave={() => {
+                      setHighlightPickup(null);
+                      setHighlightDelivery(null);
+                    }}
+                  >
                     {columnDefs.map((col) => (
                       <td
                         key={col.key}
@@ -978,6 +1079,7 @@ export default function RatesPage() {
           onPageChange={setCurrentPage}
           onPageSizeChange={setPageSize}
           itemName={t("pagination.rates")}
+          pageSizeOptions={[20, 50, 100]}
         />
       </div>
 

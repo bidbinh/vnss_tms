@@ -2119,7 +2119,61 @@
       "phone": "Phone",
       "email": "Email",
       "address": "Address",
-      "taxCode": "Tax Code"
+      "taxCode": "Tax Code",
+      "addresses": {
+        "title": "Addresses",
+        "add": "Add Address",
+        "edit": "Edit Address",
+        "types": {
+          "operating": "Operating Address",
+          "businessRegistration": "Business Registration Address",
+          "billing": "Billing Address",
+          "shipping": "Shipping Address",
+          "branch": "Branch",
+          "warehouse": "Warehouse"
+        },
+        "sameAsOperating": "Same as Operating Address",
+        "contactPerson": "Shipping Contact Person",
+        "setDefault": "Set as Default",
+        "default": "Default",
+        "noAddresses": "No addresses yet"
+      },
+      "bankAccounts": {
+        "title": "Bank Accounts",
+        "add": "Add Bank Account",
+        "edit": "Edit Bank Account",
+        "bank": "Bank",
+        "branch": "Branch",
+        "accountNumber": "Account Number",
+        "accountHolder": "Account Holder",
+        "primary": "Primary",
+        "setPrimary": "Set as Primary",
+        "noBankAccounts": "No bank accounts yet"
+      },
+      "contacts": {
+        "title": "Contacts",
+        "add": "Add Contact",
+        "edit": "Edit Contact",
+        "name": "Full Name",
+        "title": "Title",
+        "department": "Department",
+        "phone": "Phone",
+        "mobile": "Mobile",
+        "email": "Email",
+        "primary": "Primary",
+        "setPrimary": "Set as Primary",
+        "decisionMaker": "Decision Maker",
+        "noContacts": "No contacts yet",
+        "types": {
+          "general": "General Contact",
+          "billing": "Billing",
+          "shipping": "Shipping",
+          "sales": "Sales",
+          "purchasing": "Purchasing",
+          "technical": "Technical",
+          "management": "Management"
+        }
+      }
     },
     "routes": {
       "title": "Routes",
@@ -2362,6 +2416,7 @@
         "location": "Location",
         "locationRequired": "required",
         "selectLocation": "-- Select location --",
+        "searchLocation": "Search location...",
         "locationNote": "Location is used for rate calculation",
         "siteCode": "Site Code",
         "siteCodePlaceholder": "Auto-generated if empty",
@@ -2395,7 +2450,7 @@
       "errors": {
         "loadFailed": "Load failed",
         "saveFailed": "Save failed",
-        "deleteFailed": "Delete failed",
+        "deleteFailed": "Cannot delete site",
         "companyLocationRequired": "Company name and Location are required."
       }
     },
@@ -2506,7 +2561,15 @@
       "filters": {
         "all": "All",
         "container": "Cont",
-        "trip": "Trip"
+        "trip": "Trip",
+        "pickupLocation": "Pickup Location",
+        "deliveryLocation": "Delivery Location",
+        "listView": "List View",
+        "groupedView": "Group by Region"
+      },
+      "searchableSelect": {
+        "search": "Search...",
+        "noResults": "No results found"
       },
       "search": {
         "placeholder": "Search pickup, delivery, customer...",
@@ -2950,7 +3013,8 @@
       "search": {
         "placeholder": "Search by code, name, tax code, phone, province/city...",
         "loading": "Loading...",
-        "customers": "customers"
+        "customers": "customers",
+        "showDeleted": "Show deleted"
       },
       "columns": {
         "code": "Code",
@@ -2965,11 +3029,17 @@
       "status": {
         "active": "Active",
         "inactive": "Inactive",
+        "deleted": "Deleted",
         "crm": "CRM"
       },
       "actions": {
         "viewDetails": "View Details",
-        "edit": "Edit"
+        "edit": "Edit",
+        "delete": "Delete",
+        "restore": "Restore"
+      },
+      "confirmations": {
+        "deleteCustomer": "Are you sure you want to delete this customer?"
       },
       "table": {
         "loading": "Loading...",
@@ -2997,7 +3067,279 @@
       "errors": {
         "loadFailed": "Load failed",
         "saveFailed": "Save failed",
+        "deleteFailed": "Delete failed",
+        "restoreFailed": "Restore failed",
         "codeAndNameRequired": "Code and Name are required."
+      }
+    },
+    "customerEdit": {
+      "title": "Edit Customer",
+      "backToCustomer": "Back",
+      "save": "Save",
+      "saveChanges": "Save Changes",
+      "cancel": "Cancel",
+      "validation": {
+        "codeRequired": "Code and Name are required!"
+      },
+      "errors": {
+        "saveFailed": "Cannot save. Please try again."
+      },
+      "tabs": {
+        "general": "General",
+        "addresses": "Addresses",
+        "bankAccounts": "Banks",
+        "contacts": "Contacts",
+        "financial": "Finance",
+        "notes": "Notes"
+      },
+      "general": {
+        "code": "Customer Code",
+        "shortName": "Short Name",
+        "name": "Customer Name",
+        "taxCode": "Tax Code",
+        "businessLicense": "Business License",
+        "phone": "Phone",
+        "email": "Email",
+        "fax": "Fax",
+        "website": "Website",
+        "industry": "Industry",
+        "source": "Customer Source",
+        "customerSince": "Customer Since",
+        "isActive": "Active"
+      },
+      "financial": {
+        "title": "Payment Terms",
+        "paymentTerms": "Terms",
+        "creditDays": "Credit Days",
+        "creditLimit": "Credit Limit",
+        "bankNote": "Note: Bank information has been moved to the \"Banks\" tab to manage multiple accounts."
+      },
+      "notes": {
+        "label": "Notes",
+        "placeholder": "Enter notes about the customer..."
+      },
+      "paymentTermsOptions": {
+        "select": "-- Select --",
+        "cod": "COD - Cash on Delivery",
+        "prepaid": "Prepaid",
+        "net15": "NET15 - Payment within 15 days",
+        "net30": "NET30 - Payment within 30 days",
+        "net45": "NET45 - Payment within 45 days",
+        "net60": "NET60 - Payment within 60 days"
+      },
+      "industryOptions": {
+        "select": "-- Select Industry --",
+        "logistics": "Logistics",
+        "manufacturing": "Manufacturing",
+        "retail": "Retail",
+        "ecommerce": "E-commerce",
+        "fmcg": "FMCG",
+        "construction": "Construction",
+        "other": "Other"
+      },
+      "sourceOptions": {
+        "select": "-- Select Source --",
+        "referral": "Referral",
+        "website": "Website",
+        "coldCall": "Cold Call",
+        "exhibition": "Exhibition",
+        "social": "Social Media",
+        "other": "Other"
+      },
+      "addressManager": {
+        "title": "Addresses",
+        "addAddress": "Add Address",
+        "editAddress": "Edit Address",
+        "addNewAddress": "Add New Address",
+        "noAddresses": "No addresses yet",
+        "addressRequired": "Address is required",
+        "saveError": "Error saving address",
+        "deleteConfirm": "Are you sure you want to delete this address?",
+        "deleteError": "Error deleting address",
+        "setDefaultError": "Error setting default",
+        "sameAsOperating": "Same as operating address",
+        "setAsDefault": "Set as default shipping address",
+        "default": "Default",
+        "equalOperating": "= Operating",
+        "contact": "Contact",
+        "edit": "Edit",
+        "delete": "Delete",
+        "cancel": "Cancel",
+        "saving": "Saving...",
+        "save": "Save",
+        "types": {
+          "OPERATING": "Operating Address",
+          "BUSINESS_REGISTRATION": "Business Registration",
+          "BILLING": "Billing Address",
+          "SHIPPING": "Shipping Address",
+          "BRANCH": "Branch",
+          "WAREHOUSE": "Warehouse"
+        },
+        "form": {
+          "addressType": "Address Type",
+          "nameLabel": "Name/Label (optional)",
+          "namePlaceholder": "E.g.: Binh Duong Warehouse, Hanoi Branch...",
+          "address": "Address",
+          "addressPlaceholder": "House number, street...",
+          "ward": "Ward",
+          "district": "District",
+          "city": "City/Province",
+          "shippingContact": "Shipping Contact Person",
+          "contactName": "Name",
+          "contactPhone": "Phone",
+          "contactEmail": "Email",
+          "notes": "Notes"
+        }
+      },
+      "bankAccountManager": {
+        "title": "Bank Accounts",
+        "addAccount": "Add Account",
+        "editAccount": "Edit Account",
+        "addBankAccount": "Add Bank Account",
+        "noAccounts": "No bank accounts yet",
+        "addFirstAccount": "+ Add first account",
+        "saveError": "Error saving bank account",
+        "deleteConfirm": "Are you sure you want to delete this account?",
+        "deleteError": "Error deleting account",
+        "setPrimaryError": "Error setting primary",
+        "primary": "Primary",
+        "setPrimary": "Set as primary",
+        "accountNumber": "Acct:",
+        "accountHolder": "Holder:",
+        "branch": "Branch:",
+        "copyAccount": "Copy account number",
+        "edit": "Edit",
+        "delete": "Delete",
+        "cancel": "Cancel",
+        "saving": "Saving...",
+        "update": "Update",
+        "add": "Add",
+        "form": {
+          "bank": "Bank",
+          "bankPlaceholder": "Select bank...",
+          "branch": "Branch",
+          "branchPlaceholder": "E.g.: District 1 Branch",
+          "accountNumber": "Account Number",
+          "accountNumberPlaceholder": "E.g.: 0123456789",
+          "accountHolder": "Account Holder",
+          "accountHolderPlaceholder": "E.g.: NGUYEN VAN A",
+          "notes": "Notes",
+          "notesPlaceholder": "E.g.: Payment receiving account",
+          "setPrimary": "Set as primary account"
+        }
+      },
+      "contactManager": {
+        "title": "Contacts",
+        "addContact": "Add Contact",
+        "editContact": "Edit Contact",
+        "addNewContact": "Add Contact",
+        "noContacts": "No contacts yet",
+        "addFirstContact": "+ Add first contact",
+        "saveError": "Error saving contact",
+        "deleteConfirm": "Are you sure you want to delete this contact?",
+        "deleteError": "Error deleting contact",
+        "setPrimaryError": "Error setting primary",
+        "primary": "Primary",
+        "setPrimary": "Set as primary",
+        "decisionMaker": "Decision Maker",
+        "edit": "Edit",
+        "delete": "Delete",
+        "cancel": "Cancel",
+        "saving": "Saving...",
+        "update": "Update",
+        "add": "Add",
+        "contactTypes": {
+          "GENERAL": "General",
+          "BILLING": "Billing",
+          "SHIPPING": "Shipping",
+          "SALES": "Sales",
+          "PURCHASING": "Purchasing",
+          "TECHNICAL": "Technical",
+          "MANAGEMENT": "Management"
+        },
+        "form": {
+          "contactType": "Contact Type",
+          "name": "Full Name",
+          "namePlaceholder": "E.g.: Nguyen Van A",
+          "title": "Title",
+          "titlePlaceholder": "E.g.: Director",
+          "department": "Department",
+          "departmentPlaceholder": "E.g.: Sales Department",
+          "phone": "Phone",
+          "phonePlaceholder": "E.g.: 028 1234 5678",
+          "mobile": "Mobile",
+          "mobilePlaceholder": "E.g.: 0912 345 678",
+          "email": "Email",
+          "emailPlaceholder": "E.g.: email@company.com",
+          "notes": "Notes",
+          "notesPlaceholder": "Notes about this contact...",
+          "isPrimary": "Primary Contact",
+          "isDecisionMaker": "Decision Maker (can approve, sign contracts)"
+        }
+      }
+    },
+    "customerDetail": {
+      "backToList": "Back to list",
+      "notFound": "Customer not found",
+      "syncFromCRM": "Update from CRM",
+      "syncSuccess": "Data updated from CRM!",
+      "crmLinked": "CRM Linked",
+      "viewOnCRM": "View on CRM",
+      "linkToCRM": "Link to CRM",
+      "unlinkCRM": "Unlink from CRM",
+      "linkSuccess": "Customer linked to CRM Account successfully!",
+      "unlinkSuccess": "Customer unlinked from CRM Account!",
+      "unlinkConfirm": "Are you sure you want to unlink this customer from CRM? The sync will stop working.",
+      "linkModal": {
+        "title": "Link to CRM Account",
+        "description": "Select a CRM Account to link with this customer. Once linked, addresses, bank accounts, and contacts will be automatically synced.",
+        "searchPlaceholder": "Search by name or code...",
+        "noAccounts": "No available CRM accounts found"
+      },
+      "status": {
+        "active": "Active",
+        "inactive": "Inactive"
+      },
+      "sections": {
+        "contactInfo": "Contact Information",
+        "address": "Address",
+        "legalInfo": "Legal Information",
+        "financialInfo": "Financial Information",
+        "bankInfo": "Bank Information",
+        "notes": "Notes",
+        "primaryContact": "Primary Contact",
+        "crmIntegration": "CRM Integration",
+        "systemInfo": "System Information"
+      },
+      "fields": {
+        "companyAddress": "Company Address",
+        "shippingAddress": "Default Shipping Address",
+        "taxCode": "Tax Code",
+        "businessLicense": "Business License",
+        "industry": "Industry",
+        "source": "Customer Source",
+        "paymentTerms": "Payment Terms",
+        "creditDays": "Credit Days",
+        "creditLimit": "Credit Limit",
+        "days": "days",
+        "bankName": "Bank",
+        "bankBranch": "Branch",
+        "bankAccount": "Account Number",
+        "bankAccountName": "Account Name",
+        "status": "Status",
+        "customerSince": "Customer Since",
+        "createdAt": "Created At",
+        "updatedAt": "Last Updated"
+      },
+      "deleteModal": {
+        "title": "Confirm Delete",
+        "message": "Are you sure you want to delete customer {name}?"
+      },
+      "errors": {
+        "deleteFailed": "Cannot delete this customer",
+        "syncFailed": "Cannot sync from CRM. Please try again.",
+        "linkFailed": "Cannot link to CRM. Please try again.",
+        "unlinkFailed": "Cannot unlink from CRM. Please try again."
       }
     },
     "reportsPage": {

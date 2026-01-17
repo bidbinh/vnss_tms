@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { apiFetch } from "@/lib/api";
 import DataTable, { Column, TablePagination } from "@/components/DataTable";
-import { MapPin, Plus, Search, Building2, Anchor, Phone, RotateCcw, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { MapPin, Plus, Search, Building2, Anchor, Phone, RotateCcw, ArrowUpDown, ArrowUp, ArrowDown, Edit, Trash2 } from "lucide-react";
 
 // ============ Types ============
 type Location = {
@@ -109,6 +109,19 @@ export default function SitesPage() {
   const [locationSearch, setLocationSearch] = useState("");
   const [showLocationDropdown, setShowLocationDropdown] = useState(false);
   const locationDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Column widths state for resizing
+  const [columnWidths, setColumnWidths] = useState<Record<string, number>>({
+    code: 100,
+    company_name: 200,
+    site_type: 100,
+    location: 150,
+    detailed_address: 200,
+    contact: 130,
+    status: 80,
+    actions: 100,
+  });
+  const [resizingColumn, setResizingColumn] = useState<string | null>(null);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -335,7 +348,26 @@ export default function SitesPage() {
       await apiFetch(`/api/v1/sites/${id}`, { method: "DELETE" });
       await load();
     } catch (e: any) {
-      alert(e?.message || t("errors.deleteFailed"));
+      // Parse error message from API response
+      let errorMessage = t("errors.deleteFailed");
+      
+      if (e?.response) {
+        try {
+          const errorData = await e.response.json();
+          if (errorData?.detail) {
+            errorMessage = errorData.detail;
+          }
+        } catch {
+          // If JSON parse fails, use text
+          if (e.response.statusText) {
+            errorMessage = e.response.statusText;
+          }
+        }
+      } else if (e?.message) {
+        errorMessage = e.message;
+      }
+      
+      alert(errorMessage);
     }
   }
 
@@ -356,20 +388,20 @@ export default function SitesPage() {
 
   // ============ Table Column Definitions ============
   const columnDefs = [
-    { key: "code", header: t("columns.code"), width: 100, sortable: true },
-    { key: "company_name", header: t("columns.companyName"), width: 200, sortable: true },
-    { key: "site_type", header: t("columns.type"), width: 100, sortable: true },
-    { key: "location", header: t("columns.location"), width: 150, sortable: true },
-    { key: "detailed_address", header: t("columns.address"), width: 200, sortable: true },
-    { key: "contact", header: t("columns.contact"), width: 130, sortable: true },
-    { key: "status", header: t("columns.status"), width: 80, sortable: true },
-    { key: "actions", header: t("columns.actions"), width: 100, sortable: false },
+    { key: "code", header: t("columns.code"), width: 100, sortable: true, align: "left" as const },
+    { key: "company_name", header: t("columns.companyName"), width: 200, sortable: true, align: "left" as const },
+    { key: "site_type", header: t("columns.type"), width: 100, sortable: true, align: "left" as const },
+    { key: "location", header: t("columns.location"), width: 150, sortable: true, align: "left" as const },
+    { key: "detailed_address", header: t("columns.address"), width: 200, sortable: true, align: "left" as const },
+    { key: "contact", header: t("columns.contact"), width: 130, sortable: true, align: "left" as const },
+    { key: "status", header: t("columns.status"), width: 80, sortable: true, align: "left" as const },
+    { key: "actions", header: t("columns.actions"), width: 100, sortable: false, align: "left" as const },
   ];
 
   function renderCell(row: Site, key: string) {
     switch (key) {
       case "code":
-        return <span className="font-semibold text-gray-900">{row.code || "-"}</span>;
+        return <span className="text-gray-900">{row.code || "-"}</span>;
       case "company_name":
         return <span className="font-medium">{row.company_name}</span>;
       case "site_type": {
@@ -412,24 +444,26 @@ export default function SitesPage() {
         );
       case "actions":
         return (
-          <div className="flex items-center justify-center gap-2">
+          <div className="flex items-center justify-start gap-1">
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 openEdit(row);
               }}
-              className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+              className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded"
+              title={t("actions.edit")}
             >
-              {t("actions.edit")}
+              <Edit className="w-4 h-4" />
             </button>
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 handleDelete(row.id);
               }}
-              className="text-red-600 hover:text-red-800 text-sm font-medium"
+              className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded"
+              title={t("actions.delete")}
             >
-              {t("actions.delete")}
+              <Trash2 className="w-4 h-4" />
             </button>
           </div>
         );
@@ -519,24 +553,26 @@ export default function SitesPage() {
       sortable: false,
       align: "center",
       render: (r) => (
-        <div className="flex items-center justify-center gap-2">
+        <div className="flex items-center justify-center gap-1">
           <button
             onClick={(e) => {
               e.stopPropagation();
               openEdit(r);
             }}
-            className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+            className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded"
+            title={t("actions.edit")}
           >
-            {t("actions.edit")}
+            <Edit className="w-4 h-4" />
           </button>
           <button
             onClick={(e) => {
               e.stopPropagation();
               handleDelete(r.id);
             }}
-            className="text-red-600 hover:text-red-800 text-sm font-medium"
+            className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded"
+            title={t("actions.delete")}
           >
-            {t("actions.delete")}
+            <Trash2 className="w-4 h-4" />
           </button>
         </div>
       ),
@@ -621,20 +657,50 @@ export default function SitesPage() {
         {/* Table Header - Sticky cùng filter */}
         <div className="px-6 pt-3 bg-white">
           <div className="border border-b-0 border-gray-200 rounded-t-xl overflow-hidden">
-            <table className="w-full text-sm">
+            <table className="w-full text-sm" style={{ tableLayout: "fixed" }}>
               <thead className="bg-gray-50 text-gray-700">
                 <tr>
-                  {columnDefs.map((col) => (
+                  {columnDefs.map((col, index) => (
                     <th
                       key={col.key}
-                      className={`px-4 py-3 font-bold text-left ${col.sortable ? "cursor-pointer select-none hover:bg-gray-100" : ""}`}
-                      style={{ width: col.width }}
+                      className={`relative px-4 py-3 font-bold ${col.align === "center" ? "text-center" : "text-left"} ${col.sortable ? "cursor-pointer select-none hover:bg-gray-100" : ""}`}
+                      style={{ width: columnWidths[col.key] || col.width, minWidth: col.key === "actions" ? 80 : 80 }}
                       onClick={() => col.sortable && handleSort(col.key)}
                     >
-                      <div className="flex items-center gap-1">
+                      <div className={`flex items-center gap-1 ${col.align === "center" ? "justify-center" : ""}`}>
                         {col.header}
                         {col.sortable && getSortIcon(col.key)}
                       </div>
+                      {index < columnDefs.length - 1 && (
+                        <div
+                          className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-blue-400 active:bg-blue-600 z-10"
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setResizingColumn(col.key);
+                            const startX = e.pageX;
+                            const startWidth = columnWidths[col.key] || col.width || 100;
+
+                            const handleMouseMove = (moveEvent: MouseEvent) => {
+                              const diff = moveEvent.pageX - startX;
+                              const newWidth = Math.max(80, startWidth + diff);
+                              setColumnWidths((prev) => ({
+                                ...prev,
+                                [col.key]: newWidth,
+                              }));
+                            };
+
+                            const handleMouseUp = () => {
+                              setResizingColumn(null);
+                              document.removeEventListener("mousemove", handleMouseMove);
+                              document.removeEventListener("mouseup", handleMouseUp);
+                            };
+
+                            document.addEventListener("mousemove", handleMouseMove);
+                            document.addEventListener("mouseup", handleMouseUp);
+                          }}
+                        />
+                      )}
                     </th>
                   ))}
                 </tr>
@@ -647,7 +713,7 @@ export default function SitesPage() {
       {/* Phần 3: Data Table Body */}
       <div className="px-6 pb-4">
         <div className="border border-t-0 border-gray-200 rounded-b-xl overflow-hidden bg-white">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm" style={{ tableLayout: "fixed" }}>
             <tbody>
               {loading ? (
                 <tr>
@@ -667,15 +733,24 @@ export default function SitesPage() {
               ) : (
                 paginatedRows.map((row) => (
                   <tr key={row.id} className="border-t hover:bg-gray-50">
-                    {columnDefs.map((col) => (
-                      <td
-                        key={col.key}
-                        className="px-4 py-3 text-left"
-                        style={{ width: col.width }}
-                      >
-                        {renderCell(row, col.key)}
-                      </td>
-                    ))}
+                    {columnDefs.map((col) => {
+                      const needsTruncate = ["code", "company_name", "detailed_address"].includes(col.key);
+                      return (
+                        <td
+                          key={col.key}
+                          className={`px-4 py-3 ${col.align === "center" ? "text-center" : "text-left"} overflow-hidden`}
+                          style={{ width: columnWidths[col.key] || col.width, minWidth: col.key === "actions" ? 80 : 80 }}
+                        >
+                          {needsTruncate ? (
+                            <div className="overflow-hidden text-ellipsis whitespace-nowrap">
+                              {renderCell(row, col.key)}
+                            </div>
+                          ) : (
+                            renderCell(row, col.key)
+                          )}
+                        </td>
+                      );
+                    })}
                   </tr>
                 ))
               )}
@@ -731,7 +806,7 @@ export default function SitesPage() {
                           setShowLocationDropdown(true);
                         }}
                         onFocus={() => setShowLocationDropdown(true)}
-                        placeholder={t("modal.searchLocation") || "Tìm kiếm location..."}
+                        placeholder={t("modal.searchLocation")}
                         className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-200"
                       />
                       <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
