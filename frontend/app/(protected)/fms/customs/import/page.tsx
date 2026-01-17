@@ -618,7 +618,8 @@ export default function CustomsImportPage() {
       });
 
       // Call backend directly to avoid Next.js proxy timeout (AI parsing can take 60+ seconds)
-      const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      // Use relative URL to work with both local dev proxy and production nginx
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
       const response = await fetch(`${backendUrl}/api/v1/fms/customs/documents/parse-ai-batch`, {
         method: 'POST',
         headers: {
@@ -1814,7 +1815,8 @@ function HSCodeAutocomplete({
     setIsLoading(true);
     try {
       const token = localStorage.getItem('token') || localStorage.getItem('access_token');
-      const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      // Use relative URL to work with both local dev proxy and production nginx
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
       const response = await fetch(`${backendUrl}/api/v1/fms/customs/hs-codes/search?q=${encodeURIComponent(query)}&limit=10`, {
         headers: {
           Authorization: token ? `Bearer ${token}` : '',
