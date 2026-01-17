@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { apiFetch } from "@/lib/api";
@@ -104,6 +104,22 @@ export default function SitesPage() {
   const [mode, setMode] = useState<"create" | "edit">("create");
   const [editing, setEditing] = useState<Site | null>(null);
   const [saving, setSaving] = useState(false);
+
+  // Location search state for modal
+  const [locationSearch, setLocationSearch] = useState("");
+  const [showLocationDropdown, setShowLocationDropdown] = useState(false);
+  const locationDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (locationDropdownRef.current && !locationDropdownRef.current.contains(event.target as Node)) {
+        setShowLocationDropdown(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const emptyForm: SiteForm = {
     code: "",
@@ -244,6 +260,8 @@ export default function SitesPage() {
     setMode("create");
     setEditing(null);
     setForm(emptyForm);
+    setLocationSearch("");
+    setShowLocationDropdown(false);
     setOpen(true);
   }
 
@@ -261,6 +279,10 @@ export default function SitesPage() {
       note: row.note || "",
       status: row.status || "ACTIVE",
     });
+    // Set location search text from existing data
+    const loc = locations.find((l) => l.id === row.location_id);
+    setLocationSearch(loc ? `${loc.code} - ${loc.name}` : (row.location_code ? `${row.location_code} - ${row.location_name}` : ""));
+    setShowLocationDropdown(false);
     setOpen(true);
   }
 
@@ -696,22 +718,64 @@ export default function SitesPage() {
                   {t("modal.basicInfo")}
                 </h3>
                 <div className="grid grid-cols-2 gap-4">
-                  <div>
+                  <div className="relative" ref={locationDropdownRef}>
                     <label className="block text-xs text-gray-600 mb-1">
                       {t("modal.location")} <span className="text-red-500">*</span>
                     </label>
-                    <select
-                      value={form.location_id}
-                      onChange={(e) => setForm((s) => ({ ...s, location_id: e.target.value }))}
-                      className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-200"
-                    >
-                      <option value="">{t("modal.selectLocation")}</option>
-                      {locations.map((loc) => (
-                        <option key={loc.id} value={loc.id}>
-                          {loc.code} - {loc.name}
-                        </option>
-                      ))}
-                    </select>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={locationSearch}
+                        onChange={(e) => {
+                          setLocationSearch(e.target.value);
+                          setShowLocationDropdown(true);
+                        }}
+                        onFocus={() => setShowLocationDropdown(true)}
+                        placeholder={t("modal.searchLocation") || "Tìm kiếm location..."}
+                        className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-200"
+                      />
+                      <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    </div>
+                    {showLocationDropdown && (
+                      <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-48 overflow-y-auto">
+                        {locations
+                          .filter((loc) => {
+                            const search = locationSearch.toLowerCase();
+                            return (
+                              !search ||
+                              loc.code.toLowerCase().includes(search) ||
+                              loc.name.toLowerCase().includes(search)
+                            );
+                          })
+                          .slice(0, 50)
+                          .map((loc) => (
+                            <div
+                              key={loc.id}
+                              onClick={() => {
+                                setForm((s) => ({ ...s, location_id: loc.id }));
+                                setLocationSearch(`${loc.code} - ${loc.name}`);
+                                setShowLocationDropdown(false);
+                              }}
+                              className={`px-3 py-2 text-sm cursor-pointer hover:bg-blue-50 ${
+                                form.location_id === loc.id ? "bg-blue-100 text-blue-700" : ""
+                              }`}
+                            >
+                              <span className="font-medium">{loc.code}</span>
+                              <span className="text-gray-500"> - {loc.name}</span>
+                            </div>
+                          ))}
+                        {locations.filter((loc) => {
+                          const search = locationSearch.toLowerCase();
+                          return (
+                            !search ||
+                            loc.code.toLowerCase().includes(search) ||
+                            loc.name.toLowerCase().includes(search)
+                          );
+                        }).length === 0 && (
+                          <div className="px-3 py-2 text-sm text-gray-500">Không tìm thấy location</div>
+                        )}
+                      </div>
+                    )}
                     <p className="text-xs text-gray-400 mt-1">{t("modal.locationNote")}</p>
                   </div>
                   <div>
