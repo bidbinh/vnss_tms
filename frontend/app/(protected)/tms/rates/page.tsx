@@ -223,6 +223,8 @@ export default function RatesPage() {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState<string>("ALL");
+  const [filterPickup, setFilterPickup] = useState<string>("");
+  const [filterDelivery, setFilterDelivery] = useState<string>("");
   const [pageSize, setPageSize] = useState<number>(50);
   const [currentPage, setCurrentPage] = useState<number>(1);
 
@@ -284,6 +286,16 @@ export default function RatesPage() {
     // Filter by pricing type
     if (filterType !== "ALL") {
       result = result.filter((r) => r.pricing_type === filterType);
+    }
+
+    // Filter by pickup location
+    if (filterPickup) {
+      result = result.filter((r) => r.pickup_location_id === filterPickup);
+    }
+
+    // Filter by delivery location
+    if (filterDelivery) {
+      result = result.filter((r) => r.delivery_location_id === filterDelivery);
     }
 
     // Filter by search term
@@ -365,7 +377,7 @@ export default function RatesPage() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, filterType, pageSize]);
+  }, [searchTerm, filterType, filterPickup, filterDelivery, pageSize]);
 
   // ============ Stats ============
   const stats = useMemo(() => {
@@ -529,15 +541,15 @@ export default function RatesPage() {
       case "pickup":
         return (
           <div>
-            <div className="font-medium text-sm">{row.pickup_location_name || "-"}</div>
-            {row.pickup_location_code && <div className="text-xs text-gray-500">{row.pickup_location_code}</div>}
+            <div className="font-semibold text-sm text-gray-900">{row.pickup_location_name || "-"}</div>
+            <div className="text-xs text-blue-600">{row.pickup_location_code}</div>
           </div>
         );
       case "delivery":
         return (
           <div>
-            <div className="font-medium text-sm">{row.delivery_location_name || "-"}</div>
-            {row.delivery_location_code && <div className="text-xs text-gray-500">{row.delivery_location_code}</div>}
+            <div className="font-semibold text-sm text-gray-900">{row.delivery_location_name || "-"}</div>
+            <div className="text-xs text-green-600">{row.delivery_location_code}</div>
           </div>
         );
       case "km":
@@ -647,8 +659,8 @@ export default function RatesPage() {
       width: 160,
       render: (r) => (
         <div>
-          <div className="font-medium text-sm">{r.pickup_location_name || "-"}</div>
-          {r.pickup_location_code && <div className="text-xs text-gray-500">{r.pickup_location_code}</div>}
+          <div className="font-semibold text-sm text-gray-900">{r.pickup_location_name || "-"}</div>
+          <div className="text-xs text-blue-600">{r.pickup_location_code}</div>
         </div>
       ),
     },
@@ -658,8 +670,8 @@ export default function RatesPage() {
       width: 160,
       render: (r) => (
         <div>
-          <div className="font-medium text-sm">{r.delivery_location_name || "-"}</div>
-          {r.delivery_location_code && <div className="text-xs text-gray-500">{r.delivery_location_code}</div>}
+          <div className="font-semibold text-sm text-gray-900">{r.delivery_location_name || "-"}</div>
+          <div className="text-xs text-green-600">{r.delivery_location_code}</div>
         </div>
       ),
     },
@@ -827,7 +839,7 @@ export default function RatesPage() {
         {/* Filter Bar */}
         <div className="border-y border-gray-200 px-6 py-3">
           <div className="flex flex-wrap items-center gap-3 justify-between">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-wrap">
               {/* Type Filter Tabs */}
               <div className="flex bg-gray-100 rounded-xl p-1">
                 {[
@@ -847,6 +859,30 @@ export default function RatesPage() {
                 ))}
               </div>
 
+              {/* Pickup Location Filter */}
+              <div className="w-48">
+                <SearchableSelect
+                  value={filterPickup}
+                  onChange={setFilterPickup}
+                  options={locations}
+                  placeholder={t("filters.pickupLocation") || "Điểm đi"}
+                  searchPlaceholder={t("searchableSelect.search") || "Tìm kiếm..."}
+                  noResultsText={t("searchableSelect.noResults") || "Không tìm thấy"}
+                />
+              </div>
+
+              {/* Delivery Location Filter */}
+              <div className="w-48">
+                <SearchableSelect
+                  value={filterDelivery}
+                  onChange={setFilterDelivery}
+                  options={locations}
+                  placeholder={t("filters.deliveryLocation") || "Điểm đến"}
+                  searchPlaceholder={t("searchableSelect.search") || "Tìm kiếm..."}
+                  noResultsText={t("searchableSelect.noResults") || "Không tìm thấy"}
+                />
+              </div>
+
               {/* Search */}
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -854,7 +890,7 @@ export default function RatesPage() {
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder={t("search.placeholder")}
-                  className="pl-10 pr-4 py-2 rounded-xl border border-gray-300 outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 text-sm w-72"
+                  className="pl-10 pr-4 py-2 rounded-xl border border-gray-300 outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 text-sm w-56"
                 />
               </div>
             </div>
