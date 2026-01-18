@@ -2,10 +2,12 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlmodel import Session, select
 from sqlalchemy import and_
+from pydantic import BaseModel
 
 from app.db.session import get_session
 from app.models import Order, Customer, User, Location, Driver
 from app.models.order import OrderStatus
+from app.models.order_status_log import OrderStatusLog
 from app.schemas.order import OrderCreate, OrderRead, OrderAccept, OrderReject, OrderUpdate
 from app.core.security import get_current_user, get_current_user_optional, require_permission, check_permission
 from app.core.activity_tracker import log_update, get_client_ip
@@ -733,9 +735,6 @@ def sync_worker_task(
 # ============================================================
 # Status Log Management APIs
 # ============================================================
-
-from app.models.order_status_log import OrderStatusLog
-from pydantic import BaseModel
 
 class StatusLogRead(BaseModel):
     id: str
