@@ -728,3 +728,153 @@ def sync_worker_task(
     session.refresh(task)
 
     return {"message": "Đã tạo WorkerTask", "task_id": task.id}
+
+
+# ============================================================
+# Status Log Management APIs
+# ============================================================
+
+from app.models.order_status_log import OrderStatusLog
+from pydantic import BaseModel
+
+class StatusLogRead(BaseModel):
+    id: str
+    order_id: str
+    from_status: Optional[str]
+    to_status: str
+    changed_at: datetime
+    changed_by_user_id: Optional[str]
+    changed_by_name: Optional[str] = None
+    note: Optional[str]
+
+class StatusLogUpdate(BaseModel):
+    changed_at: datetime
+    note: Optional[str] = None
+
+
+@router.get("/{order_id}/status-logs", response_model=List[StatusLogRead])
+def get_order_status_logs(
+    order_id: str,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Get all status logs for an order"""
+    tenant_id = str(current_user.tenant_id)
+
+    # Verify order exists and belongs to tenant
+    order = session.get(Order, order_id)
+    if not order or str(order.tenant_id) != tenant_id:
+        raise HTTPException(404, "Order not found")
+
+    # Get all status logs with user info
+    logs = session.exec(
+        select(OrderStatusLog)
+        .where(
+            OrderStatusLog.order_id == order_id,
+            OrderStatusLog.tenant_id == tenant_id
+        )
+        .order_by(OrderStatusLog.changed_at.asc())
+    ).all()
+
+    result = []
+    for log in logs:
+        changed_by_name = None
+        if log.changed_by_user_id:
+            user = session.get(User, log.changed_by_user_id)
+            if user:
+                changed_by_name = user.full_name or user.username
+
+        result.append(StatusLogRead(
+            id=str(log.id),
+            order_id=str(log.order_id),
+            from_status=log.from_status,
+            to_status=log.to_status,
+            changed_at=log.changed_at,
+            changed_by_user_id=log.changed_by_user_id,
+            changed_by_name=changed_by_name,
+            note=log.note
+        ))
+
+    return result
+
+
+@router.patch("/{order_id}/status-logs/{log_id}", response_model=StatusLogRead)
+def update_status_log(
+    order_id: str,
+    log_id: str,
+    payload: StatusLogUpdate,
+    request: Request,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Update status log datetime - used to correct driver timing errors.
+    Only ADMIN or DISPATCHER can update status logs.
+    """
+    # Check permission
+    if current_user.role not in ("DISPATCHER", "ADMIN"):
+        check_permission(session, current_user, "tms", "orders", "edit")
+
+    tenant_id = str(current_user.tenant_id)
+
+    # Verify order exists
+    order = session.get(Order, order_id)
+    if not order or str(order.tenant_id) != tenant_id:
+        raise HTTPException(404, "Order not found")
+
+    # Get the status log
+    log = session.get(OrderStatusLog, log_id)
+    if not log or str(log.order_id) != order_id or str(log.tenant_id) != tenant_id:
+        raise HTTPException(404, "Status log not found")
+
+    # Capture old data for audit
+    old_changed_at = log.changed_at
+
+    # Update the log
+    log.changed_at = payload.changed_at
+    if payload.note is not None:
+        log.note = payload.note
+
+    session.add(log)
+    session.commit()
+    session.refresh(log)
+
+    # Log this change for audit trail
+    try:
+        log_update(
+            tenant_id=tenant_id,
+            user_id=str(current_user.id),
+            user_name=current_user.full_name or current_user.username,
+            user_role=current_user.role,
+            user_email=current_user.email,
+            module="tms",
+            resource_type="order_status_logs",
+            resource_id=log_id,
+            resource_code=order.order_code,
+            old_data={"changed_at": str(old_changed_at), "to_status": log.to_status},
+            new_data={"changed_at": str(log.changed_at), "note": log.note},
+            endpoint=f"/api/v1/orders/{order_id}/status-logs/{log_id}",
+            method="PATCH",
+            ip_address=get_client_ip(request),
+            user_agent=request.headers.get("user-agent", ""),
+        )
+    except Exception as e:
+        print(f"[StatusLog] Activity log error (non-blocking): {e}")
+
+    # Get user name for response
+    changed_by_name = None
+    if log.changed_by_user_id:
+        user = session.get(User, log.changed_by_user_id)
+        if user:
+            changed_by_name = user.full_name or user.username
+
+    return StatusLogRead(
+        id=str(log.id),
+        order_id=str(log.order_id),
+        from_status=log.from_status,
+        to_status=log.to_status,
+        changed_at=log.changed_at,
+        changed_by_user_id=log.changed_by_user_id,
+        changed_by_name=changed_by_name,
+        note=log.note
+    )

@@ -3,6 +3,8 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { getDriverColor } from "@/lib/utils";
+import { History } from "lucide-react";
+import StatusLogModal from "@/components/tms/StatusLogModal";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api/v1";
 
@@ -196,6 +198,13 @@ export default function DriverSalaryManagementPage() {
 
   // Current user role
   const [userRole, setUserRole] = useState<string | null>(null);
+
+  // Status Log Modal state
+  const [statusLogModal, setStatusLogModal] = useState<{
+    isOpen: boolean;
+    orderId: string;
+    orderCode: string;
+  }>({ isOpen: false, orderId: "", orderCode: "" });
 
   // Sort state - default to customer_requested_date (Cust Date)
   const [sortField, setSortField] = useState<SortField>('customer_requested_date');
@@ -1123,7 +1132,18 @@ export default function DriverSalaryManagementPage() {
                 const breakdown = trip.salary_breakdown;
                 return (
                   <tr key={trip.id} className="hover:bg-gray-50">
-                    <td className="px-2 py-2 border border-gray-300 overflow-hidden whitespace-nowrap text-ellipsis" style={{ width: columnWidths.order_code, maxWidth: columnWidths.order_code }}>{trip.order_code}</td>
+                    <td className="px-2 py-2 border border-gray-300 overflow-hidden whitespace-nowrap" style={{ width: columnWidths.order_code, maxWidth: columnWidths.order_code }}>
+                      <div className="flex items-center gap-1">
+                        <span className="text-ellipsis overflow-hidden">{trip.order_code}</span>
+                        <button
+                          onClick={() => setStatusLogModal({ isOpen: true, orderId: trip.id, orderCode: trip.order_code })}
+                          className="p-0.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded flex-shrink-0"
+                          title="Xem lịch sử trạng thái"
+                        >
+                          <History className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </td>
                     <td className="px-2 py-2 text-center border border-gray-300 overflow-hidden whitespace-nowrap" style={{ width: columnWidths.driver_id, maxWidth: columnWidths.driver_id }}>
                       <span className={`font-semibold ${getDriverColor(trip.driver_id).bg} ${getDriverColor(trip.driver_id).text} px-2 py-1 rounded`}>
                         {getDriverInitials(trip.driver_id)}
@@ -1325,6 +1345,18 @@ export default function DriverSalaryManagementPage() {
           </div>
         </div>
       )}
+
+      {/* Status Log Modal */}
+      <StatusLogModal
+        orderId={statusLogModal.orderId}
+        orderCode={statusLogModal.orderCode}
+        isOpen={statusLogModal.isOpen}
+        onClose={() => setStatusLogModal({ isOpen: false, orderId: "", orderCode: "" })}
+        onUpdated={() => {
+          // Reload trips when status log is updated (affects trips_per_day calculation)
+          fetchTrips();
+        }}
+      />
     </div>
   );
 }
