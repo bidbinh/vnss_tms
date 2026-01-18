@@ -996,6 +996,46 @@ const GROUP_ITEM_ORDER_KEY = "sidebar_group_item_order";
 const API_BASE_URL = "/api/v1";
 
 // =====================================================
+// PERMISSION MAPPING - Map href to permission resource
+// =====================================================
+// Format: { href: resource } - resource matches backend LEGACY_ROLE_PERMISSIONS keys
+const HREF_TO_PERMISSION: Record<string, string> = {
+  // TMS Operations
+  "/tms/dispatch": "orders",
+  "/tms/orders": "orders",
+  "/tms/empty-returns": "orders",
+  "/tms/automation": "orders",
+  // TMS Finance
+  "/tms/trip-revenue": "trips",
+  "/tms/advance-payments": "salary",
+  "/tms/driver-salary-management": "salary",
+  "/tms/fuel-logs": "fuel_logs",
+  "/tms/vehicle-costs": "maintenance",
+  "/tms/invoice-automation": "orders",
+  // TMS Master Data
+  "/tms/vehicles": "vehicles",
+  "/tms/drivers": "drivers",
+  "/tms/customers": "customers",
+  "/tms/locations": "locations",
+  "/tms/sites": "sites",
+  "/tms/rates": "rates",
+  "/tms/gps-settings": "settings",
+  "/tms/driver-salary-settings": "salary",
+  // TMS Maintenance
+  "/tms/maintenance/schedules": "maintenance",
+  "/tms/maintenance/records": "maintenance",
+  // TMS Reports
+  "/tms/fuel-reports": "reports",
+  "/tms/revenue-reports": "reports",
+  "/tms/pl-reports": "reports",
+  "/tms/driver-salary-reports": "reports",
+  "/tms/maintenance-reports": "reports",
+  // Settings
+  "/users": "users",
+  "/role-permissions": "users",
+};
+
+// =====================================================
 // SORTABLE COMPONENTS
 // =====================================================
 
@@ -1128,6 +1168,8 @@ export default function Sidebar() {
   const [starredMenus, setStarredMenus] = useState<Record<string, boolean>>({});
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [enabledModules, setEnabledModules] = useState<string[]>(["tms", "wms", "mes", "crm", "hrm", "accounting", "fms"]);
+  const [userRole, setUserRole] = useState<string>("");
+  const [userPermissions, setUserPermissions] = useState<Record<string, string[]>>({});
 
   // Hydration fix - only render DnD after mount
   const [isMounted, setIsMounted] = useState(false);
@@ -1165,23 +1207,24 @@ export default function Sidebar() {
     })
   );
 
-  // Check if user is Super Admin and load enabled modules
+  // Check if user is Super Admin and load enabled modules + permissions
   useEffect(() => {
     const userStr = localStorage.getItem("user");
     if (userStr) {
       try {
         const user = JSON.parse(userStr);
         setIsSuperAdmin(user.system_role === "SUPER_ADMIN");
+        setUserRole(user.role || "");
       } catch (e) {
         console.error("Failed to parse user", e);
       }
     }
 
+    const token = localStorage.getItem("access_token");
+    if (!token) return;
+
     // Fetch enabled modules from API
     const fetchEnabledModules = async () => {
-      const token = localStorage.getItem("access_token");
-      if (!token) return;
-
       try {
         const res = await fetch(`${API_BASE_URL}/tenant/enabled-modules`, {
           headers: { Authorization: `Bearer ${token}` },
@@ -1195,7 +1238,24 @@ export default function Sidebar() {
       }
     };
 
+    // Fetch user permissions from API
+    const fetchUserPermissions = async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/users/permissions`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setUserPermissions(data.permissions || {});
+          setUserRole(data.role || "");
+        }
+      } catch (e) {
+        console.error("Failed to fetch user permissions", e);
+      }
+    };
+
     fetchEnabledModules();
+    fetchUserPermissions();
   }, []);
 
   // Load saved orders from localStorage
@@ -1300,6 +1360,29 @@ export default function Sidebar() {
     return enabledModules.includes(moduleId);
   };
 
+  // Check if user has permission to view a menu item
+  const hasPermission = (href: string): boolean => {
+    // ADMIN role has full access
+    if (userRole === "ADMIN") return true;
+    // Super Admin has full access
+    if (isSuperAdmin) return true;
+
+    // Get the resource for this href
+    const resource = HREF_TO_PERMISSION[href];
+
+    // If no mapping, allow access (for dashboards, etc.)
+    if (!resource) return true;
+
+    // Check if user has "view" permission for this resource
+    const resourcePermissions = userPermissions[resource];
+    return resourcePermissions?.includes("view") ?? false;
+  };
+
+  // Filter menu items based on permissions
+  const filterItemsByPermission = (items: MenuItem[]): MenuItem[] => {
+    return items.filter(item => hasPermission(item.href));
+  };
+
   const toggleModule = (key: string) => {
     setExpandedModules((prev) => ({ ...prev, [key]: !prev[key] }));
   };
@@ -1374,6 +1457,9 @@ export default function Sidebar() {
 
   // Render menu item (non-sortable version for starred section)
   const renderMenuItem = (item: MenuItem, isSubItem = false) => {
+    // Check permission before rendering
+    if (!hasPermission(item.href)) return null;
+
     const active = pathname === item.href;
     const Icon = item.icon;
     const itemKey = item.href.replace(/\//g, "_");
@@ -1409,10 +1495,15 @@ export default function Sidebar() {
   // Render group with sortable items
   const renderGroup = (group: MenuGroup) => {
     const isOpen = openMenus[group.key];
-    const orderedItems = getOrderedItems(group.key, group.items);
+    // Filter items by permission first, then apply ordering
+    const filteredItems = filterItemsByPermission(group.items);
+    const orderedItems = getOrderedItems(group.key, filteredItems);
+
+    // If no items after filtering, don't render the group
+    if (orderedItems.length === 0) return null;
 
     // Check if any item in this group is active
-    const isGroupActive = group.items.some(item => pathname === item.href || pathname.startsWith(item.href + "/"));
+    const isGroupActive = orderedItems.some(item => pathname === item.href || pathname.startsWith(item.href + "/"));
 
     // Render items without DnD (for SSR or before mount)
     const renderItemsWithoutDnd = () => (
@@ -1565,7 +1656,11 @@ export default function Sidebar() {
         {MAIN_MENU.map((item) => renderMenuItem(item))}
 
         {/* Starred/Favorites Section */}
-        {!collapsed && Object.keys(starredMenus).filter((k) => starredMenus[k]).length > 0 && (
+        {!collapsed && Object.keys(starredMenus).filter((k) => {
+          if (!starredMenus[k]) return false;
+          const href = k.replace(/_/g, "/");
+          return hasPermission(href);
+        }).length > 0 && (
           <div className="pt-2 pb-1">
             <div className="px-3 py-1 text-xs font-semibold text-gray-400 uppercase flex items-center gap-1">
               <Star className="w-3 h-3 fill-yellow-500 text-yellow-500" />
@@ -1579,6 +1674,8 @@ export default function Sidebar() {
                   const allMenuItems = getAllMenuItems();
                   const menuItem = allMenuItems.find((m) => m.href === href);
                   if (!menuItem) return null;
+                  // Check permission for starred items
+                  if (!hasPermission(menuItem.href)) return null;
 
                   const active = pathname === menuItem.href;
                   const Icon = menuItem.icon;
