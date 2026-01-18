@@ -215,14 +215,21 @@ export default function DriverSalaryReportsPage() {
   }
 
   function exportToPDF(driver: DriverReport) {
-    const doc = new jsPDF("landscape", "mm", "a4");
+    // Portrait A4 for better readability
+    const doc = new jsPDF("portrait", "mm", "a4");
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 15;
 
-    doc.setFontSize(16);
-    doc.text(`PHIEU LUONG THANG ${month}/${year}`, doc.internal.pageSize.getWidth() / 2, 15, { align: "center" });
+    // ============ PAGE 1: Trip Details Table ============
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.text(`BANG KE CHUYEN - THANG ${month}/${year}`, pageWidth / 2, 20, { align: "center" });
 
-    doc.setFontSize(11);
-    doc.text(`Tai xe: ${removeVietnameseTones(driver.driver_name)}`, 15, 25);
-    doc.text(`So chuyen: ${driver.trip_count}`, 15, 32);
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Tai xe: ${driver.driver_name}`, margin, 30);
+    doc.text(`So chuyen: ${driver.trip_count}`, margin, 36);
 
     const tripSummary = driver.trips.reduce((sum, t) => ({
       distance_salary: sum.distance_salary + t.distance_salary,
@@ -240,149 +247,178 @@ export default function DriverSalaryReportsPage() {
       trip.pickup_site_code || "-",
       trip.delivery_site_code || "-",
       trip.distance_km || "-",
-      trip.trip_number_in_day,
       formatCurrency(trip.distance_salary),
       trip.port_gate_fee > 0 ? formatCurrency(trip.port_gate_fee) : "-",
-      trip.flatbed_tarp_fee > 0 ? formatCurrency(trip.flatbed_tarp_fee) : "-",
-      trip.warehouse_bonus > 0 ? formatCurrency(trip.warehouse_bonus) : "-",
       trip.daily_trip_bonus > 0 ? formatCurrency(trip.daily_trip_bonus) : "-",
-      trip.is_holiday ? `${trip.holiday_multiplier}x` : "-",
       formatCurrency(trip.total)
     ]);
 
     autoTable(doc, {
-      startY: 38,
-      head: [["STT", "Ngay", "Ma DH", "Pickup", "Delivery", "Km", "Chuyen\nT.Ngay", "Luong KM", "Ve cong", "Bai bat", "Hang Xa", "Thuong\nchuyen", "Ngay le", "Tong"]],
+      startY: 42,
+      head: [["STT", "Ngay", "Ma DH", "Diem lay", "Diem giao", "Km", "Luong KM", "Ve cong", "Thuong", "Tong"]],
       body: tripData,
       foot: [[
-        { content: `TONG CONG (${driver.trip_count} chuyen)`, colSpan: 7, styles: { halign: "right" as const } },
+        { content: `TONG (${driver.trip_count} chuyen)`, colSpan: 6, styles: { halign: "right" as const, fontStyle: "bold" as const } },
         formatCurrency(tripSummary.distance_salary),
         formatCurrency(tripSummary.port_gate_fee),
-        formatCurrency(tripSummary.flatbed_tarp_fee),
-        formatCurrency(tripSummary.warehouse_bonus),
         formatCurrency(tripSummary.daily_trip_bonus),
-        "",
         formatCurrency(tripSummary.total)
       ]],
       theme: "grid",
-      styles: { fontSize: 7, cellPadding: 1.5, halign: "center" as const, valign: "middle" as const },
-      headStyles: { fillColor: [100, 100, 100], textColor: 255, fontSize: 6, fontStyle: "bold", halign: "center" as const },
-      footStyles: { fillColor: [255, 250, 205], textColor: [0, 0, 0], fontSize: 7, fontStyle: "bold", halign: "right" as const },
+      styles: { fontSize: 8, cellPadding: 2, halign: "center" as const, valign: "middle" as const, textColor: [0, 0, 0] },
+      headStyles: { fillColor: [70, 130, 180], textColor: [255, 255, 255], fontSize: 8, fontStyle: "bold", halign: "center" as const },
+      footStyles: { fillColor: [255, 250, 205], textColor: [0, 0, 0], fontSize: 8, fontStyle: "bold" },
       columnStyles: {
-        0: { cellWidth: 8 }, 1: { cellWidth: 14 }, 2: { cellWidth: 20 }, 3: { cellWidth: 22 }, 4: { cellWidth: 22 },
-        5: { cellWidth: 10 }, 6: { cellWidth: 12 }, 7: { cellWidth: 18, halign: "right" as const }, 8: { cellWidth: 16, halign: "right" as const },
-        9: { cellWidth: 16, halign: "right" as const }, 10: { cellWidth: 16, halign: "right" as const }, 11: { cellWidth: 18, halign: "right" as const },
-        12: { cellWidth: 12 }, 13: { cellWidth: 20, halign: "right" as const }
+        0: { cellWidth: 10 },
+        1: { cellWidth: 18 },
+        2: { cellWidth: 22 },
+        3: { cellWidth: 28 },
+        4: { cellWidth: 28 },
+        5: { cellWidth: 12, halign: "right" as const },
+        6: { cellWidth: 22, halign: "right" as const },
+        7: { cellWidth: 18, halign: "right" as const },
+        8: { cellWidth: 18, halign: "right" as const },
+        9: { cellWidth: 22, halign: "right" as const }
       },
-      // Auto page break for long tables
       showFoot: "lastPage",
       didDrawPage: (data: any) => {
-        // Add page number at bottom
-        const pageCount = doc.getNumberOfPages();
+        // Page number
         doc.setFontSize(8);
-        doc.text(`Trang ${data.pageNumber}/${pageCount}`, doc.internal.pageSize.getWidth() - 25, doc.internal.pageSize.getHeight() - 10);
+        doc.setFont("helvetica", "normal");
+        doc.text(`Trang ${data.pageNumber}`, pageWidth - 25, pageHeight - 10);
       }
     });
 
-    const tableEndY = (doc as any).lastAutoTable.finalY;
-    const pageHeight = doc.internal.pageSize.getHeight();
-    const summaryHeight = 70; // Estimated height needed for salary summary section
+    // ============ PAGE 2: Salary Summary (Always new page) ============
+    doc.addPage();
 
-    // Check if we need a new page for salary summary
-    let finalY: number;
-    if (tableEndY + summaryHeight > pageHeight - 15) {
-      // Not enough space, add new page
-      doc.addPage();
-      finalY = 20;
-    } else {
-      finalY = tableEndY + 8;
-    }
+    // Title
+    doc.setFontSize(16);
+    doc.setFont("helvetica", "bold");
+    doc.text(`PHIEU LUONG THANG ${month}/${year}`, pageWidth / 2, 25, { align: "center" });
 
-    doc.setFontSize(12);
-    doc.text(`Phieu Luong Thang ${month}/${year}`, doc.internal.pageSize.getWidth() / 2, finalY, { align: "center" });
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Tai xe: ${driver.driver_name}`, margin, 38);
+    doc.text(`So chuyen trong thang: ${driver.trip_count}`, margin, 45);
 
-    const leftX = 15;
-    const rightX = doc.internal.pageSize.getWidth() / 2 + 10;
-    let leftY = finalY + 8;
-    let rightY = finalY + 8;
+    let currentY = 58;
+    const colLeft = margin;
+    const colRight = pageWidth / 2 + 5;
+    const valueOffset = 75;
 
-    doc.setFontSize(10);
-    doc.text("LUONG THEO CHUC DANH CONG VIEC:", leftX, leftY);
-    doc.setFontSize(9);
-    doc.text(`${formatCurrency(driver.base_salary)} VND`, leftX + 80, leftY);
-    leftY += 6;
+    // Left column - Income
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    doc.text("THU NHAP", colLeft, currentY);
+    currentY += 8;
 
     doc.setFontSize(10);
-    doc.text("CAC KHOAN BO SUNG KHAC:", leftX, leftY);
-    leftY += 5;
-    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.text("Luong co ban:", colLeft, currentY);
+    doc.text(`${formatCurrency(driver.base_salary)} VND`, colLeft + valueOffset, currentY);
+    currentY += 7;
 
-    doc.text("Luong chuyen:", leftX + 5, leftY);
-    doc.text(`${formatCurrency(driver.total_trip_salary)} VND`, leftX + 80, leftY);
-    leftY += 5;
+    doc.text("Luong chuyen:", colLeft, currentY);
+    doc.text(`${formatCurrency(driver.total_trip_salary)} VND`, colLeft + valueOffset, currentY);
+    currentY += 7;
 
     if (driver.seniority_bonus > 0) {
-      doc.text("Thuong tham nien:", leftX + 5, leftY);
-      doc.text(`${formatCurrency(driver.seniority_bonus)} VND`, leftX + 80, leftY);
-      leftY += 5;
+      doc.text("Thuong tham nien:", colLeft, currentY);
+      doc.text(`${formatCurrency(driver.seniority_bonus)} VND`, colLeft + valueOffset, currentY);
+      currentY += 7;
     }
 
     if (driver.monthly_bonus > 0) {
-      doc.text(`Thuong san luong chuyen (${driver.trip_count} chuyen):`, leftX + 5, leftY);
-      doc.text(`${formatCurrency(driver.monthly_bonus)} VND`, leftX + 80, leftY);
-      leftY += 5;
+      doc.text(`Thuong san luong (${driver.trip_count} chuyen):`, colLeft, currentY);
+      doc.text(`${formatCurrency(driver.monthly_bonus)} VND`, colLeft + valueOffset, currentY);
+      currentY += 7;
     }
 
+    // Right column - Deductions
+    let rightY = 58;
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    doc.text("KHOAN TRU", colRight, rightY);
+    rightY += 8;
+
     doc.setFontSize(10);
-    doc.text("CAC KHOAN TRU KHAC:", rightX, rightY);
-    rightY += 5;
-    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
 
     if (driver.deductions) {
-      doc.text("BHXH, BHYT, BHTN:", rightX + 5, rightY);
-      doc.text(`${formatCurrency(driver.deductions.total_insurance)} VND`, rightX + 70, rightY);
-      rightY += 5;
-
-      doc.setFontSize(8);
-      doc.text(`- BHXH (8%):`, rightX + 10, rightY);
-      doc.text(formatCurrency(driver.deductions.social_insurance), rightX + 70, rightY);
-      rightY += 4;
-
-      doc.text(`- BHYT (1.5%):`, rightX + 10, rightY);
-      doc.text(formatCurrency(driver.deductions.health_insurance), rightX + 70, rightY);
-      rightY += 4;
-
-      doc.text(`- BHTN (1%):`, rightX + 10, rightY);
-      doc.text(formatCurrency(driver.deductions.unemployment_insurance), rightX + 70, rightY);
-      rightY += 5;
+      doc.text("BHXH, BHYT, BHTN:", colRight, rightY);
+      doc.text(`${formatCurrency(driver.deductions.total_insurance)} VND`, colRight + valueOffset - 10, rightY);
+      rightY += 6;
 
       doc.setFontSize(9);
-      doc.text("Thue TNCN:", rightX + 5, rightY);
-      doc.text(driver.deductions.income_tax > 0 ? `${formatCurrency(driver.deductions.income_tax)} VND` : "-", rightX + 70, rightY);
+      doc.text(`  - BHXH (8%):`, colRight, rightY);
+      doc.text(`${formatCurrency(driver.deductions.social_insurance)}`, colRight + valueOffset - 10, rightY);
       rightY += 5;
 
-      doc.text("Tam ung:", rightX + 5, rightY);
-      doc.text(driver.deductions.advance_payment > 0 ? `${formatCurrency(driver.deductions.advance_payment)} VND` : "-", rightX + 70, rightY);
+      doc.text(`  - BHYT (1.5%):`, colRight, rightY);
+      doc.text(`${formatCurrency(driver.deductions.health_insurance)}`, colRight + valueOffset - 10, rightY);
+      rightY += 5;
+
+      doc.text(`  - BHTN (1%):`, colRight, rightY);
+      doc.text(`${formatCurrency(driver.deductions.unemployment_insurance)}`, colRight + valueOffset - 10, rightY);
+      rightY += 7;
+
+      doc.setFontSize(10);
+      doc.text("Thue TNCN:", colRight, rightY);
+      doc.text(driver.deductions.income_tax > 0 ? `${formatCurrency(driver.deductions.income_tax)} VND` : "0 VND", colRight + valueOffset - 10, rightY);
+      rightY += 7;
+
+      doc.text("Tam ung:", colRight, rightY);
+      doc.text(driver.deductions.advance_payment > 0 ? `${formatCurrency(driver.deductions.advance_payment)} VND` : "0 VND", colRight + valueOffset - 10, rightY);
     }
 
-    const summaryY = Math.max(leftY, rightY) + 8;
+    // Summary section
+    const summaryY = Math.max(currentY, rightY) + 15;
+
+    // Draw line
+    doc.setDrawColor(100, 100, 100);
+    doc.line(margin, summaryY - 5, pageWidth - margin, summaryY - 5);
+
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    doc.text("TONG THU NHAP:", colLeft, summaryY);
+    doc.text(`${formatCurrency(driver.deductions?.gross_income || driver.gross_salary)} VND`, colLeft + valueOffset, summaryY);
+
+    doc.text("TONG KHOAN TRU:", colLeft, summaryY + 8);
+    doc.text(`(${formatCurrency(driver.deductions?.total_deductions || 0)}) VND`, colLeft + valueOffset, summaryY + 8);
+
+    // Net salary highlight
+    doc.setFillColor(200, 255, 200);
+    doc.rect(margin - 2, summaryY + 14, pageWidth - 2 * margin + 4, 12, "F");
+    doc.setDrawColor(0, 150, 0);
+    doc.rect(margin - 2, summaryY + 14, pageWidth - 2 * margin + 4, 12, "S");
+
+    doc.setFontSize(13);
+    doc.setFont("helvetica", "bold");
+    doc.text("THUC LANH:", colLeft, summaryY + 22);
+    doc.text(`${formatCurrency(driver.total_salary)} VND`, colLeft + valueOffset, summaryY + 22);
+
+    // Amount in words
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "italic");
+    doc.text(`(Bang chu: ${convertNumberToVietnameseWords(driver.total_salary)} dong)`, margin, summaryY + 35);
+
+    // Signature section
+    const sigY = summaryY + 55;
     doc.setFontSize(10);
-    doc.text("TONG CONG:", leftX, summaryY);
-    doc.text(`${formatCurrency(driver.deductions?.gross_income || driver.gross_salary)} VND`, leftX + 80, summaryY);
-
-    doc.text("TRU:", leftX, summaryY + 6);
-    doc.text(`(${formatCurrency(driver.deductions?.total_deductions || 0)}) VND`, leftX + 80, summaryY + 6);
-
-    doc.setFontSize(12);
-    doc.setFillColor(220, 255, 220);
-    doc.rect(leftX - 2, summaryY + 10, 120, 8, "F");
-    doc.text("TONG THU NHAP:", leftX, summaryY + 16);
-    doc.text(`${formatCurrency(driver.total_salary)} VND`, leftX + 80, summaryY + 16);
+    doc.setFont("helvetica", "normal");
+    doc.text("Nguoi lap phieu", margin + 20, sigY, { align: "center" });
+    doc.text("Tai xe", pageWidth - margin - 30, sigY, { align: "center" });
 
     doc.setFontSize(8);
-    doc.text(`So tien bang chu: ${convertNumberToVietnameseWords(driver.total_salary)} dong`, leftX, summaryY + 24);
+    doc.text("(Ky, ghi ro ho ten)", margin + 20, sigY + 5, { align: "center" });
+    doc.text("(Ky, ghi ro ho ten)", pageWidth - margin - 30, sigY + 5, { align: "center" });
 
-    doc.save(`Phieu_Luong_${removeVietnameseTones(driver.driver_name)}_${month}_${year}.pdf`);
+    // Page number for page 2
+    doc.setFontSize(8);
+    doc.text(`Trang ${doc.getNumberOfPages()}`, pageWidth - 25, pageHeight - 10);
+
+    doc.save(`Phieu_Luong_${driver.driver_name.replace(/\s+/g, "_")}_T${month}_${year}.pdf`);
   }
 
   return (
