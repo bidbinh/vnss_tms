@@ -83,9 +83,15 @@ interface ReportData {
 // ============================================================================
 
 export default function DriverSalaryReportsPage() {
-  const currentDate = new Date();
-  const [year, setYear] = useState(currentDate.getFullYear());
-  const [month, setMonth] = useState(currentDate.getMonth() + 1);
+  // Default to previous month
+  const [year, setYear] = useState(() => {
+    const now = new Date();
+    return now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
+  });
+  const [month, setMonth] = useState(() => {
+    const now = new Date();
+    return now.getMonth() === 0 ? 12 : now.getMonth(); // getMonth() is 0-indexed, so this gives previous month
+  });
   const [selectedDriver, setSelectedDriver] = useState("");
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [reportData, setReportData] = useState<ReportData | null>(null);
