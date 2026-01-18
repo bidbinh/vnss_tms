@@ -268,7 +268,7 @@ def create_driver_payroll(
 
         if workflow_instance:
             payroll.workflow_instance_id = workflow_instance.id
-            payroll.status = DriverPayrollStatus.PENDING_HR_REVIEW.value
+            payroll.status = DriverPayrollStatus.PENDING_REVIEW.value
             session.add(payroll)
             session.commit()
             session.refresh(payroll)
@@ -381,15 +381,15 @@ def hr_review_payroll(
     if not payroll or str(payroll.tenant_id) != tenant_id:
         raise HTTPException(404, "Payroll not found")
 
-    if payroll.status != DriverPayrollStatus.PENDING_HR_REVIEW.value:
+    if payroll.status != DriverPayrollStatus.PENDING_REVIEW.value:
         raise HTTPException(400, f"Cannot review payroll in status: {payroll.status}")
 
     if payload.action == "approve":
-        payroll.status = DriverPayrollStatus.PENDING_DRIVER_CONFIRM.value
+        payroll.status = DriverPayrollStatus.CONFIRMED.value
         payroll.confirmed_by_hr_at = datetime.utcnow()
         payroll.hr_notes = payload.notes
     elif payload.action == "reject":
-        payroll.status = DriverPayrollStatus.REJECTED.value
+        payroll.status = DriverPayrollStatus.DISPUTED.value
         payroll.hr_notes = payload.notes
     else:
         raise HTTPException(400, "Invalid action. Must be 'approve' or 'reject'")

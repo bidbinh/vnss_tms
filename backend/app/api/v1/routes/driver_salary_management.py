@@ -246,7 +246,7 @@ def list_driver_salary_trips(
                 DriverPayroll.year == year,
                 DriverPayroll.month == month,
                 DriverPayroll.status.in_([
-                    DriverPayrollStatus.PENDING_DRIVER_CONFIRM.value,
+                    DriverPayrollStatus.PENDING_REVIEW.value,
                     DriverPayrollStatus.CONFIRMED.value,
                     DriverPayrollStatus.PAID.value
                 ])
@@ -279,7 +279,7 @@ def list_driver_salary_trips(
                 delivery_site_name = delivery_site.company_name
 
         # DISTANCE LOCKING LOGIC
-        # If payroll is locked (status >= PENDING_DRIVER_CONFIRM), use snapshot distance
+        # If payroll is locked (status >= PENDING_REVIEW), use snapshot distance
         # Otherwise, calculate dynamically from rates
         distance_km = order.distance_km
         is_distance_locked = False

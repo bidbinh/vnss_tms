@@ -300,7 +300,7 @@ def confirm_my_payroll(
     if payroll.driver_id != x_driver_id:
         raise HTTPException(403, "Not your payroll")
 
-    if payroll.status != DriverPayrollStatus.PENDING_DRIVER_CONFIRM.value:
+    if payroll.status != DriverPayrollStatus.PENDING_REVIEW.value:
         raise HTTPException(400, f"Cannot confirm payroll in status: {payroll.status}")
 
     if payload.action == "confirm":
@@ -313,7 +313,7 @@ def confirm_my_payroll(
         message = "Payroll confirmed successfully. Distance values are now locked."
     elif payload.action == "reject":
         # Driver rejects - needs to go back to HR for review
-        payroll.status = DriverPayrollStatus.REJECTED.value
+        payroll.status = DriverPayrollStatus.DISPUTED.value
         payroll.driver_notes = payload.notes or "Rejected by driver"
 
         message = "Payroll rejected. HR will review your comments."
