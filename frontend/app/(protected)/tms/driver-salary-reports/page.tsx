@@ -221,11 +221,14 @@ export default function DriverSalaryReportsPage() {
   }
 
   function exportToPDF(driver: DriverReport) {
+    // Helper to convert Vietnamese text for PDF
+    const vn = (str: string) => removeVietnameseTones(str);
+
     // Portrait A4 for better readability
     const doc = new jsPDF("portrait", "mm", "a4");
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
-    const margin = 15;
+    const margin = 12;
 
     // ============ PAGE 1: Trip Details Table ============
     doc.setFontSize(14);
@@ -234,7 +237,7 @@ export default function DriverSalaryReportsPage() {
 
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
-    doc.text(`Tai xe: ${driver.driver_name}`, margin, 30);
+    doc.text(`Tai xe: ${vn(driver.driver_name)}`, margin, 30);
     doc.text(`So chuyen: ${driver.trip_count}`, margin, 36);
 
     const tripSummary = driver.trips.reduce((sum, t) => ({
@@ -250,8 +253,8 @@ export default function DriverSalaryReportsPage() {
       idx + 1,
       formatDate(trip.delivered_date),
       trip.order_code,
-      trip.pickup_site_code || "-",
-      trip.delivery_site_code || "-",
+      vn(trip.pickup_site_code || "-"),
+      vn(trip.delivery_site_code || "-"),
       trip.distance_km || "-",
       formatCurrency(trip.distance_salary),
       trip.port_gate_fee > 0 ? formatCurrency(trip.port_gate_fee) : "-",
@@ -271,27 +274,29 @@ export default function DriverSalaryReportsPage() {
         formatCurrency(tripSummary.total)
       ]],
       theme: "grid",
-      styles: { fontSize: 8, cellPadding: 2, halign: "center" as const, valign: "middle" as const, textColor: [0, 0, 0] },
-      headStyles: { fillColor: [70, 130, 180], textColor: [255, 255, 255], fontSize: 8, fontStyle: "bold", halign: "center" as const },
-      footStyles: { fillColor: [255, 250, 205], textColor: [0, 0, 0], fontSize: 8, fontStyle: "bold" },
+      styles: { fontSize: 7, cellPadding: 1.5, halign: "center" as const, valign: "middle" as const, textColor: [0, 0, 0], overflow: "linebreak" },
+      headStyles: { fillColor: [70, 130, 180], textColor: [255, 255, 255], fontSize: 7, fontStyle: "bold", halign: "center" as const },
+      footStyles: { fillColor: [255, 250, 205], textColor: [0, 0, 0], fontSize: 7, fontStyle: "bold" },
       columnStyles: {
-        0: { cellWidth: 10 },
-        1: { cellWidth: 18 },
-        2: { cellWidth: 22 },
-        3: { cellWidth: 28 },
-        4: { cellWidth: 28 },
-        5: { cellWidth: 12, halign: "right" as const },
-        6: { cellWidth: 22, halign: "right" as const },
-        7: { cellWidth: 18, halign: "right" as const },
-        8: { cellWidth: 18, halign: "right" as const },
-        9: { cellWidth: 22, halign: "right" as const }
+        0: { cellWidth: 8 },
+        1: { cellWidth: 14 },
+        2: { cellWidth: 18 },
+        3: { cellWidth: 24 },
+        4: { cellWidth: 24 },
+        5: { cellWidth: 10, halign: "right" as const },
+        6: { cellWidth: 20, halign: "right" as const },
+        7: { cellWidth: 16, halign: "right" as const },
+        8: { cellWidth: 16, halign: "right" as const },
+        9: { cellWidth: 20, halign: "right" as const }
       },
+      tableWidth: "auto",
+      margin: { left: margin, right: margin },
       showFoot: "lastPage",
       didDrawPage: (data: any) => {
         // Page number
         doc.setFontSize(8);
         doc.setFont("helvetica", "normal");
-        doc.text(`Trang ${data.pageNumber}`, pageWidth - 25, pageHeight - 10);
+        doc.text(`Trang ${data.pageNumber}`, pageWidth - 20, pageHeight - 10);
       }
     });
 
@@ -305,7 +310,7 @@ export default function DriverSalaryReportsPage() {
 
     doc.setFontSize(11);
     doc.setFont("helvetica", "normal");
-    doc.text(`Tai xe: ${driver.driver_name}`, margin, 38);
+    doc.text(`Tai xe: ${vn(driver.driver_name)}`, margin, 38);
     doc.text(`So chuyen trong thang: ${driver.trip_count}`, margin, 45);
 
     let currentY = 58;
@@ -424,7 +429,7 @@ export default function DriverSalaryReportsPage() {
     doc.setFontSize(8);
     doc.text(`Trang ${doc.getNumberOfPages()}`, pageWidth - 25, pageHeight - 10);
 
-    doc.save(`Phieu_Luong_${driver.driver_name.replace(/\s+/g, "_")}_T${month}_${year}.pdf`);
+    doc.save(`Phieu_Luong_${vn(driver.driver_name).replace(/\s+/g, "_")}_T${month}_${year}.pdf`);
   }
 
   return (
