@@ -224,21 +224,21 @@ export default function DriverSalaryReportsPage() {
     // Helper to convert Vietnamese text for PDF
     const vn = (str: string) => removeVietnameseTones(str);
 
-    // Portrait A4 for better readability
-    const doc = new jsPDF("portrait", "mm", "a4");
+    // Landscape A4 for all columns
+    const doc = new jsPDF("landscape", "mm", "a4");
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
-    const margin = 12;
+    const margin = 10;
 
     // ============ PAGE 1: Trip Details Table ============
     doc.setFontSize(14);
     doc.setFont("helvetica", "bold");
-    doc.text(`BANG KE CHUYEN - THANG ${month}/${year}`, pageWidth / 2, 20, { align: "center" });
+    doc.text(`BANG KE CHUYEN - THANG ${month}/${year}`, pageWidth / 2, 15, { align: "center" });
 
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
-    doc.text(`Tai xe: ${vn(driver.driver_name)}`, margin, 30);
-    doc.text(`So chuyen: ${driver.trip_count}`, margin, 36);
+    doc.text(`Tai xe: ${vn(driver.driver_name)}`, margin, 23);
+    doc.text(`So chuyen: ${driver.trip_count}`, margin, 29);
 
     const tripSummary = driver.trips.reduce((sum, t) => ({
       distance_salary: sum.distance_salary + t.distance_salary,
@@ -249,6 +249,7 @@ export default function DriverSalaryReportsPage() {
       total: sum.total + t.total
     }), { distance_salary: 0, port_gate_fee: 0, flatbed_tarp_fee: 0, warehouse_bonus: 0, daily_trip_bonus: 0, total: 0 });
 
+    // Full data with all columns like original
     const tripData = driver.trips.map((trip, idx) => [
       idx + 1,
       formatDate(trip.delivered_date),
@@ -258,45 +259,52 @@ export default function DriverSalaryReportsPage() {
       trip.distance_km || "-",
       formatCurrency(trip.distance_salary),
       trip.port_gate_fee > 0 ? formatCurrency(trip.port_gate_fee) : "-",
+      trip.flatbed_tarp_fee > 0 ? formatCurrency(trip.flatbed_tarp_fee) : "-",
+      trip.warehouse_bonus > 0 ? formatCurrency(trip.warehouse_bonus) : "-",
       trip.daily_trip_bonus > 0 ? formatCurrency(trip.daily_trip_bonus) : "-",
+      trip.is_holiday ? `${trip.holiday_multiplier}x` : "-",
       formatCurrency(trip.total)
     ]);
 
     autoTable(doc, {
-      startY: 42,
-      head: [["STT", "Ngay", "Ma DH", "Diem lay", "Diem giao", "Km", "Luong KM", "Ve cong", "Thuong", "Tong"]],
+      startY: 34,
+      head: [["STT", "Ngay", "Ma DH", "Diem lay", "Diem giao", "Km", "Luong KM", "Ve cong", "Bai bat", "Hang xa", "Thuong", "Ngay le", "Tong"]],
       body: tripData,
       foot: [[
         { content: `TONG (${driver.trip_count} chuyen)`, colSpan: 6, styles: { halign: "right" as const, fontStyle: "bold" as const } },
         formatCurrency(tripSummary.distance_salary),
         formatCurrency(tripSummary.port_gate_fee),
+        formatCurrency(tripSummary.flatbed_tarp_fee),
+        formatCurrency(tripSummary.warehouse_bonus),
         formatCurrency(tripSummary.daily_trip_bonus),
+        "",
         formatCurrency(tripSummary.total)
       ]],
       theme: "grid",
-      styles: { fontSize: 7, cellPadding: 1.5, halign: "center" as const, valign: "middle" as const, textColor: [0, 0, 0], overflow: "linebreak" },
-      headStyles: { fillColor: [70, 130, 180], textColor: [255, 255, 255], fontSize: 7, fontStyle: "bold", halign: "center" as const },
-      footStyles: { fillColor: [255, 250, 205], textColor: [0, 0, 0], fontSize: 7, fontStyle: "bold" },
+      styles: { fontSize: 8, cellPadding: 2, halign: "center" as const, valign: "middle" as const, textColor: [0, 0, 0] },
+      headStyles: { fillColor: [70, 130, 180], textColor: [255, 255, 255], fontSize: 8, fontStyle: "bold", halign: "center" as const },
+      footStyles: { fillColor: [255, 250, 205], textColor: [0, 0, 0], fontSize: 8, fontStyle: "bold" },
       columnStyles: {
-        0: { cellWidth: 8 },
-        1: { cellWidth: 14 },
-        2: { cellWidth: 18 },
-        3: { cellWidth: 24 },
-        4: { cellWidth: 24 },
-        5: { cellWidth: 10, halign: "right" as const },
-        6: { cellWidth: 20, halign: "right" as const },
-        7: { cellWidth: 16, halign: "right" as const },
-        8: { cellWidth: 16, halign: "right" as const },
-        9: { cellWidth: 20, halign: "right" as const }
+        0: { cellWidth: 10 },
+        1: { cellWidth: 16 },
+        2: { cellWidth: 22 },
+        3: { cellWidth: 28 },
+        4: { cellWidth: 28 },
+        5: { cellWidth: 12, halign: "right" as const },
+        6: { cellWidth: 22, halign: "right" as const },
+        7: { cellWidth: 18, halign: "right" as const },
+        8: { cellWidth: 18, halign: "right" as const },
+        9: { cellWidth: 18, halign: "right" as const },
+        10: { cellWidth: 18, halign: "right" as const },
+        11: { cellWidth: 14, halign: "center" as const },
+        12: { cellWidth: 24, halign: "right" as const }
       },
-      tableWidth: "auto",
       margin: { left: margin, right: margin },
       showFoot: "lastPage",
       didDrawPage: (data: any) => {
-        // Page number
         doc.setFontSize(8);
         doc.setFont("helvetica", "normal");
-        doc.text(`Trang ${data.pageNumber}`, pageWidth - 20, pageHeight - 10);
+        doc.text(`Trang ${data.pageNumber}`, pageWidth - 20, pageHeight - 8);
       }
     });
 
