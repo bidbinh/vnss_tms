@@ -184,24 +184,36 @@ def get_tenant_public_info(
     Used by frontend to show tenant branding on login page
     Example: GET /tenant/public/tinhung → returns Tín Hưng Logistics info
     """
-    tenant = session.exec(
-        select(Tenant).where(Tenant.code == tenant_code)
-    ).first()
+    import traceback
+    try:
+        tenant = session.exec(
+            select(Tenant).where(Tenant.code == tenant_code)
+        ).first()
 
-    if not tenant:
-        raise HTTPException(404, f"Không tìm thấy công ty với mã '{tenant_code}'")
+        if not tenant:
+            raise HTTPException(404, f"Không tìm thấy công ty với mã '{tenant_code}'")
 
-    if hasattr(tenant, 'is_active') and not tenant.is_active:
-        raise HTTPException(403, "Công ty này đã bị vô hiệu hóa. Liên hệ 9log.tech để được hỗ trợ.")
+        if hasattr(tenant, 'is_active') and not tenant.is_active:
+            raise HTTPException(403, "Công ty này đã bị vô hiệu hóa. Liên hệ 9log.tech để được hỗ trợ.")
 
-    return TenantPublicInfo(
-        id=str(tenant.id),
-        name=tenant.name,
-        code=tenant.code if hasattr(tenant, 'code') and tenant.code else "default",
-        logo_url=tenant.logo_url if hasattr(tenant, 'logo_url') else None,
-        primary_color=tenant.primary_color if hasattr(tenant, 'primary_color') else None,
-        is_active=tenant.is_active if hasattr(tenant, 'is_active') else True,
-    )
+        return TenantPublicInfo(
+            id=str(tenant.id),
+            name=tenant.name,
+            code=tenant.code if hasattr(tenant, 'code') and tenant.code else "default",
+            logo_url=tenant.logo_url if hasattr(tenant, 'logo_url') else None,
+            primary_color=tenant.primary_color if hasattr(tenant, 'primary_color') else None,
+            is_active=tenant.is_active if hasattr(tenant, 'is_active') else True,
+        )
+    except HTTPException:
+        # Re-raise HTTP exceptions (404, 403, etc.)
+        raise
+    except Exception as e:
+        # Log unexpected errors
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error fetching tenant public info for code '{tenant_code}': {e}")
+        logger.error(traceback.format_exc())
+        raise HTTPException(500, f"Internal server error: {str(e)}")
 
 
 # Reserved subdomains that cannot be registered

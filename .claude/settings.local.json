@@ -275,7 +275,10 @@
       "Bash(del \"d:\\\\vnss_tms\\\\backend\\\\alembic\\\\versions\\\\20260115_0001_update_driver_payroll_columns.py\")",
       "Bash(source venv/Scripts/activate)",
       "Bash(source:*)",
-      "Bash(py -c:*)"
+      "Bash(py -c:*)",
+      "Bash(Get-ChildItem -Path \"d:\\\\vnss_tms\\\\mobile\\\\android\\\\app\\\\src\\\\main\\\\res\" -Filter \"*.xml\" -Recurse)",
+      "Bash(Select-Object -First 20)",
+      "Bash(ForEach-Object { $_FullName })"
     ]
   }
 }

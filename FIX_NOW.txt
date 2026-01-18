@@ -1,0 +1,42 @@
+========================================
+FIX LỖI: column orders.priority does not exist
+========================================
+
+CÁCH 1: Chạy Python Script (NHANH NHẤT)
+----------------------------------------
+cd backend
+python quick_fix_priority.py
+
+Hoặc:
+py quick_fix_priority.py
+
+
+CÁCH 2: Chạy SQL Trực Tiếp
+---------------------------
+Mở PostgreSQL (pgAdmin, DBeaver, hoặc psql) và chạy:
+
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS priority VARCHAR(20) NOT NULL DEFAULT 'NORMAL';
+CREATE INDEX IF NOT EXISTS ix_orders_priority ON orders(priority);
+
+
+CÁCH 3: Chạy Full Fix (Tất cả columns)
+---------------------------------------
+cd backend
+python scripts\fix_priority_column.py
+
+
+SAU KHI FIX:
+------------
+1. RESTART backend server (QUAN TRỌNG!)
+2. Refresh Orders page trong browser
+3. Kiểm tra - lỗi sẽ biến mất
+
+
+NẾU VẪN LỖI:
+-------------
+- Kiểm tra backend có đang chạy không
+- Đảm bảo đã RESTART backend sau khi add columns
+- Kiểm tra connection database có đúng không
+
+
+========================================

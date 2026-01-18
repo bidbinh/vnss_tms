@@ -25,6 +25,16 @@ class Site(BaseUUIDModel, TimestampMixin, TenantScoped, SQLModel, table=True):
     # Detailed address
     detailed_address: str = Field(nullable=False)  # Số nhà, đường, ...
 
+    # Coordinates (for distance calculation, GPS tracking, route optimization)
+    latitude: Optional[float] = Field(default=None, index=True)  # Latitude (can be inherited from Location)
+    longitude: Optional[float] = Field(default=None, index=True)  # Longitude (can be inherited from Location)
+
+    # Geofence (for GPS-based status detection)
+    geofence_radius_meters: int = Field(default=100, nullable=False)  # Radius in meters (default: 100m)
+
+    # Service time (for multi-stop trip ETA calculation)
+    service_time_minutes: int = Field(default=30, nullable=False)  # Service time in minutes (default: 30 min)
+
     # Contact info
     contact_name: Optional[str] = Field(default=None)  # Tên người liên hệ
     contact_phone: Optional[str] = Field(default=None)  # SĐT người liên hệ

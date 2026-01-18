@@ -7,7 +7,7 @@ from app.db.session import get_session
 from app.models import Order, Customer, User, Location, Driver
 from app.models.order import OrderStatus
 from app.schemas.order import OrderCreate, OrderRead, OrderAccept, OrderReject, OrderUpdate
-from app.core.security import get_current_user, get_current_user_optional
+from app.core.security import get_current_user, get_current_user_optional, require_permission, check_permission
 from app.core.activity_tracker import log_update, get_client_ip
 from app.services.order_code import next_order_code
 from app.services.order_parser import parse_order_text
@@ -123,9 +123,13 @@ def create_order(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
-    """Create single order (CUSTOMER/ADMIN role)"""
+    """Create single order - requires create permission"""
     try:
         tenant_id = str(current_user.tenant_id)
+        
+        # Check permission for non-legacy roles
+        if current_user.role not in ("ADMIN", "DISPATCHER", "CUSTOMER"):
+            check_permission(session, current_user, "tms", "orders", "create")
 
         customer = session.get(Customer, payload.customer_id)
         if not customer or str(customer.tenant_id) != tenant_id:
@@ -241,6 +245,7 @@ def list_orders(
     - CUSTOMER: only their orders
     - DRIVER: only assigned to them
     - DISPATCHER/ADMIN: all orders in tenant
+    - Other roles: requires 'view' permission on 'orders' resource
 
     Query params:
     - limit: max results (default 50, max 500)
@@ -250,6 +255,11 @@ def list_orders(
     - date_to: filter orders until this date (YYYY-MM-DD)
     """
     tenant_id = str(current_user.tenant_id)
+    
+    # Check permission for non-legacy roles
+    # Legacy roles (ADMIN, DISPATCHER, DRIVER, CUSTOMER) have their own access logic
+    if current_user.role not in ("ADMIN", "DISPATCHER", "DRIVER", "CUSTOMER"):
+        check_permission(session, current_user, "tms", "orders", "view")
 
     # Limit max results for performance
     limit = min(limit, 500)
@@ -541,9 +551,10 @@ def update_order(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
-    """Update order fields (DISPATCHER/ADMIN)"""
+    """Update order fields - requires edit permission"""
+    # Check permission: legacy roles or permission system
     if current_user.role not in ("DISPATCHER", "ADMIN"):
-        raise HTTPException(403, "Only DISPATCHER or ADMIN can update orders")
+        check_permission(session, current_user, "tms", "orders", "edit")
 
     tenant_id = str(current_user.tenant_id)
 

@@ -175,6 +175,7 @@ const TMS_CONFIG: ModuleConfig = {
         { labelKey: "tms.aiDispatch", href: "/tms/dispatch", icon: Brain },
         { labelKey: "tms.orders", href: "/tms/orders", icon: ClipboardList },
         { labelKey: "tms.emptyReturns", href: "/tms/empty-returns", icon: RotateCcw },
+        { labelKey: "tms.automation", href: "/tms/automation", icon: Bot },
       ],
     },
     {

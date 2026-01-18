@@ -68,5 +68,10 @@ class Customer(BaseUUIDModel, TimestampMixin, TenantScoped, SQLModel, table=True
     # === Trạng thái ===
     is_active: bool = Field(default=True)
 
+    # === Auto-Accept Configuration (for TMS automation) ===
+    auto_accept_enabled: bool = Field(default=False, index=True)  # Enable auto-acceptance for this customer
+    auto_accept_confidence_threshold: float = Field(default=90.0)  # Confidence threshold (0-100, default: 90%)
+    delay_alert_threshold_minutes: int = Field(default=15)  # Delay threshold for alerts (default: 15 minutes)
+
     # === CRM Integration ===
     crm_account_id: Optional[str] = Field(default=None, index=True)  # Link to CRM Account

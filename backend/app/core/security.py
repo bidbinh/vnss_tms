@@ -112,3 +112,125 @@ def get_current_user_optional(
         return user
     except:
         return None
+
+
+# ============ Permission Check Utilities ============
+
+def get_user_permissions(session: Session, user_id: str) -> dict:
+    """
+    Get all permissions for a user (aggregated from all assigned roles).
+    Returns a dict: { module: { resource: [actions] } }
+    Special case: {"all": True} means admin with full access.
+    """
+    from app.models import Role, Permission, UserRole
+    
+    # Get all roles assigned to user
+    user_roles = session.exec(
+        select(UserRole).where(UserRole.user_id == user_id)
+    ).all()
+
+    if not user_roles:
+        return {}
+
+    role_ids = [ur.role_id for ur in user_roles]
+
+    # Get roles
+    roles = session.exec(
+        select(Role).where(Role.id.in_(role_ids), Role.is_active == True)
+    ).all()
+
+    # Check if user has ADMIN role (full access)
+    for role in roles:
+        if role.code == "ADMIN":
+            return {"all": True}
+
+    # Get all permissions from all roles
+    permissions = session.exec(
+        select(Permission).where(Permission.role_id.in_(role_ids))
+    ).all()
+
+    # Aggregate permissions by module/resource
+    result = {}
+    for p in permissions:
+        if p.module not in result:
+            result[p.module] = {}
+        if p.resource not in result[p.module]:
+            result[p.module][p.resource] = []
+        if p.action not in result[p.module][p.resource]:
+            result[p.module][p.resource].append(p.action)
+
+    return result
+
+
+def check_permission(
+    session: Session,
+    user: User,
+    module: str,
+    resource: str,
+    action: str,
+    raise_exception: bool = True
+) -> bool:
+    """
+    Check if user has a specific permission.
+    
+    Args:
+        session: Database session
+        user: Current user
+        module: Module name (e.g., "tms", "hrm", "crm")
+        resource: Resource name (e.g., "orders", "drivers", "customers")
+        action: Action name (e.g., "view", "create", "edit", "delete")
+        raise_exception: If True, raises HTTPException 403 when not allowed
+        
+    Returns:
+        True if allowed, False if not (when raise_exception=False)
+        
+    Raises:
+        HTTPException 403 if not allowed and raise_exception=True
+    """
+    # Legacy role check - ADMIN always has full access
+    if user.role == "ADMIN":
+        return True
+    
+    # Get user permissions from role-permission system
+    permissions = get_user_permissions(session, str(user.id))
+    
+    # Check for full admin access
+    if permissions.get("all"):
+        return True
+    
+    # Check specific permission
+    allowed = False
+    if module in permissions:
+        if resource in permissions[module]:
+            if action in permissions[module][resource]:
+                allowed = True
+    
+    if not allowed and raise_exception:
+        raise HTTPException(
+            status_code=403,
+            detail=f"Permission denied. You don't have '{action}' access to '{resource}' in '{module}' module."
+        )
+    
+    return allowed
+
+
+def require_permission(module: str, resource: str, action: str):
+    """
+    Dependency factory to require a specific permission.
+    
+    Usage:
+        @router.get("/orders")
+        def list_orders(
+            _: None = Depends(require_permission("tms", "orders", "view")),
+            current_user: User = Depends(get_current_user),
+        ):
+            ...
+    """
+    def permission_checker(
+        session: Session = Depends(get_session),
+        current_user: User = Depends(get_current_user),
+    ):
+        check_permission(session, current_user, module, resource, action)
+        return None
+    
+    return permission_checker

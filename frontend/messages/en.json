@@ -1550,6 +1550,7 @@
       "recentMaintenance": "Recent Maintenance"
     },
     "aiDispatch": "AI Dispatch",
+    "automation": "Automation",
     "orders": "Orders",
     "emptyReturns": "Empty Returns",
     "emptyReturnsPage": {

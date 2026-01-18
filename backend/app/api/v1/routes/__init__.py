@@ -155,3 +155,7 @@ api_router.include_router(bank_payment_router, tags=["Bank Payment"])
 
 # OMS - Order Management System
 api_router.include_router(oms_router, prefix="/oms", tags=["OMS"])
+
+# TMS Automation
+from .automation import router as automation_router
+api_router.include_router(automation_router)

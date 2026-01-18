@@ -24,6 +24,10 @@ class Location(BaseUUIDModel, TimestampMixin, TenantScoped, SQLModel, table=True
     district: Optional[str] = Field(default=None, index=True)  # Quận/Huyện
     province: Optional[str] = Field(default=None, index=True)  # Tỉnh/TP
 
+    # Coordinates (for distance calculation, GPS tracking, route optimization)
+    latitude: Optional[float] = Field(default=None, index=True)  # Latitude
+    longitude: Optional[float] = Field(default=None, index=True)  # Longitude
+
     note: Optional[str] = Field(default=None)
 
     # Soft delete

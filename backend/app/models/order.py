@@ -33,6 +33,7 @@ class Order(BaseUUIDModel, TimestampMixin, TenantScoped, SQLModel, table=True):
 
     # Status workflow
     status: str = Field(default=OrderStatus.NEW, index=True, nullable=False)
+    priority: str = Field(default="NORMAL", index=True, nullable=False)  # URGENT, HIGH, NORMAL, LOW
     order_date: datetime = Field(default_factory=datetime.utcnow, index=True, nullable=False)
     customer_requested_date: Optional[datetime] = Field(default=None, nullable=True)  # Ngày KH yêu cầu giao hàng
 
@@ -82,6 +83,17 @@ class Order(BaseUUIDModel, TimestampMixin, TenantScoped, SQLModel, table=True):
     # ETAs (estimated time of arrival)
     eta_pickup_at: Optional[datetime] = Field(default=None, nullable=True)
     eta_delivery_at: Optional[datetime] = Field(default=None, nullable=True)
+    original_eta_pickup_at: Optional[datetime] = Field(default=None, nullable=True)  # Original ETA (for delay comparison)
+    original_eta_delivery_at: Optional[datetime] = Field(default=None, nullable=True)  # Original ETA (for delay comparison)
+
+    # Actual times (from GPS detection or manual entry)
+    actual_pickup_at: Optional[datetime] = Field(default=None, nullable=True)  # Actual pickup time
+    actual_delivery_at: Optional[datetime] = Field(default=None, nullable=True)  # Actual delivery time
+    arrived_at_pickup_at: Optional[datetime] = Field(default=None, nullable=True)  # GPS detected arrival at pickup
+    arrived_at_delivery_at: Optional[datetime] = Field(default=None, nullable=True)  # GPS detected arrival at delivery
+
+    # Cargo weight (for capacity check)
+    weight_kg: Optional[float] = Field(default=None, nullable=True)  # Weight in kg
 
     # Rejection
     reject_reason: Optional[str] = Field(default=None, nullable=True)

@@ -15,4 +15,7 @@ class Settings(BaseSettings):
     DB_POOL_TIMEOUT: int = int(os.getenv("DB_POOL_TIMEOUT", "30"))  # Wait time for connection
     DB_POOL_RECYCLE: int = int(os.getenv("DB_POOL_RECYCLE", "1800"))  # Recycle connections every 30 mins
 
+    # Google Maps API (optional, for geocoding and distance calculation)
+    GOOGLE_MAPS_API_KEY: str = os.getenv("GOOGLE_MAPS_API_KEY", "")
+
 settings = Settings()

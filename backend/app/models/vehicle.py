@@ -29,6 +29,11 @@ class Vehicle(BaseUUIDModel, TimestampMixin, TenantScoped, SQLModel, table=True)
     # Registration & inspection
     registration_expiry: Optional[date] = Field(default=None) # Hạn đăng kiểm
 
+    # Maintenance (for auto-scheduling)
+    current_mileage: Optional[int] = Field(default=None)  # Current mileage in km
+    maintenance_interval_km: Optional[int] = Field(default=None)  # Maintenance interval in km (e.g., 10000)
+    maintenance_interval_days: Optional[int] = Field(default=None)  # Maintenance interval in days (e.g., 90)
+
     # Status
     status: str = Field(default="ACTIVE")                  # ACTIVE, INACTIVE
     inactive_reason: Optional[str] = Field(default=None)   # Lý do ngừng hoạt động
