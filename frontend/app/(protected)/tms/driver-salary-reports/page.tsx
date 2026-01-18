@@ -273,10 +273,30 @@ export default function DriverSalaryReportsPage() {
         5: { cellWidth: 10 }, 6: { cellWidth: 12 }, 7: { cellWidth: 18, halign: "right" as const }, 8: { cellWidth: 16, halign: "right" as const },
         9: { cellWidth: 16, halign: "right" as const }, 10: { cellWidth: 16, halign: "right" as const }, 11: { cellWidth: 18, halign: "right" as const },
         12: { cellWidth: 12 }, 13: { cellWidth: 20, halign: "right" as const }
+      },
+      // Auto page break for long tables
+      showFoot: "lastPage",
+      didDrawPage: (data: any) => {
+        // Add page number at bottom
+        const pageCount = doc.getNumberOfPages();
+        doc.setFontSize(8);
+        doc.text(`Trang ${data.pageNumber}/${pageCount}`, doc.internal.pageSize.getWidth() - 25, doc.internal.pageSize.getHeight() - 10);
       }
     });
 
-    const finalY = (doc as any).lastAutoTable.finalY + 8;
+    const tableEndY = (doc as any).lastAutoTable.finalY;
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const summaryHeight = 70; // Estimated height needed for salary summary section
+
+    // Check if we need a new page for salary summary
+    let finalY: number;
+    if (tableEndY + summaryHeight > pageHeight - 15) {
+      // Not enough space, add new page
+      doc.addPage();
+      finalY = 20;
+    } else {
+      finalY = tableEndY + 8;
+    }
 
     doc.setFontSize(12);
     doc.text(`Phieu Luong Thang ${month}/${year}`, doc.internal.pageSize.getWidth() / 2, finalY, { align: "center" });
