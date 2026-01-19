@@ -653,7 +653,7 @@ def list_payrolls(
     current_user: User = Depends(get_current_user),
 ):
     """List all driver payrolls for a month"""
-    if current_user.role not in ("DISPATCHER", "ADMIN", "HR_MANAGER"):
+    if current_user.role not in ("DISPATCHER", "ADMIN", "HR", "HR_MANAGER"):
         raise HTTPException(403, "Access denied")
 
     tenant_id = str(current_user.tenant_id)
@@ -712,7 +712,7 @@ def get_payroll(
     current_user: User = Depends(get_current_user),
 ):
     """Get a single driver payroll by ID"""
-    if current_user.role not in ("DISPATCHER", "ADMIN", "HR_MANAGER", "DRIVER"):
+    if current_user.role not in ("DISPATCHER", "ADMIN", "HR", "HR_MANAGER", "DRIVER"):
         raise HTTPException(403, "Access denied")
 
     tenant_id = str(current_user.tenant_id)
@@ -992,7 +992,7 @@ def driver_confirm_payroll(
         if employee and employee.user_id and str(employee.user_id) == str(current_user.id):
             is_driver_owner = True
 
-    is_admin = current_user.role in ("ADMIN", "HR_MANAGER", "DISPATCHER")
+    is_admin = current_user.role in ("ADMIN", "HR", "HR_MANAGER", "DISPATCHER")
 
     if not is_driver_owner and not is_admin:
         raise HTTPException(403, "Only the driver or admin can confirm")
@@ -1039,7 +1039,7 @@ def driver_dispute_payroll(
         if employee and employee.user_id and str(employee.user_id) == str(current_user.id):
             is_driver_owner = True
 
-    is_admin = current_user.role in ("ADMIN", "HR_MANAGER", "DISPATCHER")
+    is_admin = current_user.role in ("ADMIN", "HR", "HR_MANAGER", "DISPATCHER")
 
     if not is_driver_owner and not is_admin:
         raise HTTPException(403, "Only the driver or admin can dispute")
@@ -1067,7 +1067,7 @@ def resolve_dispute(
     current_user: User = Depends(get_current_user),
 ):
     """Resolve disputed payroll (DISPATCHER/HR)"""
-    if current_user.role not in ("DISPATCHER", "ADMIN", "HR_MANAGER"):
+    if current_user.role not in ("DISPATCHER", "ADMIN", "HR", "HR_MANAGER"):
         raise HTTPException(403, "Only DISPATCHER, ADMIN or HR can resolve disputes")
 
     tenant_id = str(current_user.tenant_id)
