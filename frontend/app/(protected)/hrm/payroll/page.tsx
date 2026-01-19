@@ -20,8 +20,12 @@ import {
   Calculator,
   ChevronDown,
   ChevronUp,
+  FileSpreadsheet,
 } from "lucide-react";
 import { apiFetch } from "@/lib/api";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import * as XLSX from "xlsx";
 
 interface PayrollPeriod {
   id: string;
@@ -183,6 +187,7 @@ const DRIVER_STATUS_CONFIG: Record<string, { bg: string; text: string; label: st
 
 export default function PayrollPage() {
   const t = useTranslations("hrm.payrollPage");
+  const tDriver = useTranslations("hrm.driverPayroll");
   const tCommon = useTranslations("common");
 
   // Current user role
@@ -495,8 +500,592 @@ export default function PayrollPage() {
     return DRIVER_STATUS_CONFIG[status] || DRIVER_STATUS_CONFIG.DRAFT;
   };
 
-  const driverTotalSalary = driverPayrolls.reduce((sum, p) => sum + p.net_salary, 0);
+  const driverTotalSalary = driverPayrolls.reduce((sum, p) => sum + (p.final_net_salary ?? p.net_salary), 0);
   const driverTotalTrips = driverPayrolls.reduce((sum, p) => sum + p.total_trips, 0);
+
+  // Helper function to remove Vietnamese tones for PDF export
+  function removeVietnameseTones(str: string): string {
+    str = str.replace(/à|á|ạ|ả|ã|â|ầ|ấ|ậ|ẩ|ẫ|ă|ằ|ắ|ặ|ẳ|ẵ/g, "a");
+    str = str.replace(/è|é|ẹ|ẻ|ẽ|ê|ề|ế|ệ|ể|ễ/g, "e");
+    str = str.replace(/ì|í|ị|ỉ|ĩ/g, "i");
+    str = str.replace(/ò|ó|ọ|ỏ|õ|ô|ồ|ố|ộ|ổ|ỗ|ơ|ờ|ớ|ợ|ở|ỡ/g, "o");
+    str = str.replace(/ù|ú|ụ|ủ|ũ|ư|ừ|ứ|ự|ử|ữ/g, "u");
+    str = str.replace(/ỳ|ý|ỵ|ỷ|ỹ/g, "y");
+    str = str.replace(/đ/g, "d");
+    str = str.replace(/À|Á|Ạ|Ả|Ã|Â|Ầ|Ấ|Ậ|Ẩ|Ẫ|Ă|Ằ|Ắ|Ặ|Ẳ|Ẵ/g, "A");
+    str = str.replace(/È|É|Ẹ|Ẻ|Ẽ|Ê|Ề|Ế|Ệ|Ể|Ễ/g, "E");
+    str = str.replace(/Ì|Í|Ị|Ỉ|Ĩ/g, "I");
+    str = str.replace(/Ò|Ó|Ọ|Ỏ|Õ|Ô|Ồ|Ố|Ộ|Ổ|Ỗ|Ơ|Ờ|Ớ|Ợ|Ở|Ỡ/g, "O");
+    str = str.replace(/Ù|Ú|Ụ|Ủ|Ũ|Ư|Ừ|Ứ|Ự|Ử|Ữ/g, "U");
+    str = str.replace(/Ỳ|Ý|Ỵ|Ỷ|Ỹ/g, "Y");
+    str = str.replace(/Đ/g, "D");
+    return str;
+  }
+
+  // Convert number to Vietnamese words for PDF
+  function convertNumberToVietnameseWords(num: number): string {
+    if (num === 0) return "Khong";
+    const ones = ["", "mot", "hai", "ba", "bon", "nam", "sau", "bay", "tam", "chin"];
+    const teens = ["muoi", "muoi mot", "muoi hai", "muoi ba", "muoi bon", "muoi lam", "muoi sau", "muoi bay", "muoi tam", "muoi chin"];
+    const tens = ["", "", "hai muoi", "ba muoi", "bon muoi", "nam muoi", "sau muoi", "bay muoi", "tam muoi", "chin muoi"];
+    const scales = ["", "nghin", "trieu", "ty"];
+
+    function convertGroup(n: number): string {
+      if (n === 0) return "";
+      if (n < 10) return ones[n];
+      if (n < 20) return teens[n - 10];
+      if (n < 100) {
+        const ten = Math.floor(n / 10);
+        const one = n % 10;
+        return tens[ten] + (one > 0 ? " " + ones[one] : "");
+      }
+      const hundred = Math.floor(n / 100);
+      const remainder = n % 100;
+      let result = ones[hundred] + " tram";
+      if (remainder > 0) {
+        if (remainder < 10) {
+          result += " le " + ones[remainder];
+        } else {
+          result += " " + convertGroup(remainder);
+        }
+      }
+      return result;
+    }
+
+    const groups = [];
+    let tempNum = num;
+    while (tempNum > 0) {
+      groups.push(tempNum % 1000);
+      tempNum = Math.floor(tempNum / 1000);
+    }
+
+    let result = "";
+    for (let i = groups.length - 1; i >= 0; i--) {
+      if (groups[i] > 0) {
+        result += convertGroup(groups[i]) + " " + scales[i] + " ";
+      }
+    }
+
+    return result.trim().charAt(0).toUpperCase() + result.trim().slice(1);
+  }
+
+  // Export individual driver salary detail to PDF (from modal)
+  const handleExportDetailPDF = () => {
+    if (!selectedPayrollDetail) return;
+
+    const vn = (str: string) => removeVietnameseTones(str);
+    const doc = new jsPDF("landscape", "mm", "a4");
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 10;
+
+    const driverName = selectedPayrollDetail.driver_name || "Unknown";
+    const tripCount = selectedPayrollDetail.total_trips;
+    const trips = selectedPayrollDetail.trip_snapshot?.trips || [];
+
+    // ============ PAGE 1: Trip Details Table ============
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.text(`BANG KE CHUYEN - THANG ${selectedPayrollDetail.month}/${selectedPayrollDetail.year}`, pageWidth / 2, 15, { align: "center" });
+
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Tai xe: ${vn(driverName)}`, margin, 23);
+    doc.text(`So chuyen: ${tripCount}`, margin, 29);
+
+    // Calculate trip summary
+    const tripSummary = trips.reduce((sum, t) => ({
+      distance_salary: sum.distance_salary + (t.breakdown?.distance_salary || 0),
+      port_gate_fee: sum.port_gate_fee + (t.breakdown?.port_gate_fee || 0),
+      flatbed_tarp_fee: sum.flatbed_tarp_fee + (t.breakdown?.flatbed_tarp_fee || 0),
+      warehouse_bonus: sum.warehouse_bonus + (t.breakdown?.warehouse_bonus || 0),
+      daily_trip_bonus: sum.daily_trip_bonus + (t.breakdown?.daily_trip_bonus || 0),
+      total: sum.total + t.trip_salary
+    }), { distance_salary: 0, port_gate_fee: 0, flatbed_tarp_fee: 0, warehouse_bonus: 0, daily_trip_bonus: 0, total: 0 });
+
+    // Trip table data
+    const tripData = trips.map((trip, idx) => {
+      const b = trip.breakdown;
+      return [
+        idx + 1,
+        formatShortDate(trip.delivered_date),
+        trip.order_code,
+        vn(trip.pickup_site_name || "-"),
+        vn(trip.delivery_site_name || "-"),
+        trip.distance_km || "-",
+        b ? formatCurrency(b.distance_salary) : "-",
+        b && b.port_gate_fee > 0 ? formatCurrency(b.port_gate_fee) : "-",
+        b && b.flatbed_tarp_fee > 0 ? formatCurrency(b.flatbed_tarp_fee) : "-",
+        b && b.warehouse_bonus > 0 ? formatCurrency(b.warehouse_bonus) : "-",
+        b && b.daily_trip_bonus > 0 ? formatCurrency(b.daily_trip_bonus) : "-",
+        trip.is_holiday ? `${b?.holiday_multiplier || 1.5}x` : "-",
+        formatCurrency(trip.trip_salary)
+      ];
+    });
+
+    autoTable(doc, {
+      startY: 34,
+      head: [["STT", "Ngay", "Ma DH", "Diem lay", "Diem giao", "Km", "Luong KM", "Ve cong", "Bai bat", "Hang xa", "Thuong", "Ngay le", "Tong"]],
+      body: tripData,
+      foot: [[
+        { content: `TONG (${tripCount} chuyen)`, colSpan: 6, styles: { halign: "right" as const, fontStyle: "bold" as const } },
+        formatCurrency(tripSummary.distance_salary),
+        formatCurrency(tripSummary.port_gate_fee),
+        formatCurrency(tripSummary.flatbed_tarp_fee),
+        formatCurrency(tripSummary.warehouse_bonus),
+        formatCurrency(tripSummary.daily_trip_bonus),
+        "",
+        formatCurrency(tripSummary.total)
+      ]],
+      theme: "grid",
+      styles: { fontSize: 8, cellPadding: 2, halign: "center" as const, valign: "middle" as const, textColor: [0, 0, 0] },
+      headStyles: { fillColor: [70, 130, 180], textColor: [255, 255, 255], fontSize: 8, fontStyle: "bold", halign: "center" as const },
+      footStyles: { fillColor: [255, 250, 205], textColor: [0, 0, 0], fontSize: 8, fontStyle: "bold" },
+      columnStyles: {
+        0: { cellWidth: 10 },
+        1: { cellWidth: 16 },
+        2: { cellWidth: 22 },
+        3: { cellWidth: 28 },
+        4: { cellWidth: 28 },
+        5: { cellWidth: 12, halign: "right" as const },
+        6: { cellWidth: 22, halign: "right" as const },
+        7: { cellWidth: 18, halign: "right" as const },
+        8: { cellWidth: 18, halign: "right" as const },
+        9: { cellWidth: 18, halign: "right" as const },
+        10: { cellWidth: 18, halign: "right" as const },
+        11: { cellWidth: 14, halign: "center" as const },
+        12: { cellWidth: 24, halign: "right" as const }
+      },
+      margin: { left: margin, right: margin },
+      showFoot: "lastPage",
+      didDrawPage: (data: any) => {
+        doc.setFontSize(8);
+        doc.setFont("helvetica", "normal");
+        doc.text(`Trang ${data.pageNumber}`, pageWidth - 20, pageHeight - 8);
+      }
+    });
+
+    // ============ PAGE 2: Salary Summary ============
+    doc.addPage();
+
+    // Title
+    doc.setFontSize(16);
+    doc.setFont("helvetica", "bold");
+    doc.text(`PHIEU LUONG THANG ${selectedPayrollDetail.month}/${selectedPayrollDetail.year}`, pageWidth / 2, 25, { align: "center" });
+
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Tai xe: ${vn(driverName)}`, margin, 38);
+    doc.text(`So chuyen trong thang: ${tripCount}`, margin, 45);
+
+    let currentY = 58;
+    const colLeft = margin;
+    const colRight = pageWidth / 2 + 5;
+    const valueOffset = 75;
+
+    // Use salary report data if available, otherwise use payroll detail
+    const baseSalary = selectedSalaryReport?.base_salary || 0;
+    const tripSalary = selectedSalaryReport?.total_trip_salary || selectedPayrollDetail.total_trip_salary;
+    const seniorityBonus = selectedSalaryReport?.seniority_bonus || 0;
+    const monthlyBonus = selectedSalaryReport?.monthly_bonus || selectedPayrollDetail.total_bonuses;
+    const grossSalary = selectedSalaryReport?.gross_salary || (tripSalary + monthlyBonus);
+    const deductions = selectedSalaryReport?.deductions;
+    const netSalary = selectedSalaryReport?.total_salary || selectedPayrollDetail.net_salary;
+
+    // Left column - Income
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    doc.text("THU NHAP", colLeft, currentY);
+    currentY += 8;
+
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    if (baseSalary > 0) {
+      doc.text("Luong co ban:", colLeft, currentY);
+      doc.text(`${formatCurrency(baseSalary)}`, colLeft + valueOffset, currentY);
+      currentY += 7;
+    }
+
+    doc.text("Luong chuyen:", colLeft, currentY);
+    doc.text(`${formatCurrency(tripSalary)}`, colLeft + valueOffset, currentY);
+    currentY += 7;
+
+    if (seniorityBonus > 0) {
+      doc.text("Thuong tham nien:", colLeft, currentY);
+      doc.text(`${formatCurrency(seniorityBonus)}`, colLeft + valueOffset, currentY);
+      currentY += 7;
+    }
+
+    if (monthlyBonus > 0) {
+      doc.text(`Thuong san luong (${tripCount} chuyen):`, colLeft, currentY);
+      doc.text(`${formatCurrency(monthlyBonus)}`, colLeft + valueOffset, currentY);
+      currentY += 7;
+    }
+
+    // Right column - Deductions
+    let rightY = 58;
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    doc.text("KHOAN TRU", colRight, rightY);
+    rightY += 8;
+
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+
+    if (deductions) {
+      doc.text("BHXH, BHYT, BHTN:", colRight, rightY);
+      doc.text(`${formatCurrency(deductions.total_insurance)}`, colRight + valueOffset - 10, rightY);
+      rightY += 6;
+
+      doc.setFontSize(9);
+      doc.text(`  - BHXH (8%):`, colRight, rightY);
+      doc.text(`${formatCurrency(deductions.social_insurance)}`, colRight + valueOffset - 10, rightY);
+      rightY += 5;
+
+      doc.text(`  - BHYT (1.5%):`, colRight, rightY);
+      doc.text(`${formatCurrency(deductions.health_insurance)}`, colRight + valueOffset - 10, rightY);
+      rightY += 5;
+
+      doc.text(`  - BHTN (1%):`, colRight, rightY);
+      doc.text(`${formatCurrency(deductions.unemployment_insurance)}`, colRight + valueOffset - 10, rightY);
+      rightY += 7;
+
+      doc.setFontSize(10);
+      doc.text("Thue TNCN:", colRight, rightY);
+      doc.text(deductions.income_tax > 0 ? `${formatCurrency(deductions.income_tax)}` : "0 d", colRight + valueOffset - 10, rightY);
+      rightY += 7;
+
+      doc.text("Tam ung:", colRight, rightY);
+      doc.text(deductions.advance_payment > 0 ? `${formatCurrency(deductions.advance_payment)}` : "0 d", colRight + valueOffset - 10, rightY);
+    }
+
+    // Summary section
+    const summaryY = Math.max(currentY, rightY) + 15;
+
+    // Draw line
+    doc.setDrawColor(100, 100, 100);
+    doc.line(margin, summaryY - 5, pageWidth - margin, summaryY - 5);
+
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    doc.text("TONG THU NHAP:", colLeft, summaryY);
+    doc.text(`${formatCurrency(grossSalary)}`, colLeft + valueOffset, summaryY);
+
+    doc.text("TONG KHOAN TRU:", colLeft, summaryY + 8);
+    doc.text(`(${formatCurrency(deductions?.total_deductions || 0)})`, colLeft + valueOffset, summaryY + 8);
+
+    // Net salary highlight
+    doc.setFillColor(200, 255, 200);
+    doc.rect(margin - 2, summaryY + 14, pageWidth - 2 * margin + 4, 12, "F");
+    doc.setDrawColor(0, 150, 0);
+    doc.rect(margin - 2, summaryY + 14, pageWidth - 2 * margin + 4, 12, "S");
+
+    doc.setFontSize(13);
+    doc.setFont("helvetica", "bold");
+    doc.text("THUC LANH:", colLeft, summaryY + 22);
+    doc.text(`${formatCurrency(netSalary)} VND`, colLeft + valueOffset, summaryY + 22);
+
+    // Amount in words
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "italic");
+    doc.text(`(Bang chu: ${convertNumberToVietnameseWords(netSalary)} dong)`, margin, summaryY + 35);
+
+    // Signature section
+    const sigY = summaryY + 55;
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text("Nguoi lap phieu", margin + 20, sigY, { align: "center" });
+    doc.text("Tai xe", pageWidth - margin - 30, sigY, { align: "center" });
+
+    doc.setFontSize(8);
+    doc.text("(Ky, ghi ro ho ten)", margin + 20, sigY + 5, { align: "center" });
+    doc.text("(Ky, ghi ro ho ten)", pageWidth - margin - 30, sigY + 5, { align: "center" });
+
+    // Page number for page 2
+    doc.setFontSize(8);
+    doc.text(`Trang ${doc.getNumberOfPages()}`, pageWidth - 25, pageHeight - 10);
+
+    doc.save(`Phieu_Luong_${vn(driverName).replace(/\s+/g, "_")}_T${selectedPayrollDetail.month}_${selectedPayrollDetail.year}.pdf`);
+  };
+
+  // Export individual driver salary detail to Excel (from modal)
+  const handleExportDetailExcel = () => {
+    if (!selectedPayrollDetail) return;
+
+    const driverName = selectedPayrollDetail.driver_name || "Unknown";
+    const trips = selectedPayrollDetail.trip_snapshot?.trips || [];
+
+    // Use salary report data if available
+    const baseSalary = selectedSalaryReport?.base_salary || 0;
+    const tripSalary = selectedSalaryReport?.total_trip_salary || selectedPayrollDetail.total_trip_salary;
+    const seniorityBonus = selectedSalaryReport?.seniority_bonus || 0;
+    const monthlyBonus = selectedSalaryReport?.monthly_bonus || selectedPayrollDetail.total_bonuses;
+    const grossSalary = selectedSalaryReport?.gross_salary || (tripSalary + monthlyBonus);
+    const deductions = selectedSalaryReport?.deductions;
+    const netSalary = selectedSalaryReport?.total_salary || selectedPayrollDetail.net_salary;
+
+    // Build single sheet with all data
+    const ws = XLSX.utils.aoa_to_sheet([]);
+
+    // Row 0: Title
+    XLSX.utils.sheet_add_aoa(ws, [
+      [`BẢNG LƯƠNG CHI TIẾT - ${driverName} - Tháng ${selectedPayrollDetail.month}/${selectedPayrollDetail.year}`]
+    ], { origin: "A1" });
+
+    // Row 2: Trip table header
+    const tripHeaders = ["STT", "Ngày", "Mã ĐH", "Điểm lấy", "Điểm giao", "Km", "Lương KM", "Vé cổng", "Bạt", "Hàng xá", "Thưởng", "Ngày lễ", "Tổng"];
+    XLSX.utils.sheet_add_aoa(ws, [tripHeaders], { origin: "A3" });
+
+    // Trip data rows
+    const tripRows = trips.map((trip, idx) => {
+      const b = trip.breakdown;
+      return [
+        idx + 1,
+        formatShortDate(trip.delivered_date),
+        trip.order_code,
+        trip.pickup_site_name || "-",
+        trip.delivery_site_name || "-",
+        trip.distance_km || "-",
+        b?.distance_salary || 0,
+        b?.port_gate_fee || 0,
+        b?.flatbed_tarp_fee || 0,
+        b?.warehouse_bonus || 0,
+        b?.daily_trip_bonus || 0,
+        trip.is_holiday ? `${b?.holiday_multiplier || 1.5}x` : "-",
+        trip.trip_salary,
+      ];
+    });
+    XLSX.utils.sheet_add_aoa(ws, tripRows, { origin: "A4" });
+
+    // Total row for trips
+    const totalRowIdx = 4 + trips.length;
+    const totalRow = [
+      "",
+      "",
+      "",
+      "",
+      `Tổng (${trips.length} chuyến)`,
+      "",
+      trips.reduce((sum, t) => sum + (t.breakdown?.distance_salary || 0), 0),
+      trips.reduce((sum, t) => sum + (t.breakdown?.port_gate_fee || 0), 0),
+      trips.reduce((sum, t) => sum + (t.breakdown?.flatbed_tarp_fee || 0), 0),
+      trips.reduce((sum, t) => sum + (t.breakdown?.warehouse_bonus || 0), 0),
+      trips.reduce((sum, t) => sum + (t.breakdown?.daily_trip_bonus || 0), 0),
+      "",
+      trips.reduce((sum, t) => sum + t.trip_salary, 0),
+    ];
+    XLSX.utils.sheet_add_aoa(ws, [totalRow], { origin: `A${totalRowIdx}` });
+
+    // Summary section starts 2 rows after total
+    const summaryStartRow = totalRowIdx + 2;
+
+    // Income section (left columns A-B) and Deductions section (right columns D-E)
+    const incomeData = [
+      ["THU NHẬP", ""],
+      ["Lương cơ bản", baseSalary],
+      ["Lương chuyến", tripSalary],
+      ["Thưởng thâm niên", seniorityBonus],
+      ["Thưởng sản lượng", monthlyBonus],
+      ["Tổng thu nhập", grossSalary],
+    ];
+
+    const deductionData = [
+      ["KHẤU TRỪ", ""],
+      ["BHXH (8%)", deductions?.social_insurance || 0],
+      ["BHYT (1.5%)", deductions?.health_insurance || 0],
+      ["BHTN (1%)", deductions?.unemployment_insurance || 0],
+      ["Thuế TNCN", deductions?.income_tax || 0],
+      ["Tạm ứng", deductions?.advance_payment || 0],
+      ["Tổng khấu trừ", deductions?.total_deductions || 0],
+    ];
+
+    // Add income section
+    XLSX.utils.sheet_add_aoa(ws, incomeData, { origin: `A${summaryStartRow}` });
+
+    // Add deduction section (columns D-E)
+    XLSX.utils.sheet_add_aoa(ws, deductionData, { origin: `D${summaryStartRow}` });
+
+    // Net salary row (spans across)
+    const netSalaryRow = summaryStartRow + Math.max(incomeData.length, deductionData.length) + 1;
+    XLSX.utils.sheet_add_aoa(ws, [
+      ["THỰC LĨNH", netSalary, "", "", "", ""],
+    ], { origin: `A${netSalaryRow}` });
+
+    // Set column widths
+    ws["!cols"] = [
+      { wch: 5 },   // A: STT
+      { wch: 12 },  // B: Ngày
+      { wch: 14 },  // C: Mã ĐH
+      { wch: 20 },  // D: Điểm lấy
+      { wch: 20 },  // E: Điểm giao
+      { wch: 8 },   // F: Km
+      { wch: 12 },  // G: Lương KM
+      { wch: 10 },  // H: Vé cổng
+      { wch: 10 },  // I: Bạt
+      { wch: 10 },  // J: Hàng xá
+      { wch: 10 },  // K: Thưởng
+      { wch: 10 },  // L: Ngày lễ
+      { wch: 14 },  // M: Tổng
+    ];
+
+    // Merge title cell
+    ws["!merges"] = [
+      { s: { r: 0, c: 0 }, e: { r: 0, c: 12 } }, // Title row merge
+    ];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Chi tiết lương");
+
+    XLSX.writeFile(wb, `Chi_tiet_luong_${driverName.replace(/\s+/g, "_")}_T${selectedPayrollDetail.month}_${selectedPayrollDetail.year}.xlsx`);
+  };
+
+  // Quick export driver salary from table (fetches data and exports)
+  const handleQuickExportDriver = async (payroll: DriverPayroll) => {
+    try {
+      // Fetch payroll detail (same endpoint as fetchPayrollDetail)
+      const detail = await apiFetch<DriverPayroll>(`/driver-salary-management/payrolls/${payroll.id}`);
+
+      // Fetch salary report
+      let salaryReport: any = null;
+      try {
+        const reportData = await apiFetch<{ drivers: any[] }>(
+          `/driver-salary-reports/monthly?year=${payroll.year}&month=${payroll.month}&driver_id=${payroll.driver_id}`
+        );
+        salaryReport = reportData.drivers?.[0] || null;
+      } catch {
+        // Salary report not available
+      }
+
+      const driverName = detail.driver_name || payroll.driver_name || "Unknown";
+      const trips = detail.trip_snapshot?.trips || [];
+
+      // Use salary report data if available
+      const baseSalary = salaryReport?.base_salary || 0;
+      const tripSalary = salaryReport?.total_trip_salary || detail.total_trip_salary;
+      const seniorityBonus = salaryReport?.seniority_bonus || 0;
+      const monthlyBonus = salaryReport?.monthly_bonus || detail.total_bonuses;
+      const grossSalary = salaryReport?.gross_salary || (tripSalary + monthlyBonus);
+      const deductions = salaryReport?.deductions;
+      const netSalary = salaryReport?.total_salary || detail.net_salary;
+
+      // Build single sheet with all data
+      const ws = XLSX.utils.aoa_to_sheet([]);
+
+      // Row 0: Title
+      XLSX.utils.sheet_add_aoa(ws, [
+        [`BẢNG LƯƠNG CHI TIẾT - ${driverName} - Tháng ${payroll.month}/${payroll.year}`]
+      ], { origin: "A1" });
+
+      // Row 2: Trip table header
+      const tripHeaders = ["STT", "Ngày", "Mã ĐH", "Điểm lấy", "Điểm giao", "Km", "Lương KM", "Vé cổng", "Bạt", "Hàng xá", "Thưởng", "Ngày lễ", "Tổng"];
+      XLSX.utils.sheet_add_aoa(ws, [tripHeaders], { origin: "A3" });
+
+      // Trip data rows
+      const tripRows = trips.map((trip: any, idx: number) => {
+        const b = trip.breakdown;
+        return [
+          idx + 1,
+          formatShortDate(trip.delivered_date),
+          trip.order_code,
+          trip.pickup_site_name || "-",
+          trip.delivery_site_name || "-",
+          trip.distance_km || "-",
+          b?.distance_salary || 0,
+          b?.port_gate_fee || 0,
+          b?.flatbed_tarp_fee || 0,
+          b?.warehouse_bonus || 0,
+          b?.daily_trip_bonus || 0,
+          trip.is_holiday ? `${b?.holiday_multiplier || 1.5}x` : "-",
+          trip.trip_salary,
+        ];
+      });
+      XLSX.utils.sheet_add_aoa(ws, tripRows, { origin: "A4" });
+
+      // Total row for trips
+      const totalRowIdx = 4 + trips.length;
+      const totalRow = [
+        "",
+        "",
+        "",
+        "",
+        `Tổng (${trips.length} chuyến)`,
+        "",
+        trips.reduce((sum: number, t: any) => sum + (t.breakdown?.distance_salary || 0), 0),
+        trips.reduce((sum: number, t: any) => sum + (t.breakdown?.port_gate_fee || 0), 0),
+        trips.reduce((sum: number, t: any) => sum + (t.breakdown?.flatbed_tarp_fee || 0), 0),
+        trips.reduce((sum: number, t: any) => sum + (t.breakdown?.warehouse_bonus || 0), 0),
+        trips.reduce((sum: number, t: any) => sum + (t.breakdown?.daily_trip_bonus || 0), 0),
+        "",
+        trips.reduce((sum: number, t: any) => sum + t.trip_salary, 0),
+      ];
+      XLSX.utils.sheet_add_aoa(ws, [totalRow], { origin: `A${totalRowIdx}` });
+
+      // Summary section starts 2 rows after total
+      const summaryStartRow = totalRowIdx + 2;
+
+      // Income section (left columns A-B) and Deductions section (right columns D-E)
+      const incomeData = [
+        ["THU NHẬP", ""],
+        ["Lương cơ bản", baseSalary],
+        ["Lương chuyến", tripSalary],
+        ["Thưởng thâm niên", seniorityBonus],
+        ["Thưởng sản lượng", monthlyBonus],
+        ["Tổng thu nhập", grossSalary],
+      ];
+
+      const deductionData = [
+        ["KHẤU TRỪ", ""],
+        ["BHXH (8%)", deductions?.social_insurance || 0],
+        ["BHYT (1.5%)", deductions?.health_insurance || 0],
+        ["BHTN (1%)", deductions?.unemployment_insurance || 0],
+        ["Thuế TNCN", deductions?.income_tax || 0],
+        ["Tạm ứng", deductions?.advance_payment || 0],
+        ["Tổng khấu trừ", deductions?.total_deductions || 0],
+      ];
+
+      // Add income section
+      XLSX.utils.sheet_add_aoa(ws, incomeData, { origin: `A${summaryStartRow}` });
+
+      // Add deduction section (columns D-E)
+      XLSX.utils.sheet_add_aoa(ws, deductionData, { origin: `D${summaryStartRow}` });
+
+      // Net salary row (spans across)
+      const netSalaryRow = summaryStartRow + Math.max(incomeData.length, deductionData.length) + 1;
+      XLSX.utils.sheet_add_aoa(ws, [
+        ["THỰC LĨNH", netSalary, "", "", "", ""],
+      ], { origin: `A${netSalaryRow}` });
+
+      // Set column widths
+      ws["!cols"] = [
+        { wch: 5 },   // A: STT
+        { wch: 12 },  // B: Ngày
+        { wch: 14 },  // C: Mã ĐH
+        { wch: 20 },  // D: Điểm lấy
+        { wch: 20 },  // E: Điểm giao
+        { wch: 8 },   // F: Km
+        { wch: 12 },  // G: Lương KM
+        { wch: 10 },  // H: Vé cổng
+        { wch: 10 },  // I: Bạt
+        { wch: 10 },  // J: Hàng xá
+        { wch: 10 },  // K: Thưởng
+        { wch: 10 },  // L: Ngày lễ
+        { wch: 14 },  // M: Tổng
+      ];
+
+      // Merge title cell
+      ws["!merges"] = [
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 12 } }, // Title row merge
+      ];
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Chi tiết lương");
+
+      XLSX.writeFile(wb, `Chi_tiet_luong_${driverName.replace(/\s+/g, "_")}_T${payroll.month}_${payroll.year}.xlsx`);
+    } catch (error) {
+      console.error("Failed to export driver salary:", error);
+      alert("Không thể xuất bảng lương. Vui lòng thử lại.");
+    }
+  };
 
   return (
     <div className="p-6 space-y-6">
@@ -506,19 +1095,19 @@ export default function PayrollPage() {
           <h1 className="text-2xl font-bold text-gray-900">{t("title")}</h1>
           <p className="text-gray-600 mt-1">{t("subtitle")}</p>
         </div>
-        <div className="flex items-center gap-3">
-          <select
-            value={selectedYear}
-            onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-            className="px-4 py-2 border border-gray-300 rounded-lg"
-          >
-            {[2023, 2024, 2025, 2026].map((year) => (
-              <option key={year} value={year}>
-                {t("year")} {year}
-              </option>
-            ))}
-          </select>
-          {activeTab === "office" && (
+        {activeTab === "office" && (
+          <div className="flex items-center gap-3">
+            <select
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+              className="px-4 py-2 border border-gray-300 rounded-lg"
+            >
+              {[2023, 2024, 2025, 2026].map((year) => (
+                <option key={year} value={year}>
+                  {t("year")} {year}
+                </option>
+              ))}
+            </select>
             <button
               onClick={() => {
                 updateDefaultDates(new Date().getMonth() + 1, new Date().getFullYear());
@@ -529,8 +1118,8 @@ export default function PayrollPage() {
               <Plus className="w-4 h-4" />
               {t("createPeriod")}
             </button>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Tabs */}
@@ -763,7 +1352,7 @@ export default function PayrollPage() {
           <div className="bg-white p-4 rounded-lg shadow border border-gray-200">
             <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Năm</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{tDriver("filters.year")}</label>
                 <select
                   value={driverYear}
                   onChange={(e) => setDriverYear(parseInt(e.target.value))}
@@ -775,53 +1364,44 @@ export default function PayrollPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Tháng</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{tDriver("filters.month")}</label>
                 <select
                   value={selectedMonth}
                   onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                 >
                   {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
-                    <option key={m} value={m}>Tháng {m}</option>
+                    <option key={m} value={m}>{tDriver("filters.monthPrefix")} {m}</option>
                   ))}
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Tài xế</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{tDriver("filters.driver")}</label>
                 <select
                   value={selectedDriverFilter}
                   onChange={(e) => setSelectedDriverFilter(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                 >
-                  <option value="">Tất cả</option>
+                  <option value="">{tDriver("filters.allDrivers")}</option>
                   {drivers.map((d) => (
                     <option key={d.id} value={d.id}>{d.short_name || d.name}</option>
                   ))}
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Trạng thái</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{tDriver("filters.status")}</label>
                 <select
                   value={selectedStatusFilter}
                   onChange={(e) => setSelectedStatusFilter(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                 >
-                  <option value="">Tất cả</option>
-                  <option value="DRAFT">Nháp</option>
-                  <option value="PENDING_REVIEW">Chờ xác nhận</option>
-                  <option value="CONFIRMED">Đã xác nhận</option>
-                  <option value="PAID">Đã thanh toán</option>
-                  <option value="DISPUTED">Khiếu nại</option>
+                  <option value="">{tDriver("filters.allStatus")}</option>
+                  <option value="DRAFT">{tDriver("status.DRAFT")}</option>
+                  <option value="PENDING_REVIEW">{tDriver("status.PENDING_REVIEW")}</option>
+                  <option value="CONFIRMED">{tDriver("status.CONFIRMED")}</option>
+                  <option value="PAID">{tDriver("status.PAID")}</option>
+                  <option value="DISPUTED">{tDriver("status.DISPUTED")}</option>
                 </select>
-              </div>
-              <div className="flex items-end">
-                <Link
-                  href="/tms/driver-salary-management"
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                >
-                  <Truck className="w-4 h-4" />
-                  Quản lý chi tiết
-                </Link>
               </div>
             </div>
           </div>
@@ -834,7 +1414,7 @@ export default function PayrollPage() {
                   <Truck className="w-5 h-5 text-blue-600" />
                 </div>
                 <div>
-                  <div className="text-sm text-gray-600">Số tài xế</div>
+                  <div className="text-sm text-gray-600">{tDriver("stats.driverCount")}</div>
                   <div className="text-xl font-bold text-gray-900">{driverPayrolls.length}</div>
                 </div>
               </div>
@@ -845,7 +1425,7 @@ export default function PayrollPage() {
                   <FileText className="w-5 h-5 text-green-600" />
                 </div>
                 <div>
-                  <div className="text-sm text-gray-600">Tổng chuyến</div>
+                  <div className="text-sm text-gray-600">{tDriver("stats.totalTrips")}</div>
                   <div className="text-xl font-bold text-gray-900">{driverTotalTrips}</div>
                 </div>
               </div>
@@ -856,7 +1436,7 @@ export default function PayrollPage() {
                   <DollarSign className="w-5 h-5 text-purple-600" />
                 </div>
                 <div>
-                  <div className="text-sm text-gray-600">Tổng lương T{selectedMonth}/{driverYear}</div>
+                  <div className="text-sm text-gray-600">{tDriver("stats.totalSalary")} T{selectedMonth}/{driverYear}</div>
                   <div className="text-xl font-bold text-purple-600">{formatCurrency(driverTotalSalary)}</div>
                 </div>
               </div>
@@ -866,7 +1446,7 @@ export default function PayrollPage() {
           {/* Driver Payroll List */}
           <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
             <div className="px-4 py-3 border-b border-gray-200">
-              <h2 className="font-semibold">Bảng lương tài xế T{selectedMonth}/{driverYear}</h2>
+              <h2 className="font-semibold">{tDriver("table.title")} T{selectedMonth}/{driverYear}</h2>
             </div>
 
             {driverLoading ? (
@@ -875,24 +1455,24 @@ export default function PayrollPage() {
               </div>
             ) : driverPayrolls.length === 0 ? (
               <div className="text-center p-8 text-gray-500">
-                Chưa có bảng lương tài xế nào trong tháng này
+                {tDriver("table.noData")}
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200 text-sm">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Tài xế</th>
-                      <th className="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase">Chuyến</th>
-                      <th className="px-2 py-2 text-right text-xs font-medium text-gray-500 uppercase">Lương CB</th>
-                      <th className="px-2 py-2 text-right text-xs font-medium text-gray-500 uppercase">Lương chuyến</th>
-                      <th className="px-2 py-2 text-right text-xs font-medium text-gray-500 uppercase">Thưởng</th>
-                      <th className="px-2 py-2 text-right text-xs font-medium text-gray-500 uppercase">Bảo hiểm</th>
-                      <th className="px-2 py-2 text-right text-xs font-medium text-gray-500 uppercase">Thuế TNCN</th>
-                      <th className="px-2 py-2 text-right text-xs font-medium text-gray-500 uppercase">Tạm ứng</th>
-                      <th className="px-2 py-2 text-right text-xs font-medium text-gray-500 uppercase">Thực lĩnh</th>
-                      <th className="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase">Trạng thái</th>
-                      <th className="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase">Thao tác</th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{tDriver("table.driver")}</th>
+                      <th className="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase">{tDriver("table.trips")}</th>
+                      <th className="px-2 py-2 text-right text-xs font-medium text-gray-500 uppercase">{tDriver("table.baseSalary")}</th>
+                      <th className="px-2 py-2 text-right text-xs font-medium text-gray-500 uppercase">{tDriver("table.tripSalary")}</th>
+                      <th className="px-2 py-2 text-right text-xs font-medium text-gray-500 uppercase">{tDriver("table.bonus")}</th>
+                      <th className="px-2 py-2 text-right text-xs font-medium text-gray-500 uppercase">{tDriver("table.insurance")}</th>
+                      <th className="px-2 py-2 text-right text-xs font-medium text-gray-500 uppercase">{tDriver("table.tax")}</th>
+                      <th className="px-2 py-2 text-right text-xs font-medium text-gray-500 uppercase">{tDriver("table.advance")}</th>
+                      <th className="px-2 py-2 text-right text-xs font-medium text-gray-500 uppercase">{tDriver("table.netSalary")}</th>
+                      <th className="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase">{tDriver("table.status")}</th>
+                      <th className="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase">{tDriver("table.actions")}</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
@@ -938,12 +1518,19 @@ export default function PayrollPage() {
                               >
                                 <Eye className="w-3 h-3" />
                               </button>
+                              <button
+                                onClick={() => handleQuickExportDriver(payroll)}
+                                className="px-2 py-1 text-xs bg-green-100 text-green-700 rounded hover:bg-green-200 flex items-center gap-1"
+                                title="Xuất Excel"
+                              >
+                                <Download className="w-3 h-3" />
+                              </button>
                               {payroll.status === "DRAFT" && (
                                 <button
                                   onClick={() => handleSubmitForReview(payroll.id)}
                                   className="px-2 py-1 text-xs bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200"
                                 >
-                                  Gửi duyệt
+                                  {tDriver("actions.submitReview")}
                                 </button>
                               )}
                               {payroll.status === "PENDING_REVIEW" && (
@@ -951,21 +1538,20 @@ export default function PayrollPage() {
                                   onClick={() => handleConfirmDriverPayroll(payroll.id)}
                                   className="px-2 py-1 text-xs bg-green-100 text-green-700 rounded hover:bg-green-200"
                                 >
-                                  Xác nhận
+                                  {tDriver("actions.confirm")}
                                 </button>
                               )}
                               {payroll.status === "CONFIRMED" && (userRole === "ACCOUNTANT" || userRole === "ADMIN") && (
                                 <button
                                   onClick={() => handleMarkDriverPaid(payroll.id)}
                                   className="px-2 py-1 text-xs bg-purple-100 text-purple-700 rounded hover:bg-purple-200"
-                                  title="Chỉ Kế toán mới được đánh dấu đã thanh toán"
                                 >
-                                  Đã TT
+                                  {tDriver("actions.markPaid")}
                                 </button>
                               )}
                               {payroll.status === "PAID" && (
                                 <span className="text-xs text-gray-500">
-                                  {payroll.paid_at ? formatDate(payroll.paid_at) : "Đã TT"}
+                                  {payroll.paid_at ? formatDate(payroll.paid_at) : tDriver("actions.markPaid")}
                                 </span>
                               )}
                             </div>
@@ -1390,6 +1976,24 @@ export default function PayrollPage() {
                 <span className={`px-3 py-1 rounded-full text-sm font-medium ${getDriverStatusConfig(selectedPayrollDetail.status).bg} ${getDriverStatusConfig(selectedPayrollDetail.status).text}`}>
                   {getDriverStatusConfig(selectedPayrollDetail.status).label}
                 </span>
+                {/* Download Excel button */}
+                <button
+                  onClick={handleExportDetailExcel}
+                  className="px-3 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-1 text-sm"
+                  title="Xuất Excel chi tiết"
+                >
+                  <FileSpreadsheet className="w-4 h-4" />
+                  Excel
+                </button>
+                {/* Download PDF button */}
+                <button
+                  onClick={handleExportDetailPDF}
+                  className="px-3 py-1 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center gap-1 text-sm"
+                  title="Xuất PDF chi tiết"
+                >
+                  <Download className="w-4 h-4" />
+                  PDF
+                </button>
               </div>
               <div className="flex gap-3">
                 <button

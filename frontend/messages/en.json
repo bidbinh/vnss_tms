@@ -570,6 +570,50 @@
       },
       "noPeriods": "No payroll periods for year"
     },
+    "driverPayroll": {
+      "filters": {
+        "year": "Year",
+        "month": "Month",
+        "monthPrefix": "Month",
+        "allMonths": "All",
+        "driver": "Driver",
+        "allDrivers": "All",
+        "status": "Status",
+        "allStatus": "All"
+      },
+      "stats": {
+        "driverCount": "Drivers",
+        "totalTrips": "Total Trips",
+        "totalSalary": "Total Salary"
+      },
+      "table": {
+        "title": "Driver Payroll",
+        "driver": "Driver",
+        "trips": "Trips",
+        "baseSalary": "Base Salary",
+        "tripSalary": "Trip Salary",
+        "bonus": "Bonus",
+        "insurance": "Insurance",
+        "tax": "PIT",
+        "advance": "Advance",
+        "netSalary": "Net Salary",
+        "status": "Status",
+        "actions": "Actions",
+        "noData": "No driver payroll for this month"
+      },
+      "actions": {
+        "submitReview": "Submit",
+        "confirm": "Confirm",
+        "markPaid": "Paid"
+      },
+      "status": {
+        "DRAFT": "Draft",
+        "PENDING_REVIEW": "Pending",
+        "CONFIRMED": "Confirmed",
+        "PAID": "Paid",
+        "DISPUTED": "Disputed"
+      }
+    },
     "leavesPage": {
       "title": "Leave Management",
       "subtitle": "Approve and track leave requests",

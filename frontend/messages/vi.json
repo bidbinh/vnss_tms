@@ -2186,11 +2186,37 @@
       "filters": {
         "year": "Năm",
         "month": "Tháng",
+        "monthPrefix": "Tháng",
         "allMonths": "Tất cả",
         "driver": "Tài xế",
         "allDrivers": "Tất cả",
         "status": "Trạng thái",
         "allStatus": "Tất cả"
+      },
+      "stats": {
+        "driverCount": "Số tài xế",
+        "totalTrips": "Tổng chuyến",
+        "totalSalary": "Tổng lương"
+      },
+      "table": {
+        "title": "Bảng lương tài xế",
+        "driver": "Tài xế",
+        "trips": "Chuyến",
+        "baseSalary": "Lương CB",
+        "tripSalary": "Lương chuyến",
+        "bonus": "Thưởng",
+        "insurance": "Bảo hiểm",
+        "tax": "Thuế TNCN",
+        "advance": "Tạm ứng",
+        "netSalary": "Thực lĩnh",
+        "status": "Trạng thái",
+        "actions": "Thao tác",
+        "noData": "Chưa có bảng lương tài xế nào trong tháng này"
+      },
+      "actions": {
+        "submitReview": "Gửi duyệt",
+        "confirm": "Xác nhận",
+        "markPaid": "Đã TT"
       },
       "columns": {
         "month": "Tháng",
@@ -2204,10 +2230,12 @@
       },
       "status": {
         "DRAFT": "Nháp",
+        "PENDING_REVIEW": "Chờ xác nhận",
         "PENDING_HR_REVIEW": "Chờ HR duyệt",
         "PENDING_DRIVER_CONFIRM": "Chờ tài xế xác nhận",
         "CONFIRMED": "Đã xác nhận",
-        "PAID": "Đã trả lương",
+        "PAID": "Đã thanh toán",
+        "DISPUTED": "Khiếu nại",
         "REJECTED": "Bị từ chối"
       },
       "createModal": {
