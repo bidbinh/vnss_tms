@@ -4,6 +4,19 @@
 export const API_BASE = "";
 console.log("API_BASE = (using Next.js rewrites)");
 
+// Custom error class for permission denied
+export class PermissionDeniedError extends Error {
+  resource?: string;
+  action?: string;
+
+  constructor(message: string, resource?: string, action?: string) {
+    super(message);
+    this.name = "PermissionDeniedError";
+    this.resource = resource;
+    this.action = action;
+  }
+}
+
 export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers || {});
   // Only set Content-Type for requests with body (POST, PUT, PATCH with body)
@@ -33,6 +46,30 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
     localStorage.removeItem("user");
     window.location.href = "/login";
     throw new Error("Unauthorized");
+  }
+
+  // Handle 403 Permission Denied with structured error
+  if (res.status === 403) {
+    let errorData: any = null;
+    try {
+      errorData = await res.json();
+    } catch {
+      // Not JSON, use text
+    }
+
+    if (errorData?.detail?.error === "permission_denied") {
+      throw new PermissionDeniedError(
+        errorData.detail.message || "Không có quyền truy cập",
+        errorData.detail.resource,
+        errorData.detail.action
+      );
+    }
+
+    // Legacy 403 response (string detail)
+    const message = errorData?.detail || "Không có quyền truy cập";
+    throw new PermissionDeniedError(
+      typeof message === "string" ? message : JSON.stringify(message)
+    );
   }
 
   if (!res.ok) {

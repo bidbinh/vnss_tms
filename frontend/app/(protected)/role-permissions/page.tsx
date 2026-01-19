@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { apiFetch } from "@/lib/api";
+import { useState, useEffect, Fragment } from "react";
+import { apiFetch, PermissionDeniedError } from "@/lib/api";
+import AccessDenied from "@/components/ui/AccessDenied";
+import { ChevronDown, ChevronRight, Shield, Users, Save, RotateCcw } from "lucide-react";
 
 interface ActionInfo {
   action: string;
@@ -9,55 +11,80 @@ interface ActionInfo {
   description: string;
 }
 
-interface ModuleInfo {
-  module: string;
+interface ResourceInfo {
+  resource: string;
   label: string;
   icon: string;
   order: number;
   available_actions: ActionInfo[];
 }
 
+interface AppModuleInfo {
+  code: string;
+  label: string;
+  icon: string;
+  order: number;
+  resources: ResourceInfo[];
+}
+
 interface RolePermission {
   role: string;
   label: string;
   permissions: Record<string, string[]>;
+  modules: string[];  // App module access
   description: string | null;
   is_custom: boolean;
 }
 
 export default function RolePermissionsPage() {
-  const [modules, setModules] = useState<ModuleInfo[]>([]);
+  const [grouped, setGrouped] = useState<AppModuleInfo[]>([]);
   const [roles, setRoles] = useState<RolePermission[]>([]);
   const [selectedRole, setSelectedRole] = useState<string>("");
   const [permissions, setPermissions] = useState<Record<string, string[]>>({});
+  const [enabledModules, setEnabledModules] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [accessDenied, setAccessDenied] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
+  const [expandedModules, setExpandedModules] = useState<Record<string, boolean>>({});
 
   // Fetch modules and roles
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       setError(null);
+      setAccessDenied(false);
       try {
         const [modulesData, rolesData] = await Promise.all([
-          apiFetch<{ modules: ModuleInfo[] }>("/role-permissions/modules"),
+          apiFetch<{ modules: any[]; grouped: AppModuleInfo[] }>("/role-permissions/modules"),
           apiFetch<{ roles: RolePermission[] }>("/role-permissions/roles"),
         ]);
 
-        setModules(modulesData.modules);
+        setGrouped(modulesData.grouped);
         setRoles(rolesData.roles);
+
+        // Expand all modules by default
+        const expanded: Record<string, boolean> = {};
+        modulesData.grouped.forEach((m) => {
+          expanded[m.code] = true;
+        });
+        setExpandedModules(expanded);
 
         // Select first role by default
         if (rolesData.roles.length > 0) {
           const firstRole = rolesData.roles[0];
           setSelectedRole(firstRole.role);
           setPermissions(firstRole.permissions || {});
+          setEnabledModules(firstRole.modules || []);
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Đã có lỗi xảy ra");
+        if (err instanceof PermissionDeniedError) {
+          setAccessDenied(true);
+        } else {
+          setError(err instanceof Error ? err.message : "Đã có lỗi xảy ra");
+        }
       } finally {
         setLoading(false);
       }
@@ -76,26 +103,47 @@ export default function RolePermissionsPage() {
     setSelectedRole(role);
     const roleData = roles.find((r) => r.role === role);
     setPermissions(roleData?.permissions || {});
+    setEnabledModules(roleData?.modules || []);
     setHasChanges(false);
     setSuccessMessage(null);
   };
 
+  // Toggle module access (top-level)
+  const toggleModuleAccess = (moduleCode: string) => {
+    setEnabledModules((prev) => {
+      if (prev.includes(moduleCode)) {
+        return prev.filter((m) => m !== moduleCode);
+      } else {
+        return [...prev, moduleCode];
+      }
+    });
+    setHasChanges(true);
+    setSuccessMessage(null);
+  };
+
+  // Check if a resource's parent module is enabled
+  const isModuleEnabled = (moduleCode: string) => {
+    // Empty array means all modules enabled (legacy)
+    if (enabledModules.length === 0) return true;
+    return enabledModules.includes(moduleCode);
+  };
+
   // Toggle permission
-  const togglePermission = (module: string, action: string) => {
+  const togglePermission = (resource: string, action: string) => {
     setPermissions((prev) => {
-      const modulePerms = prev[module] || [];
-      const newModulePerms = modulePerms.includes(action)
-        ? modulePerms.filter((a) => a !== action)
-        : [...modulePerms, action];
+      const resourcePerms = prev[resource] || [];
+      const newResourcePerms = resourcePerms.includes(action)
+        ? resourcePerms.filter((a) => a !== action)
+        : [...resourcePerms, action];
 
       const newPermissions = {
         ...prev,
-        [module]: newModulePerms,
+        [resource]: newResourcePerms,
       };
 
-      // Remove empty modules
-      if (newModulePerms.length === 0) {
-        delete newPermissions[module];
+      // Remove empty resources
+      if (newResourcePerms.length === 0) {
+        delete newPermissions[resource];
       }
 
       return newPermissions;
@@ -104,28 +152,36 @@ export default function RolePermissionsPage() {
     setSuccessMessage(null);
   };
 
-  // Toggle all actions for a module
-  const toggleAllModule = (module: string, moduleInfo: ModuleInfo) => {
-    const currentPerms = permissions[module] || [];
-    const allActions = moduleInfo.available_actions.map((a) => a.action);
+  // Toggle all actions for a resource
+  const toggleAllResource = (resource: string, resourceInfo: ResourceInfo) => {
+    const currentPerms = permissions[resource] || [];
+    const allActions = resourceInfo.available_actions.map((a) => a.action);
     const hasAll = allActions.every((a) => currentPerms.includes(a));
 
     setPermissions((prev) => {
       if (hasAll) {
         // Remove all
         const newPermissions = { ...prev };
-        delete newPermissions[module];
+        delete newPermissions[resource];
         return newPermissions;
       } else {
         // Add all
         return {
           ...prev,
-          [module]: allActions,
+          [resource]: allActions,
         };
       }
     });
     setHasChanges(true);
     setSuccessMessage(null);
+  };
+
+  // Toggle expand/collapse module
+  const toggleExpand = (moduleCode: string) => {
+    setExpandedModules((prev) => ({
+      ...prev,
+      [moduleCode]: !prev[moduleCode],
+    }));
   };
 
   // Save permissions
@@ -135,11 +191,14 @@ export default function RolePermissionsPage() {
     setSuccessMessage(null);
 
     try {
-      const data = await apiFetch<{ message: string; role: string; permissions: Record<string, string[]> }>(
+      const data = await apiFetch<{ message: string; role: string; permissions: Record<string, string[]>; modules: string[] }>(
         `/role-permissions/roles/${selectedRole}`,
         {
           method: "PUT",
-          body: JSON.stringify({ permissions }),
+          body: JSON.stringify({
+            permissions,
+            modules: enabledModules.length > 0 ? enabledModules : null,
+          }),
         }
       );
 
@@ -150,7 +209,7 @@ export default function RolePermissionsPage() {
       setRoles((prev) =>
         prev.map((r) =>
           r.role === selectedRole
-            ? { ...r, permissions, is_custom: true }
+            ? { ...r, permissions, modules: enabledModules, is_custom: true }
             : r
         )
       );
@@ -179,13 +238,14 @@ export default function RolePermissionsPage() {
 
       setSuccessMessage(data.message);
       setPermissions(data.permissions);
+      setEnabledModules([]);
       setHasChanges(false);
 
       // Update roles list
       setRoles((prev) =>
         prev.map((r) =>
           r.role === selectedRole
-            ? { ...r, permissions: data.permissions, is_custom: false }
+            ? { ...r, permissions: data.permissions, modules: [], is_custom: false }
             : r
         )
       );
@@ -197,6 +257,10 @@ export default function RolePermissionsPage() {
   };
 
   const selectedRoleData = roles.find((r) => r.role === selectedRole);
+
+  if (accessDenied) {
+    return <AccessDenied title="Không có quyền truy cập" message="Chỉ Admin mới có thể quản lý phân quyền" />;
+  }
 
   if (loading) {
     return (
@@ -217,7 +281,10 @@ export default function RolePermissionsPage() {
     <div className="p-6 max-w-7xl mx-auto">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Phân quyền vai trò</h1>
+        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+          <Shield className="w-7 h-7 text-blue-600" />
+          Phân quyền vai trò
+        </h1>
         <p className="mt-1 text-sm text-gray-500">
           Cấu hình quyền truy cập cho từng vai trò trong hệ thống
         </p>
@@ -240,8 +307,11 @@ export default function RolePermissionsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Role List */}
         <div className="lg:col-span-1">
-          <div className="bg-white rounded-xl shadow-sm border p-4">
-            <h2 className="font-semibold text-gray-900 mb-4">Vai trò</h2>
+          <div className="bg-white rounded-xl shadow-sm border p-4 sticky top-4">
+            <h2 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <Users className="w-4 h-4" />
+              Vai trò
+            </h2>
             <div className="space-y-2">
               {roles.map((role) => (
                 <button
@@ -273,7 +343,7 @@ export default function RolePermissionsPage() {
         <div className="lg:col-span-3">
           <div className="bg-white rounded-xl shadow-sm border">
             {/* Header */}
-            <div className="p-4 border-b flex items-center justify-between">
+            <div className="p-4 border-b flex items-center justify-between sticky top-0 bg-white z-20 rounded-t-xl">
               <div>
                 <h2 className="font-semibold text-gray-900">
                   Quyền của {selectedRoleData?.label}
@@ -288,8 +358,9 @@ export default function RolePermissionsPage() {
                 <button
                   onClick={handleReset}
                   disabled={saving}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 flex items-center gap-2"
                 >
+                  <RotateCcw className="w-4 h-4" />
                   Đặt lại mặc định
                 </button>
                 <button
@@ -321,144 +392,161 @@ export default function RolePermissionsPage() {
                       Đang lưu...
                     </>
                   ) : (
-                    "Lưu thay đổi"
+                    <>
+                      <Save className="w-4 h-4" />
+                      Lưu thay đổi
+                    </>
                   )}
                 </button>
               </div>
             </div>
 
-            {/* Permission Table */}
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="bg-gray-50">
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-1/4">
-                      Chức năng
-                    </th>
-                    <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      Xem
-                    </th>
-                    <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      Tạo mới
-                    </th>
-                    <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      Chỉnh sửa
-                    </th>
-                    <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      Xóa
-                    </th>
-                    <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      Xuất file
-                    </th>
-                    <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      Sử dụng
-                    </th>
-                    <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider w-20">
-                      Tất cả
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {modules.map((module) => {
-                    const modulePerms = permissions[module.module] || [];
-                    const availableActions = module.available_actions.map(
-                      (a) => a.action
-                    );
-                    const hasAll = availableActions.every((a) =>
-                      modulePerms.includes(a)
-                    );
+            {/* Permission by Module */}
+            <div className="max-h-[65vh] overflow-y-auto">
+              {grouped.map((appModule) => {
+                const isExpanded = expandedModules[appModule.code] ?? true;
+                const moduleEnabled = isModuleEnabled(appModule.code);
 
-                    return (
-                      <tr key={module.module} className="hover:bg-gray-50">
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-2">
-                            <span className="text-lg">{module.icon}</span>
-                            <span className="font-medium text-gray-900">
-                              {module.label}
-                            </span>
-                          </div>
-                        </td>
-                        {["view", "create", "edit", "delete", "export", "use"].map(
-                          (action) => {
-                            const isAvailable = availableActions.includes(action);
-                            const isChecked = modulePerms.includes(action);
+                return (
+                  <div key={appModule.code} className="border-b last:border-b-0">
+                    {/* Module Header */}
+                    <div
+                      className={`flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-gray-50 ${
+                        !moduleEnabled ? "opacity-50" : ""
+                      }`}
+                      onClick={() => toggleExpand(appModule.code)}
+                    >
+                      <div className="flex items-center gap-3">
+                        {isExpanded ? (
+                          <ChevronDown className="w-5 h-5 text-gray-400" />
+                        ) : (
+                          <ChevronRight className="w-5 h-5 text-gray-400" />
+                        )}
+                        <span className="text-xl">{appModule.icon}</span>
+                        <span className="font-semibold text-gray-900">{appModule.label}</span>
+                        <span className="text-xs text-gray-500">
+                          ({appModule.resources.length} chức năng)
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <span className="text-xs text-gray-500">Truy cập Module</span>
+                          <input
+                            type="checkbox"
+                            checked={moduleEnabled}
+                            onChange={() => toggleModuleAccess(appModule.code)}
+                            className="w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                          />
+                        </label>
+                      </div>
+                    </div>
 
-                            return (
-                              <td key={action} className="px-4 py-3 text-center">
-                                {isAvailable ? (
-                                  <label className="inline-flex items-center justify-center cursor-pointer">
+                    {/* Resources Table */}
+                    {isExpanded && moduleEnabled && (
+                      <div className="bg-gray-50 px-4 pb-4">
+                        <table className="w-full bg-white rounded-lg overflow-hidden shadow-sm">
+                          <thead>
+                            <tr className="bg-gray-100">
+                              <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase w-1/4">
+                                Chức năng
+                              </th>
+                              <th className="px-3 py-2 text-center text-xs font-semibold text-gray-600 uppercase">
+                                Xem
+                              </th>
+                              <th className="px-3 py-2 text-center text-xs font-semibold text-gray-600 uppercase">
+                                Tạo mới
+                              </th>
+                              <th className="px-3 py-2 text-center text-xs font-semibold text-gray-600 uppercase">
+                                Sửa
+                              </th>
+                              <th className="px-3 py-2 text-center text-xs font-semibold text-gray-600 uppercase">
+                                Xóa
+                              </th>
+                              <th className="px-3 py-2 text-center text-xs font-semibold text-gray-600 uppercase">
+                                Xuất file
+                              </th>
+                              <th className="px-3 py-2 text-center text-xs font-semibold text-gray-600 uppercase">
+                                Sử dụng
+                              </th>
+                              <th className="px-3 py-2 text-center text-xs font-semibold text-gray-600 uppercase w-16">
+                                Tất cả
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-100">
+                            {appModule.resources.map((resource) => {
+                              const resourcePerms = permissions[resource.resource] || [];
+                              const availableActions = resource.available_actions.map((a) => a.action);
+                              const hasAll = availableActions.every((a) => resourcePerms.includes(a));
+
+                              return (
+                                <tr key={resource.resource} className="hover:bg-gray-50">
+                                  <td className="px-4 py-2">
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-sm">{resource.icon}</span>
+                                      <span className="text-sm font-medium text-gray-800">
+                                        {resource.label}
+                                      </span>
+                                    </div>
+                                  </td>
+                                  {["view", "create", "edit", "delete", "export", "use"].map((action) => {
+                                    const isAvailable = availableActions.includes(action);
+                                    const isChecked = resourcePerms.includes(action);
+
+                                    return (
+                                      <td key={action} className="px-3 py-2 text-center">
+                                        {isAvailable ? (
+                                          <input
+                                            type="checkbox"
+                                            checked={isChecked}
+                                            onChange={() => togglePermission(resource.resource, action)}
+                                            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
+                                          />
+                                        ) : (
+                                          <span className="text-gray-300">—</span>
+                                        )}
+                                      </td>
+                                    );
+                                  })}
+                                  <td className="px-3 py-2 text-center">
                                     <input
                                       type="checkbox"
-                                      checked={isChecked}
-                                      onChange={() =>
-                                        togglePermission(module.module, action)
-                                      }
-                                      className="w-5 h-5 text-black bg-gray-100 border-gray-300 rounded focus:ring-black focus:ring-2 cursor-pointer"
+                                      checked={hasAll}
+                                      onChange={() => toggleAllResource(resource.resource, resource)}
+                                      className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
                                     />
-                                  </label>
-                                ) : (
-                                  <span className="text-gray-300">—</span>
-                                )}
-                              </td>
-                            );
-                          }
-                        )}
-                        <td className="px-4 py-3 text-center">
-                          <label className="inline-flex items-center justify-center cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={hasAll}
-                              onChange={() => toggleAllModule(module.module, module)}
-                              className="w-5 h-5 text-black bg-gray-100 border-gray-300 rounded focus:ring-black focus:ring-2 cursor-pointer"
-                            />
-                          </label>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+
+                    {/* Collapsed disabled state */}
+                    {isExpanded && !moduleEnabled && (
+                      <div className="bg-gray-50 px-4 py-6 text-center text-gray-400 text-sm">
+                        Module đã bị tắt. Bật "Truy cập Module" để cấu hình quyền chi tiết.
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
 
             {/* Legend */}
-            <div className="p-4 border-t bg-gray-50">
-              <div className="flex flex-wrap gap-6 text-sm text-gray-600">
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked
-                    readOnly
-                    className="w-4 h-4 text-black bg-gray-100 border-gray-300 rounded"
-                  />
-                  <span>Có quyền</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    readOnly
-                    className="w-4 h-4 bg-gray-100 border-gray-300 rounded"
-                  />
-                  <span>Không có quyền</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-gray-300">—</span>
-                  <span>Không áp dụng</span>
-                </div>
+            <div className="p-4 border-t bg-gray-50 rounded-b-xl">
+              <h3 className="font-medium text-gray-700 mb-2">Ghi chú</h3>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm text-gray-600">
+                <div>• <strong>Xem:</strong> Xem danh sách và chi tiết</div>
+                <div>• <strong>Tạo mới:</strong> Thêm bản ghi mới</div>
+                <div>• <strong>Sửa:</strong> Chỉnh sửa bản ghi</div>
+                <div>• <strong>Xóa:</strong> Xóa bản ghi</div>
+                <div>• <strong>Xuất file:</strong> Xuất Excel/PDF</div>
+                <div>• <strong>Sử dụng:</strong> Sử dụng tính năng</div>
               </div>
             </div>
-          </div>
-
-          {/* Info Card */}
-          <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-100">
-            <h3 className="font-medium text-blue-900 mb-2">Ghi chú</h3>
-            <ul className="text-sm text-blue-800 space-y-1">
-              <li>• <strong>Xem:</strong> Xem danh sách và chi tiết dữ liệu</li>
-              <li>• <strong>Tạo mới:</strong> Thêm bản ghi mới</li>
-              <li>• <strong>Chỉnh sửa:</strong> Sửa đổi bản ghi hiện có</li>
-              <li>• <strong>Xóa:</strong> Xóa bản ghi</li>
-              <li>• <strong>Xuất file:</strong> Xuất dữ liệu ra Excel/PDF</li>
-              <li>• <strong>Sử dụng:</strong> Sử dụng tính năng (áp dụng cho AI Assistant)</li>
-            </ul>
           </div>
         </div>
       </div>

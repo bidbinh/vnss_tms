@@ -8,8 +8,28 @@ from app.models.base import BaseUUIDModel, TimestampMixin, TenantScoped
 from enum import Enum
 
 
+class AppModule(str, Enum):
+    """Top-level application modules"""
+    TMS = "tms"      # Transport Management System
+    CRM = "crm"      # Customer Relationship Management
+    HRM = "hrm"      # Human Resource Management
+    DMS = "dms"      # Document Management System
+    PLATFORM = "platform"  # Platform settings (users, roles, billing)
+
+
+# Module display info (top-level)
+APP_MODULE_INFO = {
+    AppModule.TMS: {"label": "TMS - Vận tải", "icon": "🚚", "order": 1},
+    AppModule.CRM: {"label": "CRM - Khách hàng", "icon": "👥", "order": 2},
+    AppModule.HRM: {"label": "HRM - Nhân sự", "icon": "👤", "order": 3},
+    AppModule.DMS: {"label": "DMS - Tài liệu", "icon": "📁", "order": 4},
+    AppModule.PLATFORM: {"label": "Nền tảng", "icon": "⚙️", "order": 5},
+}
+
+
 class ModuleType(str, Enum):
-    """Available modules in the system"""
+    """Available resources/features in the system"""
+    # TMS Resources
     DASHBOARD = "dashboard"
     ORDERS = "orders"
     TRIPS = "trips"
@@ -25,9 +45,33 @@ class ModuleType(str, Enum):
     SALARY = "salary"
     ADVANCE_PAYMENTS = "advance_payments"
     REPORTS = "reports"
+    # Platform Resources
     USERS = "users"
     SETTINGS = "settings"
     AI_ASSISTANT = "ai_assistant"
+
+
+# Map resources to their parent module
+RESOURCE_TO_MODULE = {
+    ModuleType.DASHBOARD: AppModule.TMS,
+    ModuleType.ORDERS: AppModule.TMS,
+    ModuleType.TRIPS: AppModule.TMS,
+    ModuleType.EMPTY_RETURNS: AppModule.TMS,
+    ModuleType.DRIVERS: AppModule.TMS,
+    ModuleType.VEHICLES: AppModule.TMS,
+    ModuleType.CUSTOMERS: AppModule.CRM,
+    ModuleType.SITES: AppModule.TMS,
+    ModuleType.LOCATIONS: AppModule.TMS,
+    ModuleType.RATES: AppModule.TMS,
+    ModuleType.MAINTENANCE: AppModule.TMS,
+    ModuleType.FUEL_LOGS: AppModule.TMS,
+    ModuleType.SALARY: AppModule.HRM,
+    ModuleType.ADVANCE_PAYMENTS: AppModule.HRM,
+    ModuleType.REPORTS: AppModule.TMS,
+    ModuleType.USERS: AppModule.PLATFORM,
+    ModuleType.SETTINGS: AppModule.PLATFORM,
+    ModuleType.AI_ASSISTANT: AppModule.PLATFORM,
+}
 
 
 class PermissionAction(str, Enum):
@@ -103,6 +147,10 @@ class RolePermission(BaseUUIDModel, TimestampMixin, TenantScoped, SQLModel, tabl
     permissions_json: Optional[str] = Field(default="{}")
     # permissions format: {"orders": ["view", "create"], "drivers": ["view"]}
 
+    # Module access - which top-level modules this role can access
+    # Format: ["tms", "crm"] - empty means no module restrictions (legacy behavior)
+    modules_json: Optional[str] = Field(default="[]")
+
     description: Optional[str] = Field(default=None)
     is_system: bool = Field(default=False)  # True for default roles, can't delete
 
@@ -116,3 +164,22 @@ class RolePermission(BaseUUIDModel, TimestampMixin, TenantScoped, SQLModel, tabl
     def set_permissions(self, value: Dict[str, List[str]]):
         """Set permissions from dict"""
         self.permissions_json = json.dumps(value)
+
+    def get_modules(self) -> List[str]:
+        """Get list of accessible modules"""
+        try:
+            return json.loads(self.modules_json or "[]")
+        except:
+            return []
+
+    def set_modules(self, value: List[str]):
+        """Set accessible modules"""
+        self.modules_json = json.dumps(value)
+
+    def has_module_access(self, module: str) -> bool:
+        """Check if role has access to a module"""
+        modules = self.get_modules()
+        # Empty list means all modules (backward compatibility)
+        if not modules:
+            return True
+        return module in modules

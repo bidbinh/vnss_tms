@@ -28,6 +28,7 @@ class LegacyUserRole(str, Enum):
     ACCOUNTANT = "ACCOUNTANT"
     HR = "HR"
     DRIVER = "DRIVER"
+    SALE = "SALE"  # Sales/CRM role
 
 
 # Legacy permission definitions (kept for backward compatibility)
@@ -90,6 +91,16 @@ LEGACY_ROLE_PERMISSIONS = {
         "dashboard": ["view"],
         "trips": ["view"],
         "fuel_logs": ["view", "create"],
+    },
+    LegacyUserRole.SALE: {
+        "dashboard": ["view"],
+        "orders": ["view", "create", "edit"],
+        "customers": ["view", "create", "edit", "delete"],
+        "sites": ["view", "create", "edit"],
+        "locations": ["view"],
+        "rates": ["view"],
+        "reports": ["view", "export"],
+        "ai_assistant": ["view", "use"],
     },
 }
 

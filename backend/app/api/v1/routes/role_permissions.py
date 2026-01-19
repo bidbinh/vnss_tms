@@ -11,8 +11,9 @@ from app.db.session import get_session
 from app.models import User, RolePermission
 from app.models.user import UserRole, ROLE_PERMISSIONS as DEFAULT_PERMISSIONS
 from app.models.role_permission import (
-    ModuleType, PermissionAction,
-    MODULE_INFO, ACTION_INFO, MODULE_ACTIONS
+    ModuleType, PermissionAction, AppModule,
+    MODULE_INFO, ACTION_INFO, MODULE_ACTIONS,
+    APP_MODULE_INFO, RESOURCE_TO_MODULE
 )
 from app.core.security import get_current_user
 
@@ -26,6 +27,7 @@ ROLE_LABELS = {
     UserRole.ACCOUNTANT.value: "Kế toán",
     UserRole.HR.value: "Nhân sự",
     UserRole.DRIVER.value: "Tài xế",
+    UserRole.SALE.value: "Sale",
 }
 
 
@@ -38,23 +40,58 @@ def check_admin(user: User):
 class PermissionUpdate(BaseModel):
     """Request body for updating permissions"""
     permissions: dict  # {"orders": ["view", "create"], "drivers": ["view"]}
+    modules: Optional[List[str]] = None  # ["tms", "crm"] - module access
+
+
+@router.get("/app-modules")
+def get_app_modules(
+    current_user: User = Depends(get_current_user),
+):
+    """Get all available top-level application modules"""
+    check_admin(current_user)
+
+    app_modules = []
+    for app_module in AppModule:
+        info = APP_MODULE_INFO.get(app_module, {})
+        app_modules.append({
+            "code": app_module.value,
+            "label": info.get("label", app_module.value),
+            "icon": info.get("icon", ""),
+            "order": info.get("order", 99),
+        })
+
+    app_modules.sort(key=lambda x: x["order"])
+    return {"app_modules": app_modules}
 
 
 @router.get("/modules")
 def get_modules(
     current_user: User = Depends(get_current_user),
 ):
-    """Get all available modules and their actions"""
+    """Get all available modules/resources and their actions, grouped by app module"""
     check_admin(current_user)
 
-    modules = []
-    for module in ModuleType:
-        info = MODULE_INFO.get(module, {})
-        available_actions = MODULE_ACTIONS.get(module, [])
+    # Group resources by app module
+    grouped = {}
+    for app_module in AppModule:
+        info = APP_MODULE_INFO.get(app_module, {})
+        grouped[app_module.value] = {
+            "code": app_module.value,
+            "label": info.get("label", app_module.value),
+            "icon": info.get("icon", ""),
+            "order": info.get("order", 99),
+            "resources": []
+        }
 
-        modules.append({
-            "module": module.value,
-            "label": info.get("label", module.value),
+    # Add resources to their parent module
+    for resource in ModuleType:
+        parent_module = RESOURCE_TO_MODULE.get(resource, AppModule.TMS)
+        info = MODULE_INFO.get(resource, {})
+        available_actions = MODULE_ACTIONS.get(resource, [])
+
+        grouped[parent_module.value]["resources"].append({
+            "resource": resource.value,
+            "label": info.get("label", resource.value),
             "icon": info.get("icon", ""),
             "order": info.get("order", 99),
             "available_actions": [
@@ -67,10 +104,43 @@ def get_modules(
             ]
         })
 
-    # Sort by order
-    modules.sort(key=lambda x: x["order"])
+    # Sort resources within each module
+    for module_data in grouped.values():
+        module_data["resources"].sort(key=lambda x: x["order"])
 
-    return {"modules": modules}
+    # Convert to list and sort by app module order
+    modules_list = list(grouped.values())
+    modules_list.sort(key=lambda x: x["order"])
+
+    # Also return flat list for backward compatibility
+    flat_modules = []
+    for module in ModuleType:
+        info = MODULE_INFO.get(module, {})
+        available_actions = MODULE_ACTIONS.get(module, [])
+        parent = RESOURCE_TO_MODULE.get(module, AppModule.TMS)
+
+        flat_modules.append({
+            "module": module.value,
+            "label": info.get("label", module.value),
+            "icon": info.get("icon", ""),
+            "order": info.get("order", 99),
+            "app_module": parent.value,
+            "available_actions": [
+                {
+                    "action": action.value,
+                    "label": ACTION_INFO.get(action, {}).get("label", action.value),
+                    "description": ACTION_INFO.get(action, {}).get("description", ""),
+                }
+                for action in available_actions
+            ]
+        })
+
+    flat_modules.sort(key=lambda x: x["order"])
+
+    return {
+        "modules": flat_modules,  # backward compatible
+        "grouped": modules_list,  # new grouped format
+    }
 
 
 @router.get("/roles")
@@ -93,6 +163,7 @@ def get_roles_with_permissions(
 
         if db_permission:
             permissions = db_permission.get_permissions()
+            modules = db_permission.get_modules()
             description = db_permission.description
             is_custom = not db_permission.is_system
         else:
@@ -102,6 +173,7 @@ def get_roles_with_permissions(
             default_perms = DEFAULT_PERMISSIONS.get(role_enum, {})
             for module, actions in default_perms.items():
                 permissions[module] = actions
+            modules = []  # Empty means all modules (legacy)
             description = None
             is_custom = False
 
@@ -109,6 +181,7 @@ def get_roles_with_permissions(
             "role": role.value,
             "label": ROLE_LABELS.get(role.value, role.value),
             "permissions": permissions,
+            "modules": modules,  # Module access list
             "description": description,
             "is_custom": is_custom,
         })
@@ -139,6 +212,7 @@ def get_role_permissions(
 
     if db_permission:
         permissions = db_permission.get_permissions()
+        modules = db_permission.get_modules()
         description = db_permission.description
         is_custom = not db_permission.is_system
     else:
@@ -148,6 +222,7 @@ def get_role_permissions(
         default_perms = DEFAULT_PERMISSIONS.get(role_enum, {})
         for module, actions in default_perms.items():
             permissions[module] = actions
+        modules = []
         description = None
         is_custom = False
 
@@ -155,6 +230,7 @@ def get_role_permissions(
         "role": role,
         "label": ROLE_LABELS.get(role, role),
         "permissions": permissions,
+        "modules": modules,
         "description": description,
         "is_custom": is_custom,
     }
@@ -175,17 +251,24 @@ def update_role_permissions(
         raise HTTPException(400, f"Vai trò không hợp lệ: {role}")
 
     # Validate permissions format
-    valid_modules = [m.value for m in ModuleType]
+    valid_resources = [m.value for m in ModuleType]
     valid_actions = [a.value for a in PermissionAction]
+    valid_app_modules = [m.value for m in AppModule]
 
-    for module, actions in data.permissions.items():
-        if module not in valid_modules:
-            raise HTTPException(400, f"Module không hợp lệ: {module}")
+    for resource, actions in data.permissions.items():
+        if resource not in valid_resources:
+            raise HTTPException(400, f"Resource không hợp lệ: {resource}")
         if not isinstance(actions, list):
-            raise HTTPException(400, f"Quyền của module {module} phải là danh sách")
+            raise HTTPException(400, f"Quyền của resource {resource} phải là danh sách")
         for action in actions:
             if action not in valid_actions:
                 raise HTTPException(400, f"Quyền không hợp lệ: {action}")
+
+    # Validate modules if provided
+    if data.modules is not None:
+        for module in data.modules:
+            if module not in valid_app_modules:
+                raise HTTPException(400, f"App module không hợp lệ: {module}")
 
     # Get or create permission record
     db_permission = session.exec(
@@ -197,11 +280,14 @@ def update_role_permissions(
 
     if db_permission:
         db_permission.permissions_json = json.dumps(data.permissions)
+        if data.modules is not None:
+            db_permission.modules_json = json.dumps(data.modules)
     else:
         db_permission = RolePermission(
             tenant_id=current_user.tenant_id,
             role=role,
             permissions_json=json.dumps(data.permissions),
+            modules_json=json.dumps(data.modules or []),
             is_system=False,
         )
         session.add(db_permission)
@@ -213,6 +299,7 @@ def update_role_permissions(
         "message": f"Đã cập nhật quyền cho vai trò {ROLE_LABELS.get(role, role)}",
         "role": role,
         "permissions": db_permission.get_permissions(),
+        "modules": db_permission.get_modules(),
     }
 
 
